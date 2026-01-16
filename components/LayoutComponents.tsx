@@ -5,8 +5,10 @@ import { NAV_ITEMS } from '../constants.tsx';
 import { Link, useLocation } from 'react-router-dom';
 
 export const Sidebar: React.FC<{ role: UserRole, collapsed: boolean, setCollapsed: (c: boolean) => void, onLogout: () => void }> = ({ role, collapsed, setCollapsed, onLogout }) => {
-  const items = NAV_ITEMS[role];
+  const items = NAV_ITEMS[role] || [];
   const location = useLocation();
+
+  if (!items || items.length === 0) return null;
 
   return (
     <aside className={`fixed left-0 top-0 h-full bg-white border-r border-slate-100 transition-all duration-300 z-50 ${collapsed ? 'w-20' : 'w-64'}`}>

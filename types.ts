@@ -4,7 +4,8 @@ export enum UserRole {
   ADMIN = 'ADMIN',
   BUILDER = 'BUILDER',
   TELECALLER = 'TELECALLER',
-  SALES_EXECUTIVE = 'SALES_EXECUTIVE'
+  SALES_EXECUTIVE = 'SALES_EXECUTIVE',
+  BUYER = 'BUYER'
 }
 
 export type PropertyCategory = 'Flats' | 'Villa' | 'Shop' | 'Office' | 'Plot' | 'Agricultural' | 'Industrial' | 'Warehouse';

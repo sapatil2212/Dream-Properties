@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { UserRole, Lead, Property, Builder, Transaction } from '../types.ts';
 import { MOCK_LEADS, MOCK_PROPERTIES, MOCK_BUILDERS, MOCK_TRANSACTIONS } from '../constants.tsx';
 import { Card, Badge, Button, Input, Modal, DataTable, EmptyState, Skeleton, Select } from '../components/UIComponents.tsx';
@@ -28,21 +29,55 @@ const StatCard: React.FC<{ label: string, value: string, trend: string, trendUp?
 
 export const SuperAdminDashboard: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
+  const [dataSummary, setDataSummary] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/superadmin/accounts-summary', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setDataSummary(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  const stats = dataSummary ? {
+    total: dataSummary.total,
+    buyers: dataSummary.buyers.length,
+    staff: dataSummary.staff.length,
+    builders: dataSummary.builders.length
+  } : { total: 0, buyers: 0, staff: 0, builders: 0 };
+
+  const recentAccounts = dataSummary ? [
+    ...dataSummary.buyers,
+    ...dataSummary.builders,
+    ...dataSummary.staff
+  ].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5) : [];
 
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard label="Active Builders" value="48" trend="+12%" icon={<Building2 className="text-blue-600" size={20} />} color="bg-blue-50" />
-        <StatCard label="Inventory Units" value="1,240" trend="+8%" icon={<Home className="text-indigo-600" size={20} />} color="bg-indigo-50" />
-        <StatCard label="Lead Conversions" value="24.8%" trend="+4%" icon={<Users className="text-amber-600" size={20} />} color="bg-amber-50" />
-        <StatCard label="Network Revenue" value="₹12.4M" trend="+18%" icon={<IndianRupee className="text-emerald-600" size={20} />} color="bg-emerald-50" />
+        <StatCard label="Total Accounts" value={stats.total.toString()} trend="+12%" icon={<Users className="text-blue-600" size={20} />} color="bg-blue-50" />
+        <StatCard label="Buyer / Users" value={stats.buyers.toString()} trend="+8%" icon={<User size={20} className="text-indigo-600" />} color="bg-indigo-50" />
+        <StatCard label="Agency Staff" value={stats.staff.toString()} trend="+4%" icon={<Briefcase size={20} className="text-amber-600" />} color="bg-amber-50" />
+        <StatCard label="Partner Builders" value={stats.builders.toString()} trend="+18%" icon={<Building2 className="text-emerald-600" size={20} />} color="bg-emerald-50" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 space-y-6">
           <Card>
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-black uppercase tracking-tight text-slate-900">Builder Onboarding Activity</h3>
+              <h3 className="font-black uppercase tracking-tight text-slate-900">Recent Registrations</h3>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" isLoading={isExporting} onClick={() => {
                   setIsExporting(true);
@@ -52,35 +87,42 @@ export const SuperAdminDashboard: React.FC = () => {
                 </Button>
               </div>
             </div>
-            <DataTable headers={['Builder Name', 'Projects', 'Joined', 'Status', 'Actions']}>
-              {MOCK_BUILDERS.map(b => (
-                <tr key={b.id} className="hover:bg-slate-50/50 group transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden border border-slate-200">
-                        <img src={b.logo} alt="" className="w-full h-full object-cover" />
+            <DataTable headers={['Name', 'Role', 'Joined', 'Status', 'Actions']}>
+              {isLoading ? (
+                <tr><td colSpan={5} className="text-center py-10"><Skeleton className="h-4 w-full" /></td></tr>
+              ) : recentAccounts.length === 0 ? (
+                <tr><td colSpan={5} className="text-center py-10">No recent activity</td></tr>
+              ) : (
+                recentAccounts.map((u: any) => (
+                  <tr key={u.id} className="hover:bg-slate-50/50 group transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200">
+                          <User size={18} className="text-slate-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900">{u.name}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">{u.email}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">{b.name}</p>
-                        <p className="text-[10px] text-slate-400 font-medium">ID: {b.id.toUpperCase()}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-xs font-black text-slate-700">{b.activeProjects}</p>
-                    <p className="text-[10px] text-slate-400 font-medium">{b.totalInventory} Units</p>
-                  </td>
-                  <td className="px-6 py-4 text-xs font-bold text-slate-600">{b.joinedDate}</td>
-                  <td className="px-6 py-4">
-                    <Badge variant={b.status === 'Active' ? 'success' : 'warning'}>{b.status}</Badge>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-                      <MoreVertical size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{u.role.replace('_', ' ')}</p>
+                    </td>
+                    <td className="px-6 py-4 text-xs font-bold text-slate-600">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="px-6 py-4">
+                      <Badge variant={u.status === 'Active' ? 'success' : 'danger'}>{u.status}</Badge>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Link to="/dashboard/users">
+                        <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                          <ArrowUpRight size={16} />
+                        </button>
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
             </DataTable>
           </Card>
         </div>
@@ -297,35 +339,157 @@ export const LeadsHub: React.FC = () => {
 };
 
 export const UserManagement: React.FC = () => {
+  const [users, setUsers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/superadmin/accounts-summary', {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Flatten categories for the table
+        const allUsers = [
+          ...data.buyers,
+          ...data.builders,
+          ...data.staff,
+          ...data.others
+        ].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        setUsers(allUsers);
+      } else {
+        setError('Failed to fetch accounts');
+      }
+    } catch (err) {
+      setError('Network error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleToggleStatus = async (userId: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'Active' ? 'Disabled' : 'Active';
+    try {
+      const response = await fetch('http://localhost:5000/api/superadmin/toggle-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ userId, status: newStatus })
+      });
+      if (response.ok) {
+        setSuccessMsg(`User ${newStatus === 'Active' ? 'enabled' : 'disabled'} successfully`);
+        fetchUsers();
+      }
+    } catch (err) {
+      setError('Failed to update status');
+    }
+  };
+
+  const handleSendCredentials = async (email: string) => {
+    try {
+      setSuccessMsg('Sending credentials...');
+      const response = await fetch('http://localhost:5000/api/superadmin/send-credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email })
+      });
+      if (response.ok) {
+        setSuccessMsg('Login details sent to ' + email);
+      } else {
+        setError('Failed to send credentials');
+      }
+    } catch (err) {
+      setError('Network error');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Team Directory</h2>
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-widest mt-1">Manage staff access levels and permissions</p>
+          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Accounts Management</h2>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-widest mt-1">Real-time directory of all platform users and agency staff</p>
         </div>
-        <Button className="gap-2"><Plus size={18} /> Add Member</Button>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        {[
-          { name: 'John Admin', role: 'SUPER_ADMIN', email: 'john@dream.com' },
-          { name: 'Rahul Sales', role: 'SALES_EXECUTIVE', email: 'rahul@dream.com' },
-          { name: 'Priya Tele', role: 'TELECALLER', email: 'priya@dream.com' }
-        ].map((u, i) => (
-          <Card key={i} className="p-6 flex items-center gap-4">
-             <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
-                <User size={24} />
-             </div>
-             <div className="flex-1">
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{u.name}</h4>
-                <p className="text-[10px] text-blue-600 font-black tracking-widest uppercase">{u.role}</p>
-                <p className="text-[10px] text-slate-400 font-medium">{u.email}</p>
-             </div>
-             <Button variant="ghost" size="icon" className="text-slate-300"><MoreVertical size={16} /></Button>
-          </Card>
-        ))}
-      </div>
+      {successMsg && (
+        <div className="p-3 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-100 flex justify-between items-center">
+          <span>{successMsg}</span>
+          <button onClick={() => setSuccessMsg('')} className="text-emerald-900 hover:scale-110">×</button>
+        </div>
+      )}
+
+      <Card>
+        <div className="overflow-x-auto">
+          <DataTable headers={['User Detail', 'Role', 'Status', 'Security Key', 'Joined', 'Actions']}>
+            {isLoading ? (
+              <tr><td colSpan={6} className="text-center py-10"><Skeleton className="h-4 w-full" /></td></tr>
+            ) : users.length === 0 ? (
+              <tr><td colSpan={6} className="text-center py-10"><EmptyState title="No users found" description="No registered accounts found in the system." /></td></tr>
+            ) : (
+              users.map((u) => (
+                <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                        <User size={20} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">{u.name}</p>
+                        <p className="text-[10px] text-slate-400 font-medium">{u.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-[10px] text-blue-600 font-black tracking-widest uppercase">{u.role.replace('_', ' ')}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <Badge variant={u.status === 'Active' ? 'success' : 'danger'}>{u.status}</Badge>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-[10px] font-mono font-bold bg-slate-100 px-2 py-1 rounded text-slate-600">
+                      {u.security_key || 'N/A'}
+                    </p>
+                  </td>
+                  <td className="px-6 py-4 text-[10px] font-bold text-slate-500">
+                    {new Date(u.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      {(u.role === 'ADMIN' || u.role === 'TELECALLER' || u.role === 'SALES_EXECUTIVE') && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 text-[10px] font-black uppercase tracking-widest"
+                          onClick={() => handleSendCredentials(u.email)}
+                        >
+                          Send Creds
+                        </Button>
+                      )}
+                      <Button 
+                        variant={u.status === 'Active' ? 'ghost' : 'primary'} 
+                        size="sm"
+                        className={`h-8 text-[10px] font-black uppercase tracking-widest ${u.status === 'Active' ? 'text-rose-600 hover:bg-rose-50' : ''}`}
+                        onClick={() => handleToggleStatus(u.id, u.status)}
+                      >
+                        {u.status === 'Active' ? 'Disable' : 'Enable'}
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </DataTable>
+        </div>
+      </Card>
     </div>
   );
 };

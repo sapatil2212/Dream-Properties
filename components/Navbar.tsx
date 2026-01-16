@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Building2, Info, Phone, User, Home, PlusCircle } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, Building2, Info, Phone, User, Home, PlusCircle, Settings, Heart, LogOut, ChevronDown } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './UIComponents.tsx';
+import { UserRole } from '../types.ts';
 
 interface NavbarProps {
   onAuthClick: () => void;
+  user?: { name: string; role: UserRole } | null;
+  onLogout: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onAuthClick }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -60,27 +65,76 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick }) => {
               
               <div className="h-4 w-px bg-gray-200" />
               
-              {/* Post Property Button */}
-              <Link 
-                to="/login" 
-                className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-slate-700 hover:text-blue-600 transition-colors"
-              >
-                <span>Post Property</span>
-                <span className="relative overflow-hidden bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
-                  FREE
-                  <span className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                </span>
-              </Link>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onAuthClick} 
-                className="font-black text-[10px] uppercase tracking-widest px-5 border-slate-200 hover:border-blue-600 hover:text-blue-600 flex items-center gap-2 rounded-xl"
-              >
-                <User size={14} />
-                Login
-              </Button>
+              {user ? (
+                <div className="relative">
+                  <button 
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-[11px] font-black uppercase">
+                      {user.name.charAt(0)}
+                    </div>
+                    <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {isProfileOpen && (
+                      <>
+                        <div className="fixed inset-0 z-[60]" onClick={() => setIsProfileOpen(false)} />
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl shadow-slate-200/50 p-2 z-[70] overflow-hidden"
+                        >
+                          <div className="px-3 py-2 border-b border-slate-50 mb-1">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Signed in as</p>
+                            <p className="text-[12px] font-black text-slate-900 truncate">{user.name}</p>
+                          </div>
+                          
+                          <Link 
+                            to="/account-settings" 
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all group"
+                            onClick={() => setIsProfileOpen(false)}
+                          >
+                            <Settings size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
+                            <span className="text-[11px] font-black uppercase tracking-wider">Account Settings</span>
+                          </Link>
+                          
+                          <Link 
+                            to="/properties-interested" 
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all group"
+                            onClick={() => setIsProfileOpen(false)}
+                          >
+                            <Heart size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
+                            <span className="text-[11px] font-black uppercase tracking-wider">Interested</span>
+                          </Link>
+
+                          <div className="h-px bg-slate-50 my-1" />
+
+                          <button 
+                            onClick={() => { setIsProfileOpen(false); onLogout(); }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-600 hover:bg-rose-50 transition-all group"
+                          >
+                            <LogOut size={16} className="text-rose-400 group-rose:text-rose-600 transition-colors" />
+                            <span className="text-[11px] font-black uppercase tracking-wider">Logout</span>
+                          </button>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onAuthClick} 
+                  className="font-black text-[10px] uppercase tracking-widest px-5 border-slate-200 hover:border-blue-600 hover:text-blue-600 flex items-center gap-2 rounded-xl"
+                >
+                  <User size={14} />
+                  Login
+                </Button>
+              )}
             </div>
 
             {/* Mobile Burger Toggle */}
@@ -129,32 +183,77 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick }) => {
                 
                 {/* Action Buttons Section - Side by Side */}
                 <div className="flex items-center gap-2.5">
-                  {/* Post Property Button */}
-                  <Link
-                    to="/login"
-                    onClick={closeMenu}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl px-2 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98]"
-                  >
-                    <PlusCircle size={15} strokeWidth={2.5} />
-                    <span className="font-black text-[9px] uppercase tracking-wider flex items-center gap-1">
-                      Post Property
-                      <span className="relative overflow-hidden bg-white/20 backdrop-blur-sm text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase border border-white/30">
-                        FREE
-                        <span className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                      </span>
-                    </span>
-                  </Link>
-                  
-                  {/* Login Button */}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="flex-1 py-3.5 rounded-xl font-black uppercase tracking-wider text-[10px] border-2 border-slate-300 hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                    onClick={() => { closeMenu(); onAuthClick(); }}
-                  >
-                    <User size={15} strokeWidth={2.5} />
-                    Login
-                  </Button>
+                  {user ? (
+                    <div className="flex flex-col w-full gap-2">
+                      <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white text-[12px] font-black uppercase">
+                          {user.name.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-black text-slate-900 truncate uppercase tracking-wider">{user.name}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{user.role}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <Link 
+                          to="/account-settings" 
+                          onClick={closeMenu}
+                          className="flex flex-col items-center justify-center gap-2 p-3 bg-white border border-slate-100 rounded-xl hover:bg-blue-50 hover:border-blue-100 transition-all group"
+                        >
+                          <Settings size={18} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
+                          <span className="text-[9px] font-black text-slate-500 group-hover:text-blue-600 uppercase tracking-widest text-center">Settings</span>
+                        </Link>
+                        
+                        <Link 
+                          to="/properties-interested" 
+                          onClick={closeMenu}
+                          className="flex flex-col items-center justify-center gap-2 p-3 bg-white border border-slate-100 rounded-xl hover:bg-blue-50 hover:border-blue-100 transition-all group"
+                        >
+                          <Heart size={18} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
+                          <span className="text-[9px] font-black text-slate-500 group-hover:text-blue-600 uppercase tracking-widest text-center">Interested</span>
+                        </Link>
+                      </div>
+
+                      <Button 
+                        variant="outline" 
+                        className="w-full py-3.5 border-rose-100 text-rose-600 hover:bg-rose-50 hover:border-rose-200 flex items-center justify-center gap-2 rounded-xl font-black uppercase text-[10px] tracking-widest"
+                        onClick={() => { closeMenu(); onLogout(); }}
+                      >
+                        <LogOut size={16} />
+                        Logout
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Post Property Button */}
+                      <Link
+                        to="/login"
+                        onClick={closeMenu}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl px-2 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98]"
+                      >
+                        <PlusCircle size={15} strokeWidth={2.5} />
+                        <span className="font-black text-[9px] uppercase tracking-wider flex items-center gap-1">
+                          Post Property
+                          <span className="relative overflow-hidden bg-white/20 backdrop-blur-sm text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase border border-white/30">
+                            FREE
+                            <span className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                          </span>
+                        </span>
+                      </Link>
+                      
+                      {/* Login Button */}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="flex-1 py-3.5 rounded-xl font-black uppercase tracking-wider text-[10px] border-2 border-slate-300 hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                        onClick={() => { closeMenu(); onAuthClick(); }}
+                      >
+                        <User size={15} strokeWidth={2.5} />
+                        Login
+                      </Button>
+                    </>
+                  )}
                 </div>
                 
                 {/* Helper Text */}

@@ -18,7 +18,7 @@ export const ContactPage: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
       {/* Hero Header */}
-      <section className="bg-slate-900 py-24 px-4 text-center">
+      <section className="bg-slate-900 py-16 px-4 text-center">
         <div className="max-w-4xl mx-auto">
           <motion.span 
             initial={{ opacity: 0 }}
@@ -46,26 +46,26 @@ export const ContactPage: React.FC = () => {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 grid lg:grid-cols-12 gap-12 items-start">
+      <div className="max-w-7xl mx-auto px-4 py-12 md:py-16 grid lg:grid-cols-12 gap-12 items-start">
         {/* Contact Form */}
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="lg:col-span-7"
         >
-          <Card className="p-8 md:p-12 shadow-2xl shadow-slate-200 border-none rounded-[3rem]">
-            <h2 className="text-2xl font-black text-slate-900 mb-8 uppercase tracking-tight">Drop us a line</h2>
+          <Card className="p-6 md:p-8 border border-slate-200 rounded-[2.5rem] shadow-none">
+            <h2 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-tight">Drop us a line</h2>
             
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 <Input label="Your Name" placeholder="John Doe" required />
                 <Input label="Phone Number" placeholder="+91 XXXXX XXXXX" required />
               </div>
               <Input label="Email Address" placeholder="john@example.com" type="email" required />
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Your Message</label>
                 <textarea 
-                  className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-blue-500 outline-none text-sm font-medium min-h-[150px] transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-blue-500 outline-none text-[13px] font-medium min-h-[120px] transition-all"
                   placeholder="Tell us what you're looking for..."
                   required
                 />
@@ -73,7 +73,7 @@ export const ContactPage: React.FC = () => {
               
               <Button 
                 type="submit" 
-                className="w-full md:w-auto px-10 py-4 rounded-xl shadow-xl shadow-blue-500/20 font-black uppercase tracking-widest text-[11px] gap-3"
+                className="w-full md:w-auto px-8 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2.5"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Sending...' : 'Send Inquiry'}
