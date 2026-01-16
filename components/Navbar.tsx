@@ -16,6 +16,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isPropertiesDropdownOpen, setIsPropertiesDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -51,17 +52,78 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              {navLinks.map((link) => (
-                <Link 
-                  key={link.href} 
-                  to={link.href} 
-                  className={`text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
-                    location.pathname === link.href ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
+              <Link 
+                to="/" 
+                className={`text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
+                  location.pathname === '/' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
+                }`}
+              >
+                Home
+              </Link>
+
+              {/* Properties Dropdown */}
+              <div 
+                className="relative"
+                onMouseEnter={() => setIsPropertiesDropdownOpen(true)}
+                onMouseLeave={() => setIsPropertiesDropdownOpen(false)}
+              >
+                <button 
+                  className={`flex items-center gap-1 text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
+                    location.pathname.startsWith('/properties') ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
                   }`}
                 >
-                  {link.label}
-                </Link>
-              ))}
+                  Properties
+                  <ChevronDown size={12} className={`transition-transform duration-200 ${isPropertiesDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                <AnimatePresence>
+                  {isPropertiesDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute left-0 mt-0 pt-4 w-48 z-[70]"
+                    >
+                      <div className="bg-white border border-slate-100 rounded-2xl shadow-xl shadow-slate-200/50 p-2 overflow-hidden">
+                        {[
+                          { label: 'All Properties', href: '/properties' },
+                          { label: 'Buy', href: '/properties/sell' },
+                          { label: 'Rent', href: '/properties/rent' },
+                          { label: 'Lease', href: '/properties/lease' },
+                        ].map((item) => (
+                          <Link 
+                            key={item.href} 
+                            to={item.href}
+                            className={`flex items-center px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                              location.pathname === item.href ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                            }`}
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <Link 
+                to="/about" 
+                className={`text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
+                  location.pathname === '/about' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
+                }`}
+              >
+                About Us
+              </Link>
+
+              <Link 
+                to="/contact" 
+                className={`text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
+                  location.pathname === '/contact' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
+                }`}
+              >
+                Contact
+              </Link>
               
               <div className="h-4 w-px bg-gray-200" />
               
@@ -161,21 +223,59 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
               <div className="px-5 py-6 flex flex-col gap-4">
                 {/* Navigation Links with improved spacing */}
                 <div className="flex flex-col gap-1">
-                  {navLinks.map((link, index) => (
-                    <Link
-                      key={link.href}
-                      to={link.href}
-                      onClick={closeMenu}
-                      className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all ${
-                        location.pathname === link.href 
-                          ? 'bg-blue-50 text-blue-600 font-black' 
-                          : 'text-slate-600 hover:bg-slate-50 font-bold'
-                      }`}
-                    >
-                      <span className="shrink-0 opacity-70">{link.icon}</span>
-                      <span className="text-[11px] uppercase tracking-wider">{link.label}</span>
-                    </Link>
-                  ))}
+                  <Link
+                    to="/"
+                    onClick={closeMenu}
+                    className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all ${
+                      location.pathname === '/' ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
+                    }`}
+                  >
+                    <span className="shrink-0 opacity-70"><Home size={16} /></span>
+                    <span className="text-[11px] uppercase tracking-wider">Home</span>
+                  </Link>
+
+                  <div className="flex flex-col gap-1 pl-4 border-l-2 border-slate-100 ml-6 my-1">
+                    <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1 ml-4">Properties</p>
+                    {[
+                      { label: 'All Listings', href: '/properties', icon: <Building2 size={14} /> },
+                      { label: 'Buy', href: '/properties/sell', icon: <Building2 size={14} /> },
+                      { label: 'Rent', href: '/properties/rent', icon: <Building2 size={14} /> },
+                      { label: 'Lease', href: '/properties/lease', icon: <Building2 size={14} /> },
+                    ].map((item) => (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        onClick={closeMenu}
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                          location.pathname === item.href ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
+                        }`}
+                      >
+                        <span className="text-[10px] uppercase tracking-wider">{item.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+
+                  <Link
+                    to="/about"
+                    onClick={closeMenu}
+                    className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all ${
+                      location.pathname === '/about' ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
+                    }`}
+                  >
+                    <span className="shrink-0 opacity-70"><Info size={16} /></span>
+                    <span className="text-[11px] uppercase tracking-wider">About Us</span>
+                  </Link>
+
+                  <Link
+                    to="/contact"
+                    onClick={closeMenu}
+                    className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all ${
+                      location.pathname === '/contact' ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
+                    }`}
+                  >
+                    <span className="shrink-0 opacity-70"><Phone size={16} /></span>
+                    <span className="text-[11px] uppercase tracking-wider">Contact</span>
+                  </Link>
                 </div>
                 
                 {/* Divider */}

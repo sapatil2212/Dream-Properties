@@ -4,7 +4,9 @@ import { UserRole } from './types.ts';
 import { Sidebar, DashboardHeader } from './components/LayoutComponents.tsx';
 import { HomePage } from './pages/Home.tsx';
 import { PropertyListingPage } from './pages/Properties.tsx';
+import { SearchResultsPage } from './pages/SearchResults.tsx';
 import { PropertyDetailsPage } from './pages/PropertyDetails.tsx';
+import { PostPropertyPage } from './pages/PostProperty.tsx';
 import { CategoryDetailPage } from './pages/CategoryDetailPage.tsx';
 import { NotFoundPage } from './pages/NotFound.tsx';
 import { AboutPage } from './pages/About.tsx';
@@ -303,8 +305,12 @@ const AuthPage: React.FC<{ onLogin: (role: UserRole, user: any) => void, current
       if (response.ok) {
         onLogin(data.user.role as UserRole, data.user);
       } else {
-        // Show common error for invalid credentials
-        setLoginCommonError('Invalid credentials');
+        // Check if account is blocked
+        if (data.blocked || data.field === 'status') {
+          setLoginCommonError(data.message || 'Your account has been blocked. Please contact support.');
+        } else {
+          setLoginCommonError(data.message || 'Invalid credentials');
+        }
         setLoginEmailError('');
         setLoginPasswordError('');
       }
@@ -973,13 +979,17 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/properties" element={<PropertyListingPage />} />
+          <Route path="/properties/sell" element={<PropertyListingPage listingType="Sell" />} />
+          <Route path="/properties/rent" element={<PropertyListingPage listingType="Rent" />} />
+          <Route path="/properties/lease" element={<PropertyListingPage listingType="Lease" />} />
+          <Route path="/properties/search" element={<SearchResultsPage />} />
           <Route path="/properties/:id" element={<PropertyDetailsPage />} />
           <Route path="/category/:slug" element={<CategoryDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/saas-portal" element={<SaasAuth onLogin={handleLogin} currentUser={currentUser} />} />
+          <Route path="/auth/platform" element={<SaasAuth onLogin={handleLogin} currentUser={currentUser} />} />
           <Route path="/login" element={<AuthPage onLogin={handleLogin} currentUser={currentUser} />} />
           <Route path="/account-settings" element={<AccountSettings user={currentUser} onUpdateUser={setCurrentUser} />} />
           <Route path="/properties-interested" element={<PropertiesInterested />} />
@@ -996,6 +1006,7 @@ const App: React.FC = () => {
           
           <Route path="/dashboard/builders" element={<BuildersManagement />} />
           <Route path="/dashboard/properties" element={<InventoryManagement />} />
+          <Route path="/dashboard/post-property" element={<PostPropertyPage />} />
           <Route path="/dashboard/leads" element={<LeadsHub />} />
           <Route path="/dashboard/follow-ups" element={<LeadsHub />} />
           <Route path="/dashboard/site-visits" element={<LeadsHub />} />

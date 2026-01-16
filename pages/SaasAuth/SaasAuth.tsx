@@ -137,7 +137,12 @@ export const SaasAuth: React.FC<SaasAuthProps> = ({ onLogin, currentUser }) => {
       if (response.ok) {
         onLogin(data.user.role, data.user);
       } else {
-        setError(data.message || 'Login failed');
+        // Check if account is blocked
+        if (data.blocked || data.field === 'status') {
+          setError(data.message || 'Your account has been blocked. Please contact support for assistance.');
+        } else {
+          setError(data.message || 'Login failed');
+        }
       }
     } catch (err) {
       setError('Network error');

@@ -87,6 +87,7 @@ export const NAV_ITEMS = {
   ],
   [UserRole.ADMIN]: [
     { label: 'Dashboard', icon: <LayoutDashboard size={20} />, href: '/dashboard' },
+    { label: 'Accounts', icon: <Users size={20} />, href: '/dashboard/users' },
     { label: 'Sales Team', icon: <Users size={20} />, href: '/dashboard/employees' },
     { label: 'Leads Hub', icon: <Users size={20} />, href: '/dashboard/leads' },
     { label: 'Finances', icon: <BadgePercent size={20} />, href: '/dashboard/finance' },

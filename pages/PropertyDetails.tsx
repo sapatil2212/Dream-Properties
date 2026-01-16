@@ -18,8 +18,17 @@ import {
   IndianRupee,
   ArrowLeft,
   FileDown,
+  Paperclip,
+  File,
+  Download,
+  ExternalLink,
+  School,
+  Bus,
+  ShoppingCart,
+  Hospital,
+  Coffee,
+  Map,
 } from 'lucide-react';
-import { MOCK_PROPERTIES } from '../constants.tsx';
 import { Badge, Button, Card, Input } from '../components/UIComponents.tsx';
 
 export const PropertyDetailsPage: React.FC = () => {
@@ -28,15 +37,102 @@ export const PropertyDetailsPage: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('overview');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Property finding logic
-  const property = MOCK_PROPERTIES.find(p => p.id === id);
+  const [property, setProperty] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    fetchPropertyDetails();
+    checkFavoriteStatus();
+  }, [id]);
 
-  if (!property) {
+  const checkFavoriteStatus = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/profile/favorites/check/${id}`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setIsFavorite(data.isFavorite);
+      }
+    } catch (err) {
+      console.error('Error checking favorite status:', err);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    try {
+      const endpoint = isFavorite ? 'remove' : 'add';
+      const response = await fetch(`http://localhost:5000/api/profile/favorites/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ propertyId: id })
+      });
+
+      if (response.ok) {
+        setIsFavorite(!isFavorite);
+      } else if (response.status === 401) {
+        setShowLoginPrompt(true);
+        setTimeout(() => setShowLoginPrompt(false), 3000);
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: property.title,
+        text: `Check out this property: ${property.title}`,
+        url: window.location.href,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    }
+  };
+
+  const fetchPropertyDetails = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/superadmin/property/${id}`);
+      if (response.ok) {
+        const data = await response.json();
+        // Parse JSON fields
+        const parsed = {
+          ...data,
+          images: typeof data.images === 'string' ? JSON.parse(data.images || '[]') : (data.images || []),
+          amenities: typeof data.amenities === 'string' ? JSON.parse(data.amenities || '[]') : (data.amenities || []),
+          highlights: typeof data.highlights === 'string' ? JSON.parse(data.highlights || '[]') : (data.highlights || []),
+          specifications: typeof data.specifications === 'string' ? JSON.parse(data.specifications || '[]') : (data.specifications || []),
+          nearby_locations: typeof data.nearby_locations === 'string' ? JSON.parse(data.nearby_locations || '[]') : (data.nearby_locations || []),
+          attachments: typeof data.attachments === 'string' ? JSON.parse(data.attachments || '[]') : (data.attachments || [])
+        };
+        setProperty(parsed);
+      } else {
+        setNotFound(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setNotFound(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (notFound || !property) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-4">
         <h2 className="text-2xl font-black text-slate-900 mb-4">Property Not Found</h2>
@@ -82,11 +178,30 @@ export const PropertyDetailsPage: React.FC = () => {
               <span className="text-slate-900 truncate max-w-[150px]">{property.title}</span>
             </nav>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" className="rounded-lg border-slate-200 text-slate-400 hover:text-rose-500">
-              <Heart size={16} />
+          <div className="flex items-center gap-2 relative">
+            {showLoginPrompt && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute top-full right-0 mt-2 bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest p-2 rounded-lg shadow-xl z-50 whitespace-nowrap"
+              >
+                Please login to add to favorites
+              </motion.div>
+            )}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={toggleFavorite}
+              className={`rounded-lg border-slate-200 transition-all ${isFavorite ? 'bg-rose-50 text-rose-500 border-rose-100' : 'text-slate-400 hover:text-rose-500'}`}
+            >
+              <Heart size={16} fill={isFavorite ? "currentColor" : "none"} />
             </Button>
-            <Button variant="outline" size="icon" className="rounded-lg border-slate-200 text-slate-400 hover:text-blue-600">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={handleShare}
+              className="rounded-lg border-slate-200 text-slate-400 hover:text-blue-600"
+            >
               <Share2 size={16} />
             </Button>
           </div>
@@ -130,8 +245,7 @@ export const PropertyDetailsPage: React.FC = () => {
                 </div>
 
                 <div className="absolute top-4 left-4 flex gap-2">
-                  <Badge variant="success" className="px-3 py-1 rounded-md">{property.status}</Badge>
-                  <Badge variant="info" className="px-3 py-1 rounded-md">{property.type}</Badge>
+                  <Badge variant="info" className="px-3 py-1 rounded-md">{property.property_subtype || property.type || 'Residential'}</Badge>
                 </div>
               </div>
 
@@ -168,27 +282,33 @@ export const PropertyDetailsPage: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-y border-slate-50">
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-1.5 text-slate-400">
-                    <Bed size={14} />
-                    <span className="text-[9px] font-bold uppercase tracking-wider">Beds</span>
+                {property.bedrooms && (
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <Bed size={14} />
+                      <span className="text-[9px] font-bold uppercase tracking-wider">Beds</span>
+                    </div>
+                    <p className="text-sm font-black text-slate-900">{property.bedrooms}</p>
                   </div>
-                  <p className="text-sm font-black text-slate-900">{property.bedrooms || 'N/A'}</p>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-1.5 text-slate-400">
-                    <Bath size={14} />
-                    <span className="text-[9px] font-bold uppercase tracking-wider">Baths</span>
+                )}
+                {property.bathrooms && (
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <Bath size={14} />
+                      <span className="text-[9px] font-bold uppercase tracking-wider">Baths</span>
+                    </div>
+                    <p className="text-sm font-black text-slate-900">{property.bathrooms}</p>
                   </div>
-                  <p className="text-sm font-black text-slate-900">{property.bathrooms || 'N/A'}</p>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-1.5 text-slate-400">
-                    <Square size={14} />
-                    <span className="text-[9px] font-bold uppercase tracking-wider">Area</span>
+                )}
+                {property.area && (
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <Square size={14} />
+                      <span className="text-[9px] font-bold uppercase tracking-wider">Area</span>
+                    </div>
+                    <p className="text-sm font-black text-slate-900">{property.area}</p>
                   </div>
-                  <p className="text-sm font-black text-slate-900">{property.area}</p>
-                </div>
+                )}
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-1.5 text-slate-400">
                     <Building2 size={14} />
@@ -197,12 +317,98 @@ export const PropertyDetailsPage: React.FC = () => {
                   <p className="text-sm font-black text-slate-900 truncate">{property.builder}</p>
                 </div>
               </div>
+
+              {/* Project Details Section */}
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-4">Project Details</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {/* Project Units */}
+                  {property.project_units && (
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Project Units</span>
+                      <p className="text-lg font-black text-slate-900">{property.project_units}</p>
+                    </div>
+                  )}
+
+                  {/* Area Unit */}
+                  {property.area_unit && (
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Area Unit</span>
+                      <p className="text-lg font-black text-slate-900">{property.area_unit}</p>
+                    </div>
+                  )}
+
+                  {/* Project Area */}
+                  {property.project_area && (
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Project Area</span>
+                      <p className="text-lg font-black text-slate-900">{property.project_area}</p>
+                    </div>
+                  )}
+
+                  {/* Sizes */}
+                  {property.sizes && (
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Sizes</span>
+                      <p className="text-sm font-black text-slate-900">{property.sizes}</p>
+                    </div>
+                  )}
+
+                  {/* Project Size */}
+                  {property.project_size && (
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Project Size</span>
+                      <p className="text-sm font-black text-slate-900">{property.project_size}</p>
+                    </div>
+                  )}
+
+                  {/* Launch Date */}
+                  {property.launch_date && (
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Launch Date</span>
+                      <p className="text-lg font-black text-slate-900">{property.launch_date}</p>
+                    </div>
+                  )}
+
+                  {/* Avg. Price */}
+                  {property.avg_price && (
+                    <div className="flex flex-col gap-1 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-blue-600">Avg. Price</span>
+                      <p className="text-lg font-black text-blue-600">{property.avg_price}</p>
+                    </div>
+                  )}
+
+                  {/* Possession Starts */}
+                  {property.possession_date && (
+                    <div className="flex flex-col gap-1 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">Possession Starts</span>
+                      <p className="text-lg font-black text-emerald-600">{property.possession_date}</p>
+                    </div>
+                  )}
+
+                  {/* Configurations */}
+                  {property.configurations && (
+                    <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100 sm:col-span-2">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Configurations</span>
+                      <p className="text-sm font-black text-slate-900">{property.configurations}</p>
+                    </div>
+                  )}
+
+                  {/* RERA ID */}
+                  {property.rera_id && (
+                    <div className="flex flex-col gap-1 p-3 bg-amber-50 rounded-lg border border-amber-100 sm:col-span-2">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-amber-600">RERA ID</span>
+                      <p className="text-sm font-black text-amber-900">{property.rera_id}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </Card>
 
             {/* Content Tabs */}
             <div className="space-y-4">
               <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200 overflow-x-auto no-scrollbar">
-                {['overview', 'amenities', 'specifications', 'brochure'].map((tab) => (
+                {['overview', 'amenities', 'specifications'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -212,8 +418,7 @@ export const PropertyDetailsPage: React.FC = () => {
                         : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                     }`}
                   >
-                    {tab === 'brochure' && <FileDown size={12} />}
-                    {tab === 'brochure' ? 'Download Brochure' : tab}
+                    {tab}
                   </button>
                 ))}
               </div>
@@ -263,27 +468,86 @@ export const PropertyDetailsPage: React.FC = () => {
                       ))}
                     </div>
                   )}
-
-                  {activeTab === 'brochure' && (
-                    <div className="text-center py-8 space-y-5">
-                      <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mx-auto">
-                        <FileDown size={24} />
-                      </div>
-                      <div>
-                        <h4 className="text-base font-black text-slate-900">Project Brochure</h4>
-                        <p className="text-slate-500 text-xs font-medium mt-1">Full floor plans and pricing details.</p>
-                      </div>
-                      <Button className="rounded-lg px-8 py-2.5 gap-2 text-xs">
-                        <FileDown size={14} />
-                        Download PDF
-                      </Button>
-                    </div>
-                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
-          </div>
 
+            {/* Property Location Section - Around This Project */}
+            <Card className="p-6 rounded-xl border-slate-200">
+              <div className="flex items-center gap-2.5 mb-1">
+                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <MapPin size={18} className="text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Property Location</h3>
+                  <p className="text-[10px] font-medium text-slate-500">{property.address || property.location}</p>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="text-sm font-black text-slate-900 mb-4">Around This Project</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {property.nearby_locations && property.nearby_locations.length > 0 ? (
+                    property.nearby_locations.map((item: any, i: number) => {
+                      const iconMap: any = {
+                        'School': <School size={18} className="text-purple-600" />,
+                        'Bus Stand': <Bus size={18} className="text-orange-600" />,
+                        'Shopping': <ShoppingCart size={18} className="text-blue-600" />,
+                        'Hospital': <Hospital size={18} className="text-red-600" />,
+                        'Coffee': <Coffee size={18} className="text-amber-600" />
+                      };
+                      return (
+                        <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-blue-200 transition-all group">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-200 group-hover:border-blue-300 transition-all">
+                              {iconMap[item.type] || <MapPin size={18} className="text-blue-600" />}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-slate-900">{item.name}</p>
+                              <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider">{item.type}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-black text-slate-900">{item.time}</p>
+                            <p className="text-[9px] text-slate-400 font-medium">({item.distance})</p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-xs text-slate-400 italic sm:col-span-2">No nearby locations provided</p>
+                  )}
+                </div>
+
+                {property.map_link && (
+                  <div className="mt-6 rounded-xl overflow-hidden border border-slate-200 aspect-video">
+                    <iframe 
+                      src={property.map_link}
+                      className="w-full h-full border-0"
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  </div>
+                )}
+
+                <div className="mt-4 text-center">
+                  <button 
+                    onClick={() => {
+                      if (property.map_link) {
+                        window.open(property.map_link, '_blank');
+                      }
+                    }}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <Map size={12} />
+                    View on Google Maps
+                  </button>
+                </div>
+              </div>
+            </Card>
+          </div>
+          
           {/* Right Column: Sticky Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-32 space-y-4">

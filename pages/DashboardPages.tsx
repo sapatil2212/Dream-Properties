@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { UserRole, Lead, Property, Builder, Transaction } from '../types.ts';
 import { MOCK_LEADS, MOCK_PROPERTIES, MOCK_BUILDERS, MOCK_TRANSACTIONS } from '../constants.tsx';
 import { Card, Badge, Button, Input, Modal, DataTable, EmptyState, Skeleton, Select } from '../components/UIComponents.tsx';
@@ -9,7 +9,7 @@ import {
   ArrowUpRight, MessageSquare, Plus, Building2, Eye, 
   MoreVertical, Search, Filter, Download, CheckCircle,
   CalendarCheck, MapPin, Handshake, Target, User, Trash2, 
-  Edit3, Briefcase, BarChart4, ShieldCheck
+  Edit3, Briefcase, BarChart4, ShieldCheck, Power, Mail, Send
 } from 'lucide-react';
 
 const StatCard: React.FC<{ label: string, value: string, trend: string, trendUp?: boolean, icon: React.ReactNode, color: string }> = ({ label, value, trend, trendUp = true, icon, color }) => (
@@ -161,9 +161,78 @@ export const SuperAdminDashboard: React.FC = () => {
 
 export const BuildersManagement: React.FC = () => {
   const [showAddBuilder, setShowAddBuilder] = useState(false);
+  const [builders, setBuilders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedBuilder, setSelectedBuilder] = useState<any>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const fetchBuilders = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/superadmin/accounts-summary', {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBuilders(data.builders || []);
+      } else {
+        setError('Failed to fetch builders');
+      }
+    } catch (err) {
+      setError('Network error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBuilders();
+  }, []);
+
+  const handleToggleStatus = async (userId: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'Active' ? 'Disabled' : 'Active';
+    try {
+      const response = await fetch('http://localhost:5000/api/superadmin/toggle-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ userId, status: newStatus })
+      });
+      if (response.ok) {
+        setSuccessMsg(`Builder ${newStatus === 'Active' ? 'enabled' : 'disabled'} successfully`);
+        setTimeout(() => setSuccessMsg(''), 3000);
+        fetchBuilders();
+      }
+    } catch (err) {
+      setError('Failed to update status');
+    }
+  };
+
+  const filteredBuilders = builders.filter(b => 
+    b.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    b.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    b.project_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
+      {successMsg && (
+        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-3 text-emerald-700">
+          <CheckCircle size={18} className="shrink-0 mt-0.5" />
+          <p className="text-sm font-medium">{successMsg}</p>
+        </div>
+      )}
+      {error && (
+        <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-3 text-rose-600">
+          <div className="shrink-0 mt-0.5 w-1.5 h-1.5 rounded-full bg-rose-600" />
+          <p className="text-sm font-medium">{error}</p>
+        </div>
+      )}
+
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Partner Builders</h2>
@@ -177,44 +246,162 @@ export const BuildersManagement: React.FC = () => {
       <Card>
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           <div className="flex gap-2">
-            <Input placeholder="Search builders..." className="w-64" icon={<Search size={14} />} />
+            <Input 
+              placeholder="Search builders..." 
+              className="w-64" 
+              icon={<Search size={14} />} 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
             <Button variant="ghost" size="icon" className="border border-slate-100"><Filter size={16} /></Button>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total: {MOCK_BUILDERS.length}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total: {filteredBuilders.length}</p>
         </div>
-        <DataTable headers={['Builder Profile', 'Inventory', 'Verification', 'Last Active', 'Actions']}>
-          {MOCK_BUILDERS.map(b => (
-            <tr key={b.id} className="hover:bg-slate-50 transition-colors">
-              <td className="px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <img src={b.logo} className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 object-cover" />
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">{b.name}</p>
-                    <p className="text-[10px] text-blue-600 font-bold uppercase tracking-tight">Corporate Partner</p>
+        <DataTable headers={['Builder Profile', 'Project Info', 'Contact', 'Status', 'Actions']}>
+          {isLoading ? (
+            <tr><td colSpan={5} className="text-center py-10"><Skeleton className="h-4 w-full" /></td></tr>
+          ) : filteredBuilders.length === 0 ? (
+            <tr><td colSpan={5} className="text-center py-10 text-slate-400 text-sm">No builders found</td></tr>
+          ) : (
+            filteredBuilders.map(b => (
+              <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 border border-blue-200 flex items-center justify-center">
+                      <Building2 size={20} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{b.name}</p>
+                      <p className="text-[10px] text-slate-400 font-medium">{b.email}</p>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <p className="text-xs font-black text-slate-700">{b.totalInventory} Units</p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase">{b.activeProjects} Active Projects</p>
-              </td>
-              <td className="px-6 py-4">
-                <Badge variant={b.status === 'Active' ? 'success' : 'warning'}>{b.status}</Badge>
-              </td>
-              <td className="px-6 py-4 text-xs font-bold text-slate-500">2 days ago</td>
-              <td className="px-6 py-4">
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" className="rounded-lg text-slate-400"><Edit3 size={16} /></Button>
-                  <Button variant="ghost" size="icon" className="rounded-lg text-slate-400 hover:text-rose-600"><Trash2 size={16} /></Button>
-                </div>
-              </td>
-            </tr>
-          ))}
+                </td>
+                <td className="px-6 py-4">
+                  <p className="text-xs font-black text-slate-700">{b.project_name || 'N/A'}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">{b.property_type || 'Not specified'}</p>
+                </td>
+                <td className="px-6 py-4">
+                  <p className="text-xs font-bold text-slate-600">{b.mobile}</p>
+                  <p className="text-[10px] text-slate-400 font-medium">{new Date(b.created_at).toLocaleDateString()}</p>
+                </td>
+                <td className="px-6 py-4">
+                  <Badge variant={b.status === 'Active' ? 'success' : 'danger'}>{b.status}</Badge>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setSelectedBuilder(b); setShowDetailModal(true); }}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      title="View Details"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button
+                      onClick={() => { setSelectedBuilder(b); setShowEditModal(true); }}
+                      className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                      title="Edit Builder"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleToggleStatus(b.id, b.status)}
+                      className={`p-2 rounded-lg transition-all ${
+                        b.status === 'Active' 
+                          ? 'text-rose-600 hover:bg-rose-50' 
+                          : 'text-emerald-600 hover:bg-emerald-50'
+                      }`}
+                      title={b.status === 'Active' ? 'Disable Builder' : 'Enable Builder'}
+                    >
+                      <Power size={16} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
         </DataTable>
       </Card>
 
+      {/* Builder Detail Modal */}
+      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="Builder Details">
+        {selectedBuilder && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Full Name</p>
+                <p className="text-sm font-bold text-slate-900">{selectedBuilder.name}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Email</p>
+                <p className="text-sm font-bold text-slate-900">{selectedBuilder.email}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Mobile</p>
+                <p className="text-sm font-bold text-slate-900">{selectedBuilder.mobile}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Status</p>
+                <Badge variant={selectedBuilder.status === 'Active' ? 'success' : 'danger'}>{selectedBuilder.status}</Badge>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Project Name</p>
+                <p className="text-sm font-bold text-slate-900">{selectedBuilder.project_name || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Property Type</p>
+                <p className="text-sm font-bold text-slate-900">{selectedBuilder.property_type || 'N/A'}</p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Property Address</p>
+                <p className="text-sm font-bold text-slate-900">{selectedBuilder.property_address || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Registered On</p>
+                <p className="text-sm font-bold text-slate-900">{new Date(selectedBuilder.created_at).toLocaleString()}</p>
+              </div>
+            </div>
+            <div className="flex justify-end pt-4">
+              <Button onClick={() => setShowDetailModal(false)}>Close</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Edit Builder Modal */}
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Builder Information">
+        {selectedBuilder && (
+          <div className="space-y-4">
+            <Input 
+              label="Full Name" 
+              defaultValue={selectedBuilder.name}
+              placeholder="Builder name"
+            />
+            <Input 
+              label="Project Name" 
+              defaultValue={selectedBuilder.project_name}
+              placeholder="Project name"
+            />
+            <Input 
+              label="Property Address" 
+              defaultValue={selectedBuilder.property_address}
+              placeholder="Property address"
+            />
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="ghost" onClick={() => setShowEditModal(false)}>Cancel</Button>
+              <Button className="px-8" onClick={() => {
+                setSuccessMsg('Builder information updated');
+                setTimeout(() => setSuccessMsg(''), 3000);
+                setShowEditModal(false);
+              }}>Save Changes</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Add Builder Modal */}
       <Modal isOpen={showAddBuilder} onClose={() => setShowAddBuilder(false)} title="Partner Onboarding">
          <div className="space-y-4">
+            <p className="text-sm text-slate-500 mb-4">Builders can self-register through the main sign-up page. Use this form only for manual verification.</p>
             <Input label="Company Official Name" placeholder="e.g. Skyline Group Pvt Ltd" />
             <Input label="RERA Registration ID" placeholder="PRM/NA/..." />
             <div className="grid grid-cols-2 gap-4">
@@ -232,44 +419,130 @@ export const BuildersManagement: React.FC = () => {
 };
 
 export const InventoryManagement: React.FC = () => {
+  const [properties, setProperties] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchProperties = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/superadmin/properties-for-approval', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setProperties(data);
+      }
+    } catch (err) { console.error(err); }
+    finally { setIsLoading(false); }
+  };
+
+  useEffect(() => { fetchProperties(); }, []);
+
+  const handleApproval = async (propertyId: number, status: string) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/superadmin/approve-property', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ propertyId, status })
+      });
+      if (response.ok) {
+        alert(`Property ${status.toLowerCase()} successfully`);
+        fetchProperties();
+        
+        // Trigger refresh on public pages
+        localStorage.setItem('propertyUpdated', Date.now().toString());
+      }
+    } catch (err) { alert('Failed to update property status'); }
+  };
+
+  const handleDelete = async (propertyId: number) => {
+    if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/superadmin/delete-property/${propertyId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        alert('Property deleted successfully');
+        fetchProperties();
+        
+        // Trigger refresh on public pages
+        localStorage.setItem('propertyUpdated', Date.now().toString());
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Failed to delete property');
+      }
+    } catch (err) {
+      alert('Failed to delete property');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Global Inventory</h2>
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-widest mt-1">Monitor all live listings across the network</p>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-widest mt-1">Review and approve property submissions</p>
         </div>
         <div className="flex gap-2">
            <Button variant="outline" className="gap-2"><Download size={16} /> Export CSV</Button>
-           <Button className="gap-2"><Plus size={18} /> Add Property</Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {MOCK_PROPERTIES.map(p => (
-          <Card key={p.id} className="relative group">
-            <div className="aspect-[16/9] overflow-hidden">
-               <img src={p.images[0]} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            </div>
-            <div className="p-5">
-               <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">{p.title}</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{p.location}</p>
-                  </div>
-                  <Badge variant={p.status === 'Fast Filling' ? 'warning' : 'success'}>{p.status}</Badge>
-               </div>
-               <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                  <p className="text-sm font-black text-blue-600">{p.price.split(' ')[0]}</p>
+      <Card>
+        <div className="p-4 border-b border-slate-100">
+          <h3 className="font-black uppercase tracking-tight text-slate-900">Property Approval Queue</h3>
+        </div>
+        <DataTable headers={['Property Detail', 'Builder', 'Type', 'Price', 'Status', 'Actions']}>
+          {isLoading ? (
+            <tr><td colSpan={6} className="text-center py-10">Loading...</td></tr>
+          ) : properties.length === 0 ? (
+            <tr><td colSpan={6} className="text-center py-10 text-slate-400">No properties in queue</td></tr>
+          ) : (
+            properties.map(p => (
+              <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="px-6 py-4">
+                  <p className="text-sm font-bold text-slate-900">{p.title}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{p.location}</p>
+                </td>
+                <td className="px-6 py-4">
+                  <p className="text-xs font-bold text-slate-700">{p.builder_name}</p>
+                  <p className="text-[10px] text-slate-400 font-medium">{p.builder_email}</p>
+                </td>
+                <td className="px-6 py-4 text-xs font-black text-blue-600 uppercase">{p.type}</td>
+                <td className="px-6 py-4 font-bold text-slate-900">{p.price}</td>
+                <td className="px-6 py-4">
+                  <Badge variant={p.status === 'Approved' ? 'success' : p.status === 'Rejected' ? 'danger' : 'warning'}>
+                    {p.status}
+                  </Badge>
+                </td>
+                <td className="px-6 py-4">
                   <div className="flex gap-2">
-                     <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 text-slate-400"><Eye size={16} /></Button>
-                     <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 text-slate-400"><Edit3 size={16} /></Button>
+                    {p.status === 'Pending Approval' && (
+                      <>
+                        <Button variant="primary" size="sm" className="bg-emerald-600 hover:bg-emerald-700 h-8 text-[10px]" onClick={() => handleApproval(p.id, 'Approved')}>Approve</Button>
+                        <Button variant="outline" size="sm" className="text-rose-600 border-rose-100 hover:bg-rose-50 h-8 text-[10px]" onClick={() => handleApproval(p.id, 'Rejected')}>Reject</Button>
+                      </>
+                    )}
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400"><Eye size={16} /></Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                      onClick={() => handleDelete(p.id)}
+                      title="Delete Property"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
                   </div>
-               </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </DataTable>
+      </Card>
     </div>
   );
 };
@@ -343,6 +616,9 @@ export const UserManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -426,10 +702,17 @@ export const UserManagement: React.FC = () => {
           <button onClick={() => setSuccessMsg('')} className="text-emerald-900 hover:scale-110">×</button>
         </div>
       )}
+      
+      {error && (
+        <div className="p-3 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-100 flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="text-rose-900 hover:scale-110">×</button>
+        </div>
+      )}
 
       <Card>
         <div className="overflow-x-auto">
-          <DataTable headers={['User Detail', 'Role', 'Status', 'Security Key', 'Joined', 'Actions']}>
+          <DataTable headers={['User Detail', 'Role', 'Mobile', 'Status', 'Joined', 'Actions']}>
             {isLoading ? (
               <tr><td colSpan={6} className="text-center py-10"><Skeleton className="h-4 w-full" /></td></tr>
             ) : users.length === 0 ? (
@@ -452,36 +735,46 @@ export const UserManagement: React.FC = () => {
                     <p className="text-[10px] text-blue-600 font-black tracking-widest uppercase">{u.role.replace('_', ' ')}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <Badge variant={u.status === 'Active' ? 'success' : 'danger'}>{u.status}</Badge>
+                    <p className="text-[10px] text-slate-600 font-bold">{u.mobile || 'N/A'}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-[10px] font-mono font-bold bg-slate-100 px-2 py-1 rounded text-slate-600">
-                      {u.security_key || 'N/A'}
-                    </p>
+                    <Badge variant={u.status === 'Active' ? 'success' : 'danger'}>{u.status}</Badge>
                   </td>
                   <td className="px-6 py-4 text-[10px] font-bold text-slate-500">
                     {new Date(u.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
-                      {(u.role === 'ADMIN' || u.role === 'TELECALLER' || u.role === 'SALES_EXECUTIVE') && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 text-[10px] font-black uppercase tracking-widest"
-                          onClick={() => handleSendCredentials(u.email)}
-                        >
-                          Send Creds
-                        </Button>
-                      )}
-                      <Button 
-                        variant={u.status === 'Active' ? 'ghost' : 'primary'} 
-                        size="sm"
-                        className={`h-8 text-[10px] font-black uppercase tracking-widest ${u.status === 'Active' ? 'text-rose-600 hover:bg-rose-50' : ''}`}
-                        onClick={() => handleToggleStatus(u.id, u.status)}
+                      <button
+                        onClick={() => { setSelectedUser(u); setShowDetailModal(true); }}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        title="View Details"
                       >
-                        {u.status === 'Active' ? 'Disable' : 'Enable'}
-                      </Button>
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        onClick={() => { setSelectedUser(u); setShowEditModal(true); }}
+                        className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                        title="Edit User"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleToggleStatus(u.id, u.status)}
+                        className={`p-2 rounded-lg transition-all ${u.status === 'Active' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                        title={u.status === 'Active' ? 'Disable Account' : 'Enable Account'}
+                      >
+                        <Power size={16} />
+                      </button>
+                      {(u.role === 'ADMIN' || u.role === 'TELECALLER' || u.role === 'SALES_EXECUTIVE') && (
+                        <button
+                          onClick={() => handleSendCredentials(u.email)}
+                          className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                          title="Send Login Credentials"
+                        >
+                          <Send size={16} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -490,6 +783,105 @@ export const UserManagement: React.FC = () => {
           </DataTable>
         </div>
       </Card>
+
+      {/* User Detail Modal */}
+      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)}>
+        {selectedUser && (
+          <div className="p-8">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center">
+                <User size={32} className="text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-slate-900">{selectedUser.name}</h2>
+                <p className="text-sm text-slate-500">{selectedUser.email}</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Role</p>
+                  <p className="text-sm font-bold text-slate-900">{selectedUser.role.replace('_', ' ')}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Status</p>
+                  <Badge variant={selectedUser.status === 'Active' ? 'success' : 'danger'}>{selectedUser.status}</Badge>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Mobile</p>
+                  <p className="text-sm font-bold text-slate-900">{selectedUser.mobile || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Joined Date</p>
+                  <p className="text-sm font-bold text-slate-900">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
+                </div>
+                {selectedUser.security_key && (
+                  <div className="col-span-2">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Security Key</p>
+                    <p className="text-sm font-mono font-bold bg-slate-100 px-3 py-2 rounded-lg text-slate-700">{selectedUser.security_key}</p>
+                  </div>
+                )}
+                {selectedUser.role === 'BUILDER' && selectedUser.project_name && (
+                  <>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Project Name</p>
+                      <p className="text-sm font-bold text-slate-900">{selectedUser.project_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Property Type</p>
+                      <p className="text-sm font-bold text-slate-900">{selectedUser.property_type}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Property Address</p>
+                      <p className="text-sm font-bold text-slate-900">{selectedUser.property_address}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-8">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowDetailModal(false)}
+              >
+                Close
+              </Button>
+              <Button 
+                variant="primary" 
+                className="flex-1"
+                onClick={() => { setShowDetailModal(false); setShowEditModal(true); }}
+              >
+                Edit User
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Edit User Modal */}
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)}>
+        {selectedUser && (
+          <div className="p-8">
+            <h2 className="text-2xl font-black text-slate-900 mb-6">Edit User</h2>
+            <div className="space-y-4">
+              <Input label="Name" value={selectedUser.name} readOnly />
+              <Input label="Email" value={selectedUser.email} readOnly />
+              <Input label="Mobile" value={selectedUser.mobile || ''} readOnly />
+              <p className="text-xs text-slate-500 italic">Note: Contact support to modify user details</p>
+            </div>
+            <Button 
+              variant="outline" 
+              className="w-full mt-6"
+              onClick={() => setShowEditModal(false)}
+            >
+              Close
+            </Button>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
@@ -581,6 +973,153 @@ export const SettingsView: React.FC = () => (
 );
 
 export const BuilderDashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({ properties: 0, leads: 0, views: 0, conversions: 0 });
+  const [myProperties, setMyProperties] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchMyProperties = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/builder/my-properties', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setMyProperties(data);
+        setStats(prev => ({ ...prev, properties: data.length }));
+      }
+    } catch (err) { console.error(err); }
+    finally { setIsLoading(false); }
+  };
+
+  useEffect(() => { fetchMyProperties(); }, []);
+
+  const handleDeleteProperty = async (propertyId: number) => {
+    if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/builder/delete-property/${propertyId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        alert('Property deleted successfully');
+        fetchMyProperties();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Failed to delete property');
+      }
+    } catch (err) {
+      alert('Failed to delete property');
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Builder Dashboard</h2>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-widest mt-1">Manage your properties and submissions</p>
+        </div>
+        <Button onClick={() => navigate('/dashboard/post-property')} className="gap-2">
+          <Plus size={18} /> Post New Property
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatCard label="My Properties" value={stats.properties.toString()} trend="+2" icon={<Building2 className="text-blue-600" size={20} />} color="bg-blue-50" />
+        <StatCard label="Active Leads" value={stats.leads.toString()} trend="+12" icon={<Users className="text-indigo-600" size={20} />} color="bg-indigo-50" />
+        <StatCard label="Monthly Views" value={stats.views.toString()} trend="+18%" icon={<Eye className="text-emerald-600" size={20} />} color="bg-emerald-50" />
+        <StatCard label="Conversions" value={stats.conversions.toString()} trend="+5" icon={<TrendingUp className="text-amber-600" size={20} />} color="bg-amber-50" />
+      </div>
+
+      <Card>
+        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+          <h3 className="font-black uppercase tracking-tight text-slate-900">My Property Listings</h3>
+        </div>
+        <DataTable headers={['Property', 'Location', 'Type', 'Price', 'Status', 'Actions']}>
+          {isLoading ? (
+            <tr><td colSpan={6} className="text-center py-10">Loading...</td></tr>
+          ) : myProperties.length === 0 ? (
+            <tr>
+              <td colSpan={6} className="text-center py-10">
+                <EmptyState 
+                  title="No Properties Listed Yet" 
+                  description="Start adding your properties to reach thousands of potential buyers" 
+                />
+              </td>
+            </tr>
+          ) : (
+            myProperties.map((p) => (
+              <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                <td className="px-6 py-4 font-bold text-slate-900">{p.title}</td>
+                <td className="px-6 py-4 text-xs font-medium text-slate-600">{p.location}</td>
+                <td className="px-6 py-4 text-xs font-black text-blue-600 uppercase">{p.type}</td>
+                <td className="px-6 py-4 font-bold text-slate-900">{p.price}</td>
+                <td className="px-6 py-4">
+                  <Badge variant={p.status === 'Approved' ? 'success' : p.status === 'Rejected' ? 'danger' : 'warning'}>
+                    {p.status}
+                  </Badge>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="icon" className="text-slate-400"><Eye size={16} /></Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                      onClick={() => handleDeleteProperty(p.id)}
+                      title="Delete Property"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </DataTable>
+      </Card>
+
+      <div className="grid lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8 space-y-6">
+          <Card>
+            <div className="p-6 border-b border-slate-100">
+              <h3 className="font-black uppercase tracking-tight text-slate-900">Recent Inquiries</h3>
+            </div>
+            <DataTable headers={['Lead Info', 'Property', 'Source', 'Status', 'Date']}>
+              <tr><td colSpan={5} className="text-center py-10 text-slate-400 text-sm">No inquiries yet</td></tr>
+            </DataTable>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-4 space-y-6">
+          <Card className="p-6">
+            <h3 className="font-black uppercase tracking-tight text-slate-900 mb-6">Quick Actions</h3>
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-slate-500">Use the "Post New Property" button above to add a new property listing</p>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="font-black uppercase tracking-tight text-slate-900 mb-6">Platform Tips</h3>
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <p className="text-xs font-bold text-blue-900">Add high-quality images to get 3x more inquiries</p>
+              </div>
+              <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                <p className="text-xs font-bold text-emerald-900">Respond to leads within 2 hours for better conversion</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const InventoryDashboard: React.FC = () => {
   const [showAddProperty, setShowAddProperty] = useState(false);
 
   return (

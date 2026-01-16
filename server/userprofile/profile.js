@@ -153,4 +153,64 @@ router.post('/update-password', authenticateToken, async (req, res) => {
   }
 });
 
+// Get Favorites
+router.get('/favorites', authenticateToken, async (req, res) => {
+  try {
+    const [favorites] = await pool.query(`
+      SELECT p.*, f.created_at as favorited_at
+      FROM properties p
+      JOIN favorites f ON p.id = f.property_id
+      WHERE f.user_id = ?
+      ORDER BY f.created_at DESC
+    `, [req.user.id]);
+    res.json(favorites);
+  } catch (error) {
+    console.error('Fetch favorites error:', error);
+    res.status(500).json({ message: 'Failed to fetch favorites' });
+  }
+});
+
+// Add to Favorites
+router.post('/favorites/add', authenticateToken, async (req, res) => {
+  const { propertyId } = req.body;
+  try {
+    await pool.query(
+      'INSERT IGNORE INTO favorites (user_id, property_id) VALUES (?, ?)',
+      [req.user.id, propertyId]
+    );
+    res.json({ success: true, message: 'Added to favorites' });
+  } catch (error) {
+    console.error('Add favorite error:', error);
+    res.status(500).json({ message: 'Failed to add to favorites' });
+  }
+});
+
+// Remove from Favorites
+router.post('/favorites/remove', authenticateToken, async (req, res) => {
+  const { propertyId } = req.body;
+  try {
+    await pool.query(
+      'DELETE FROM favorites WHERE user_id = ? AND property_id = ?',
+      [req.user.id, propertyId]
+    );
+    res.json({ success: true, message: 'Removed from favorites' });
+  } catch (error) {
+    console.error('Remove favorite error:', error);
+    res.status(500).json({ message: 'Failed to remove from favorites' });
+  }
+});
+
+// Check if favorite
+router.get('/favorites/check/:propertyId', authenticateToken, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT id FROM favorites WHERE user_id = ? AND property_id = ?',
+      [req.user.id, req.params.propertyId]
+    );
+    res.json({ isFavorite: rows.length > 0 });
+  } catch (error) {
+    res.status(500).json({ message: 'Error checking favorite status' });
+  }
+});
+
 export default router;

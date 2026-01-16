@@ -198,6 +198,15 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ message: 'Access denied for this role' });
     }
 
+    // Check if account is disabled
+    if (user.status === 'Disabled') {
+      return res.status(403).json({ 
+        message: 'Your account has been blocked. Please contact support for assistance.', 
+        field: 'status',
+        blocked: true
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });

@@ -4,7 +4,7 @@ import { QuickBookingForm } from './QuickBookingForm.tsx';
 
 export const HeroSection: React.FC = () => {
   return (
-    <section className="relative min-h-[420px] md:min-h-[500px] overflow-visible mb-64 md:mb-20">
+    <section className="relative min-h-[600px] md:min-h-[700px] overflow-visible mb-8">
       {/* Hero Background Image */}
       <div className="absolute inset-0 z-0">
         <img
@@ -16,7 +16,7 @@ export const HeroSection: React.FC = () => {
       </div>
 
       {/* Hero Text Content */}
-      <div className="relative z-10 container mx-auto px-4 text-center text-white pt-16 md:pt-20 pb-32 md:pb-28">
+      <div className="relative z-10 container mx-auto px-4 text-center text-white pt-24 md:pt-32 pb-[240px] md:pb-[240px]">
         <motion.div
           initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}

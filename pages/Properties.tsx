@@ -6,10 +6,67 @@ import { PropertyCategory } from '../types.ts';
 import { Select } from '../components/UIComponents.tsx';
 import { Filter } from 'lucide-react';
 
-export const PropertyListingPage: React.FC = () => {
+interface PropertyListingPageProps {
+  listingType?: 'Sell' | 'Rent' | 'Lease' | 'All';
+}
+
+export const PropertyListingPage: React.FC<PropertyListingPageProps> = ({ listingType = 'All' }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialFilter = (searchParams.get('type') as PropertyCategory) || 'All';
   const [filter, setFilter] = useState<PropertyCategory | 'All'>(initialFilter);
+  const [properties, setProperties] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchApprovedProperties = async () => {
+    try {
+      let url = 'http://localhost:5000/api/superadmin/approved-properties';
+      if (listingType !== 'All') {
+        url += `?listing_type=${listingType}`;
+      }
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        // Parse JSON fields if they are strings
+        const parsed = data.map((p: any) => ({
+          ...p,
+          images: typeof p.images === 'string' ? JSON.parse(p.images || '[]') : (p.images || []),
+          amenities: typeof p.amenities === 'string' ? JSON.parse(p.amenities || '[]') : (p.amenities || []),
+          highlights: typeof p.highlights === 'string' ? JSON.parse(p.highlights || '[]') : (p.highlights || []),
+          specifications: typeof p.specifications === 'string' ? JSON.parse(p.specifications || '[]') : (p.specifications || [])
+        }));
+        setProperties(parsed);
+      }
+    } catch (err) { console.error(err); }
+    finally { setIsLoading(false); }
+  };
+
+  useEffect(() => {
+    fetchApprovedProperties();
+  }, [listingType]);
+
+  useEffect(() => {
+    fetchApprovedProperties();
+    
+    // Auto-refresh when window gains focus
+    const handleFocus = () => {
+      fetchApprovedProperties();
+    };
+    
+    // Listen for property updates from admin approval
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'propertyUpdated') {
+        fetchApprovedProperties();
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   // Sync state if URL changes
   useEffect(() => {
@@ -29,8 +86,8 @@ export const PropertyListingPage: React.FC = () => {
   };
 
   const filteredProperties = filter === 'All' 
-    ? MOCK_PROPERTIES 
-    : MOCK_PROPERTIES.filter(p => p.type === filter);
+    ? properties 
+    : properties.filter(p => p.type === filter);
 
   const categories: (PropertyCategory | 'All')[] = [
     'All', 'Flats', 'Villa', 'Shop', 'Office', 'Plot', 'Agricultural', 'Industrial', 'Warehouse'
@@ -44,9 +101,11 @@ export const PropertyListingPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-12">
         <div className="flex-shrink-0">
           <span className="text-blue-600 font-black text-[7px] md:text-[10px] uppercase tracking-[0.3em] block mb-0.5">Catalog</span>
-          <h1 className="text-xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight mb-0.5">Exclusive Properties</h1>
+          <h1 className="text-xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight mb-0.5">
+            {listingType === 'All' ? 'Exclusive Properties' : `Properties for ${listingType}`}
+          </h1>
           <p className="text-slate-500 font-medium text-[9px] md:text-base opacity-75">
-            {filter === 'All' ? 'Browse all' : `Browse ${filter}`} verified listings in Nashik.
+            {filter === 'All' ? 'Browse all' : `Browse ${filter}`} verified {listingType !== 'All' ? listingType.toLowerCase() : ''} listings in Nashik.
           </p>
         </div>
         

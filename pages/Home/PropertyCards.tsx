@@ -1,12 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, MapPin, Bed, Maximize, Heart, Info, Send } from 'lucide-react';
-import { MOCK_PROPERTIES } from '../../constants.tsx';
 import { Card, Badge, Button } from '../../components/UIComponents.tsx';
 import { Property } from '../../types.ts';
 import { useNavigate } from 'react-router-dom';
 
 export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
   const navigate = useNavigate();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+
+  useEffect(() => {
+    checkFavoriteStatus();
+  }, [property.id]);
+
+  const checkFavoriteStatus = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/profile/favorites/check/${property.id}`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setIsFavorite(data.isFavorite);
+      }
+    } catch (err) {
+      // Ignore
+    }
+  };
+
+  const toggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const endpoint = isFavorite ? 'remove' : 'add';
+      const response = await fetch(`http://localhost:5000/api/profile/favorites/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ propertyId: property.id })
+      });
+
+      if (response.ok) {
+        setIsFavorite(!isFavorite);
+      } else if (response.status === 401) {
+        setShowLoginPrompt(true);
+        setTimeout(() => setShowLoginPrompt(false), 3000);
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
 
   return (
     <Card className="group flex flex-col h-full bg-white hover:shadow-xl transition-all duration-500 border border-slate-100 rounded-2xl overflow-hidden">
@@ -21,23 +62,23 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
         
         {/* Overlay Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-          <Badge 
-            variant={
-              property.status === 'Sold Out' ? 'error' : 
-              property.status === 'Fast Filling' ? 'warning' : 'success'
-            }
-          >
-            {property.status}
-          </Badge>
-          {(property.type === 'Flats' || property.type === 'Villa') && (
-             <Badge variant="info">Verified Project</Badge>
-          )}
+          <Badge variant="info">{property.property_subtype || property.type || 'Residential'}</Badge>
         </div>
 
         {/* Wishlist Button */}
-        <button className="absolute top-3 right-3 p-1.5 bg-white/90 backdrop-blur-sm rounded-full text-slate-400 hover:text-rose-500 hover:bg-white shadow-sm transition-all duration-300">
-          <Heart size={16} className="group-hover:scale-110 transition-transform" />
-        </button>
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+          {showLoginPrompt && (
+            <div className="bg-slate-900 text-white text-[7px] font-black uppercase tracking-widest p-1.5 rounded shadow-lg whitespace-nowrap">
+              Login Required
+            </div>
+          )}
+          <button 
+            onClick={toggleFavorite}
+            className={`p-1.5 bg-white/90 backdrop-blur-sm rounded-full transition-all duration-300 shadow-sm ${isFavorite ? 'text-rose-500' : 'text-slate-400 hover:text-rose-500 hover:bg-white'}`}
+          >
+            <Heart size={16} fill={isFavorite ? "currentColor" : "none"} className={isFavorite ? "" : "group-hover:scale-110 transition-transform"} />
+          </button>
+        </div>
 
         {/* Builder Badge Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
@@ -110,6 +151,53 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
 
 export const FeaturedProperties: React.FC = () => {
   const navigate = useNavigate();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchApprovedProperties = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/superadmin/approved-properties');
+        if (response.ok) {
+          const data = await response.json();
+          // Parse JSON fields if they are strings
+          const parsed = data
+            .map((p: any) => ({
+              ...p,
+              images: typeof p.images === 'string' ? JSON.parse(p.images || '[]') : (p.images || []),
+              amenities: typeof p.amenities === 'string' ? JSON.parse(p.amenities || '[]') : (p.amenities || []),
+              highlights: typeof p.highlights === 'string' ? JSON.parse(p.highlights || '[]') : (p.highlights || []),
+              specifications: typeof p.specifications === 'string' ? JSON.parse(p.specifications || '[]') : (p.specifications || [])
+            }))
+            .slice(0, 3); // Get only first 3 for featured section
+          setProperties(parsed);
+        }
+      } catch (err) { console.error(err); }
+      finally { setIsLoading(false); }
+    };
+    
+    fetchApprovedProperties();
+    
+    // Auto-refresh when window gains focus (user switches back to tab)
+    const handleFocus = () => {
+      fetchApprovedProperties();
+    };
+    
+    // Listen for property updates from admin approval
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'propertyUpdated') {
+        fetchApprovedProperties();
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   return (
     <section className="py-16 bg-white px-4 md:px-8">
@@ -129,11 +217,23 @@ export const FeaturedProperties: React.FC = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {MOCK_PROPERTIES.slice(0, 3).map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-96 bg-slate-100 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        ) : properties.length === 0 ? (
+          <div className="text-center py-20 bg-slate-50 rounded-2xl">
+            <p className="text-slate-400 font-bold text-sm">No properties available at the moment</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {properties.map((property) => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
