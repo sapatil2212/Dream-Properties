@@ -1,40 +1,37 @@
+// Vercel Serverless Function - Main API Handler
+// This wraps your Express.js app for Vercel deployment
+
 import express from 'express';
-import nodemailer from 'nodemailer';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import mysql from 'mysql2/promise';
+import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import cookieParser from 'cookie-parser';
-import { pool } from './db.js';
-import { transporter } from './mailer.js';
-import { authenticateToken } from './authMiddleware.js';
-import forgotPasswordRouter from './forgotpassword/forgotPassword.js';
-import profileRouter from './userprofile/profile.js';
-import saasAuthRouter from './saasownerapis/saasAuth.js';
-import adminManagementRouter from './saasownerapis/adminManagement.js';
-import superAdminRouter from './superadminaccess/superAdminController.js';
-import builderRouter from './builder/builderController.js';
-import cloudinary from './cloudinaryConfig.js';
+import { pool } from '../server/db.js';
+import { transporter } from '../server/mailer.js';
+import { authenticateToken } from '../server/authMiddleware.js';
+import forgotPasswordRouter from '../server/forgotpassword/forgotPassword.js';
+import profileRouter from '../server/userprofile/profile.js';
+import saasAuthRouter from '../server/saasownerapis/saasAuth.js';
+import adminManagementRouter from '../server/saasownerapis/adminManagement.js';
+import superAdminRouter from '../server/superadminaccess/superAdminController.js';
+import builderRouter from '../server/builder/builderController.js';
+import cloudinary from '../server/cloudinaryConfig.js';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
-const port = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || '*',
   credentials: true
 }));
-app.use(express.json({ limit: '50mb' })); // Increase payload limit for image uploads
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
+
+// Mount routers
 app.use('/api/auth', forgotPasswordRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api/saas', saasAuthRouter);
@@ -42,16 +39,15 @@ app.use('/api/admin', adminManagementRouter);
 app.use('/api/superadmin', superAdminRouter);
 app.use('/api/builder', builderRouter);
 
-// Image upload endpoint using Cloudinary
+// Image upload endpoint
 app.post('/api/upload-image', async (req, res) => {
   try {
-    const { image } = req.body; // base64 image string
+    const { image } = req.body;
     
     if (!image) {
       return res.status(400).json({ message: 'No image provided' });
     }
 
-    // Upload to Cloudinary
     const result = await cloudinary.uploader.upload(image, {
       folder: 'dream-properties',
       resource_type: 'auto'
@@ -68,8 +64,7 @@ app.post('/api/upload-image', async (req, res) => {
   }
 });
 
-// Database initialization removed from here as pool is now in db.js
-// but we still want to init tables on start
+// Initialize database tables on first run (only in development or first deploy)
 const initDB = async () => {
   try {
     const connection = await pool.getConnection();
@@ -93,7 +88,7 @@ const initDB = async () => {
       )
     `);
 
-    // Create Properties table
+    // Properties table
     await connection.query(`
       CREATE TABLE IF NOT EXISTS properties (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -133,7 +128,7 @@ const initDB = async () => {
       )
     `);
 
-    // Pending Registrations (OTP Storage)
+    // Pending users (OTP)
     await connection.query(`
       CREATE TABLE IF NOT EXISTS pending_users (
         email VARCHAR(255) PRIMARY KEY,
@@ -152,7 +147,7 @@ const initDB = async () => {
       )
     `);
 
-    // Favorites Table
+    // Favorites
     await connection.query(`
       CREATE TABLE IF NOT EXISTS favorites (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -165,32 +160,6 @@ const initDB = async () => {
       )
     `);
 
-    // Add security_key column if it doesn't exist
-    try {
-      await connection.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS security_key VARCHAR(50)');
-      await connection.query('ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS security_key VARCHAR(50)');
-      await connection.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS status ENUM("Active", "Disabled") DEFAULT "Active"');
-      await connection.query('ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS status ENUM("Active", "Disabled") DEFAULT "Active"');
-      await connection.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS project_name VARCHAR(255)');
-      await connection.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS property_address TEXT');
-      await connection.query('ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS project_name VARCHAR(255)');
-      await connection.query('ALTER TABLE pending_users ADD COLUMN IF NOT EXISTS property_address TEXT');
-      
-      // New property columns
-      await connection.query('ALTER TABLE properties ADD COLUMN IF NOT EXISTS avg_price VARCHAR(100)');
-      await connection.query('ALTER TABLE properties ADD COLUMN IF NOT EXISTS launch_date VARCHAR(50)');
-      await connection.query('ALTER TABLE properties ADD COLUMN IF NOT EXISTS sizes VARCHAR(255)');
-      await connection.query('ALTER TABLE properties ADD COLUMN IF NOT EXISTS project_size VARCHAR(255)');
-      await connection.query('ALTER TABLE properties ADD COLUMN IF NOT EXISTS area_unit VARCHAR(50)');
-      await connection.query('ALTER TABLE properties ADD COLUMN IF NOT EXISTS property_subtype VARCHAR(100)');
-      await connection.query('ALTER TABLE properties ADD COLUMN IF NOT EXISTS map_link TEXT');
-      await connection.query('ALTER TABLE properties ADD COLUMN IF NOT EXISTS nearby_locations JSON');
-      await connection.query('ALTER TABLE properties ADD COLUMN IF NOT EXISTS attachments JSON');
-      await connection.query('ALTER TABLE properties ADD COLUMN IF NOT EXISTS listing_type ENUM("Sell", "Rent", "Lease") DEFAULT "Sell"');
-    } catch (err) {
-      console.log('Columns might already exist');
-    }
-
     connection.release();
     console.log('Database tables initialized');
   } catch (err) {
@@ -198,26 +167,28 @@ const initDB = async () => {
   }
 };
 
-initDB();
+// Only init DB on cold start (not every request)
+let dbInitialized = false;
+if (!dbInitialized) {
+  initDB().then(() => { dbInitialized = true; });
+}
 
 // Authentication Routes
 
-// 1. Start Registration & Send OTP
+// 1. Register Step 1 - Send OTP
 app.post('/api/auth/register-step1', async (req, res) => {
   const { name, email, mobile, password, role, propertyType, lookingTo, projectName, propertyAddress } = req.body;
   
   try {
-    // Check if user already exists
     const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.length > 0) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Store in pending table (upsert)
     await pool.query(`
       INSERT INTO pending_users (email, name, mobile, password, role, property_type, looking_to, project_name, property_address, otp, expires_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -228,7 +199,6 @@ app.post('/api/auth/register-step1', async (req, res) => {
       property_address=VALUES(property_address), otp=VALUES(otp), expires_at=VALUES(expires_at)
     `, [email, name, mobile, hashedPassword, role, propertyType, lookingTo, projectName, propertyAddress, otp, expiresAt]);
 
-    // Send Email
     const emailTemplate = `
       <!DOCTYPE html>
       <html>
@@ -266,7 +236,7 @@ app.post('/api/auth/register-step1', async (req, res) => {
   }
 });
 
-// 2. Verify OTP & Create Account
+// 2. Verify OTP
 app.post('/api/auth/verify-otp', async (req, res) => {
   const { email, otp } = req.body;
 
@@ -282,36 +252,24 @@ app.post('/api/auth/verify-otp', async (req, res) => {
 
     const user = pending[0];
 
-    // Move to main users table
     await pool.query(`
       INSERT INTO users (name, email, mobile, password, role, property_type, looking_to, project_name, property_address)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [user.name, user.email, user.mobile, user.password, user.role, user.property_type, user.looking_to, user.project_name, user.property_address]);
 
-    // Delete from pending
     await pool.query('DELETE FROM pending_users WHERE email = ?', [email]);
 
-    // Send confirmation emails to builder, admin, and super admin
     if (user.role === 'BUILDER') {
-      // Email to the builder
+      // Send emails (builder confirmation + admin notification)
       const builderEmailTemplate = `
         <!DOCTYPE html>
         <html>
-        <head>
-          <style>
-            body { font-family: sans-serif; color: #334155; }
-            .container { max-width: 600px; margin: 20px auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; }
-            .header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; }
-            .content { padding: 20px 0; }
-            .footer { font-size: 12px; color: #64748b; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
+        <body style="font-family: sans-serif; color: #334155;">
+          <div style="max-width: 600px; margin: 20px auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px;">
+            <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 20px; border-radius: 8px; text-align: center;">
               <h2 style="margin:0;">Welcome to Dream Properties!</h2>
             </div>
-            <div class="content">
+            <div style="padding: 20px 0;">
               <p>Dear ${user.name},</p>
               <p>Congratulations! Your builder account has been successfully created.</p>
               <p><strong>Account Details:</strong></p>
@@ -319,11 +277,8 @@ app.post('/api/auth/verify-otp', async (req, res) => {
                 <li>Email: ${user.email}</li>
                 <li>Mobile: ${user.mobile}</li>
                 <li>Project: ${user.project_name || 'N/A'}</li>
-                <li>Property Type: ${user.property_type || 'N/A'}</li>
               </ul>
-              <p>You can now log in to your dashboard and start managing your properties.</p>
             </div>
-            <div class="footer">© 2026 Dream Properties Sole Selling Pvt Ltd. | Nashik</div>
           </div>
         </body>
         </html>
@@ -336,39 +291,27 @@ app.post('/api/auth/verify-otp', async (req, res) => {
         html: builderEmailTemplate
       });
 
-      // Notification email to Admin and Super Admin
+      // Notify admins
       const adminNotificationTemplate = `
         <!DOCTYPE html>
         <html>
-        <head>
-          <style>
-            body { font-family: sans-serif; color: #334155; }
-            .container { max-width: 600px; margin: 20px auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; }
-            .alert { background: #dbeafe; padding: 15px; border-radius: 8px; margin: 15px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
+        <body style="font-family: sans-serif; color: #334155;">
+          <div style="max-width: 600px; margin: 20px auto; padding: 24px;">
             <h2>New Builder Registration</h2>
-            <div class="alert">
-              <p><strong>New builder has signed up on the platform:</strong></p>
+            <div style="background: #dbeafe; padding: 15px; border-radius: 8px; margin: 15px 0;">
+              <p><strong>New builder has signed up:</strong></p>
               <ul>
                 <li><strong>Name:</strong> ${user.name}</li>
                 <li><strong>Email:</strong> ${user.email}</li>
                 <li><strong>Mobile:</strong> ${user.mobile}</li>
-                <li><strong>Project Name:</strong> ${user.project_name || 'N/A'}</li>
-                <li><strong>Property Address:</strong> ${user.property_address || 'N/A'}</li>
-                <li><strong>Property Type:</strong> ${user.property_type || 'N/A'}</li>
-                <li><strong>Registered At:</strong> ${new Date().toLocaleString()}</li>
+                <li><strong>Project:</strong> ${user.project_name || 'N/A'}</li>
               </ul>
             </div>
-            <p>Please review and approve the account from the admin dashboard.</p>
           </div>
         </body>
         </html>
       `;
 
-      // Send to Super Admin
       if (process.env.SUPER_ADMIN_EMAIL) {
         await transporter.sendMail({
           from: `"Dream Properties" <${process.env.EMAIL_USERNAME}>`,
@@ -378,7 +321,6 @@ app.post('/api/auth/verify-otp', async (req, res) => {
         });
       }
 
-      // Send to all Admins in database
       const [admins] = await pool.query('SELECT email FROM users WHERE role = "ADMIN" AND status = "Active"');
       for (const admin of admins) {
         await transporter.sendMail({
@@ -402,86 +344,45 @@ app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    console.log('\n=== LOGIN REQUEST DEBUG START ===');
-    console.log('Login attempt for email:', email);
-    
     const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
     
     if (users.length === 0) {
-      console.log('❌ User not found');
-      return res.status(401).json({ 
-        message: 'Wrong email id', 
-        field: 'email' 
-      });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const user = users[0];
-    console.log('✅ User found in database:');
-    console.log('  - ID:', user.id);
-    console.log('  - Name:', user.name);
-    console.log('  - Email:', user.email);
-    console.log('  - Mobile:', user.mobile);
-    console.log('  - Mobile type:', typeof user.mobile);
-    console.log('  - Mobile is null?', user.mobile === null);
-    console.log('  - Mobile is undefined?', user.mobile === undefined);
-    console.log('  - Role:', user.role);
-    console.log('  - Status:', user.status);
-    
-    // Check if account is disabled
+
     if (user.status === 'Disabled') {
-      console.log('❌ Account is disabled');
-      return res.status(403).json({ 
-        message: 'Your account has been blocked. Please contact support for assistance.', 
-        field: 'status',
-        blocked: true
-      });
-    }
-    
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      console.log('❌ Password mismatch');
-      return res.status(401).json({ 
-        message: 'Wrong password', 
-        field: 'password' 
-      });
+      return res.status(403).json({ message: 'Your account has been disabled. Please contact support.' });
     }
 
-    console.log('✅ Password verified');
-    
-    // Generate JWT
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
     const token = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: '24h' }
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
     );
 
-    console.log('✅ JWT token generated');
-    
-    // Set HTTP-only cookie
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      path: '/'
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    const responseUser = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      mobile: user.mobile,
-      role: user.role
-    };
-    
-    console.log('📤 Sending response user object:', responseUser);
-    console.log('=== LOGIN REQUEST DEBUG END ===\n');
-    
+    const responseUser = { ...user };
+    delete responseUser.password;
+
     res.json({
       message: 'Login successful',
       user: responseUser
     });
   } catch (error) {
-    console.error('❌ Login error:', error);
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Login failed' });
   }
 });
@@ -492,8 +393,8 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
+// Health check
+app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: 'Server is running',
@@ -501,12 +402,12 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.json({ 
     message: 'Dream Properties API Server',
     version: '1.0.0',
     endpoints: {
-      health: '/health',
+      health: '/api/health',
       auth: '/api/auth/*',
       profile: '/api/profile/*',
       properties: '/api/superadmin/*',
@@ -515,7 +416,5 @@ app.get('/', (req, res) => {
   });
 });
 
-// Profile Routes moved to userprofile/profile.js
-app.listen(port, () => {
-  console.log(`Production server running on port ${port}`);
-});
+// Export for Vercel Serverless
+export default app;
