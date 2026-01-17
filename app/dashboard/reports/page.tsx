@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function ReportsPage() {
   const { data: session } = useSession();
@@ -306,111 +307,120 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* Export Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Export Report</CardTitle>
-          <CardDescription>
-            Select report type and format to export your data
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Report Type */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Report Type</label>
-              <Select value={reportType} onValueChange={setReportType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select report type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="properties">Properties Report</SelectItem>
-                  <SelectItem value="leads">Leads Report</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Export Format */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Export Format</label>
-              <Select value={exportFormat} onValueChange={setExportFormat}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select format" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pdf">
-                    <div className="flex items-center gap-2">
-                      <FileText size={16} className="text-rose-600" />
-                      PDF Document
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="excel">
-                    <div className="flex items-center gap-2">
-                      <FileSpreadsheet size={16} className="text-emerald-600" />
-                      Excel Spreadsheet
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="word">
-                    <div className="flex items-center gap-2">
-                      <FileIcon size={16} className="text-blue-600" />
-                      Word Document
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Export Button */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 invisible">Action</label>
-              <Button 
-                onClick={handleExport} 
-                className="w-full gap-2"
-                disabled={isLoading || (reportType === 'properties' ? properties.length === 0 : leads.length === 0)}
-              >
-                <Download size={18} />
-                Export Report
-              </Button>
-            </div>
-          </div>
-
-          {/* Data Preview */}
-          <div className="mt-6 border-t pt-4">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">Data Preview</h3>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* Property Status Distribution Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Property Status Distribution</CardTitle>
+            <CardDescription>Overview of property approval status</CardDescription>
+          </CardHeader>
+          <CardContent>
             {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-              </div>
+              <Skeleton className="h-64 w-full" />
             ) : (
-              <div className="text-sm text-slate-600">
-                <p>Total Records: <span className="font-bold text-slate-900">{reportType === 'properties' ? properties.length : leads.length}</span></p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Report will include all {reportType} data with complete details
-                </p>
-              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Approved', value: properties.filter(p => p.status === 'Approved').length, color: '#10b981' },
+                      { name: 'Pending', value: properties.filter(p => p.status === 'Pending_Approval').length, color: '#f59e0b' },
+                      { name: 'Rejected', value: properties.filter(p => p.status === 'Rejected').length, color: '#ef4444' },
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    animationBegin={0}
+                    animationDuration={800}
+                  >
+                    {[
+                      { name: 'Approved', value: properties.filter(p => p.status === 'Approved').length, color: '#10b981' },
+                      { name: 'Pending', value: properties.filter(p => p.status === 'Pending_Approval').length, color: '#f59e0b' },
+                      { name: 'Rejected', value: properties.filter(p => p.status === 'Rejected').length, color: '#ef4444' },
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
             )}
-          </div>
+          </CardContent>
+        </Card>
+
+        {/* Property Type Distribution Bar Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Property Type Distribution</CardTitle>
+            <CardDescription>Properties by type category</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-64 w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={[
+                    { type: 'Residential', count: properties.filter(p => p.type === 'Residential').length },
+                    { type: 'Commercial', count: properties.filter(p => p.type === 'Commercial').length },
+                    { type: 'Plots', count: properties.filter(p => p.type === 'Plots').length },
+                  ]}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="type" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="count" fill="#3b82f6" animationDuration={800} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Property Views Trend Line Chart */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-lg">Property Views Trend</CardTitle>
+          <CardDescription>Total views across all properties</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-80 w-full" />
+          ) : (
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart
+                data={properties.slice(0, 10).map((p, index) => ({
+                  name: p.title?.substring(0, 15) || `Property ${index + 1}`,
+                  views: p.views || 0,
+                }))}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="views" 
+                  stroke="#8b5cf6" 
+                  strokeWidth={2}
+                  activeDot={{ r: 8 }}
+                  animationDuration={1000}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </CardContent>
       </Card>
 
-      {/* Info Card */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="pt-6">
-          <div className="flex gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <FileText className="text-blue-600" size={20} />
-            </div>
-            <div>
-              <h4 className="font-semibold text-blue-900 text-sm">Export Formats Available</h4>
-              <p className="text-xs text-blue-700 mt-1">
-                <strong>PDF:</strong> Best for sharing and printing • <strong>Excel:</strong> For data analysis • <strong>Word:</strong> For documentation
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

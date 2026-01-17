@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Download, Eye, Trash2, Edit2, X } from 'lucide-react';
+import { Download, Eye, Trash2, Edit2, X, Flag, CheckCircle, Search, Filter, FileText, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -42,6 +42,12 @@ export default function InventoryManagementPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedProperty, setEditedProperty] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [flaggingPropertyId, setFlaggingPropertyId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [typeFilter, setTypeFilter] = useState('All');
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [filteredProperties, setFilteredProperties] = useState<any[]>([]);
 
   // Determine user role
   const isAdmin = session?.user?.role === 'SUPER_ADMIN' || session?.user?.role === 'ADMIN';
@@ -71,6 +77,31 @@ export default function InventoryManagementPage() {
     fetchProperties();
   }, []);
 
+  useEffect(() => {
+    let filtered = properties;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter((p: any) => 
+        p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.type?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'All') {
+      filtered = filtered.filter((p: any) => p.status === statusFilter);
+    }
+
+    // Apply type filter
+    if (typeFilter !== 'All') {
+      filtered = filtered.filter((p: any) => p.type === typeFilter);
+    }
+
+    setFilteredProperties(filtered);
+  }, [properties, searchQuery, statusFilter, typeFilter]);
+
   const handleApproval = async (propertyId: number, status: string) => {
     try {
       const response = await fetch('/api/superadmin/approve-property', {
@@ -88,6 +119,42 @@ export default function InventoryManagementPage() {
       }
     } catch (err) {
       alert('Failed to update property status');
+    }
+  };
+
+  const handleFlagProperty = async (propertyId: number, flag: string | null, listingType: string) => {
+    // Validate flag matches listing type
+    if (flag) {
+      if (listingType === 'Sell' && flag !== 'Sold') {
+        alert('Properties for sale can only be flagged as "Sold"');
+        return;
+      }
+      if (listingType === 'Rent' && flag !== 'Rented') {
+        alert('Properties for rent can only be flagged as "Rented"');
+        return;
+      }
+      if (listingType === 'Lease' && flag !== 'Leased') {
+        alert('Properties for lease can only be flagged as "Leased"');
+        return;
+      }
+    }
+
+    try {
+      const response = await fetch('/api/superadmin/flag-property', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propertyId, flag }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message);
+        fetchProperties();
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Failed to flag property');
+      }
+    } catch (err) {
+      alert('Failed to flag property');
     }
   };
 
@@ -188,6 +255,182 @@ export default function InventoryManagementPage() {
     return 'secondary';
   };
 
+  const exportToPDF = async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const autoTable = (await import('jspdf-autotable')).default;
+      
+      const doc = new jsPDF();
+      
+      // Load logo image
+      const logoImg = new Image();
+      logoImg.src = '/assets/dp-logo.png';
+      
+      await new Promise((resolve, reject) => {
+        logoImg.onload = resolve;
+        logoImg.onerror = reject;
+      });
+      
+      // Add logo to top right corner
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.addImage(logoImg, 'PNG', pageWidth - 50, 10, 40, 15);
+      
+      // Add watermark in center with 95% opacity
+      const pageHeight = doc.internal.pageSize.getHeight();
+      doc.saveGraphicsState();
+      // @ts-ignore - jsPDF GState type definition issue
+      doc.setGState({ opacity: 0.05 }); // 95% transparency = 5% opacity
+      const watermarkSize = 80;
+      doc.addImage(
+        logoImg, 
+        'PNG', 
+        (pageWidth - watermarkSize) / 2, 
+        (pageHeight - watermarkSize) / 2, 
+        watermarkSize, 
+        watermarkSize * (logoImg.height / logoImg.width)
+      );
+      doc.restoreGraphicsState();
+      
+      // Add title
+      doc.setFontSize(18);
+      doc.text('Properties Report', 14, 20);
+      
+      // Add date
+      doc.setFontSize(10);
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+      
+      // Prepare table data
+      const tableData = filteredProperties.map((p: any) => [
+        p.title || 'N/A',
+        p.type || 'N/A',
+        p.price || 'N/A',
+        p.status === 'Pending_Approval' ? 'Pending' : p.status || 'N/A',
+        p.location || 'N/A',
+        p.propertyFlag || '-'
+      ]);
+      
+      // Add table
+      autoTable(doc, {
+        head: [['Property', 'Type', 'Price', 'Status', 'Location', 'Flag']],
+        body: tableData,
+        startY: 35,
+        theme: 'grid',
+        headStyles: { fillColor: [59, 130, 246] },
+        styles: { fontSize: 9 }
+      });
+      
+      // Save PDF
+      doc.save(`properties_${new Date().toISOString().split('T')[0]}.pdf`);
+      setShowExportMenu(false);
+    } catch (error) {
+      console.error('PDF export error:', error);
+      alert('Failed to export PDF. Please try again.');
+    }
+  };
+
+  const exportToExcel = () => {
+    const headers = ['Property', 'Type', 'Price', 'Status', 'Location'];
+    const rows = filteredProperties.map((p: any) => [
+      p.title,
+      p.type,
+      p.price,
+      p.status,
+      p.location
+    ]);
+
+    let csvContent = headers.join(',') + '\n';
+    rows.forEach((row: any[]) => {
+      csvContent += row.map((cell: any) => `"${cell || ''}"`).join(',') + '\n';
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `properties_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    setShowExportMenu(false);
+  };
+
+  const exportToWord = async () => {
+    try {
+      const { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType, AlignmentType } = await import('docx');
+      
+      // Create header
+      const headerParagraph = new Paragraph({
+        children: [
+          new TextRun({
+            text: 'Properties Report',
+            bold: true,
+            size: 32,
+          }),
+        ],
+        spacing: { after: 200 },
+      });
+      
+      const dateParagraph = new Paragraph({
+        children: [
+          new TextRun({
+            text: `Generated: ${new Date().toLocaleDateString()}`,
+            size: 20,
+          }),
+        ],
+        spacing: { after: 400 },
+      });
+      
+      // Create table header
+      const tableHeader = new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Property', bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Type', bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Price', bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Status', bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Location', bold: true })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Flag', bold: true })] })] }),
+        ],
+      });
+      
+      // Create table rows
+      const tableRows = filteredProperties.map((p: any) => 
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph(p.title || 'N/A')] }),
+            new TableCell({ children: [new Paragraph(p.type || 'N/A')] }),
+            new TableCell({ children: [new Paragraph(p.price || 'N/A')] }),
+            new TableCell({ children: [new Paragraph(p.status === 'Pending_Approval' ? 'Pending' : p.status || 'N/A')] }),
+            new TableCell({ children: [new Paragraph(p.location || 'N/A')] }),
+            new TableCell({ children: [new Paragraph(p.propertyFlag || '-')] }),
+          ],
+        })
+      );
+      
+      // Create table
+      const table = new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [tableHeader, ...tableRows],
+      });
+      
+      // Create document
+      const doc = new Document({
+        sections: [
+          {
+            children: [headerParagraph, dateParagraph, table],
+          },
+        ],
+      });
+      
+      // Generate and download
+      const blob = await Packer.toBlob(doc);
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `properties_${new Date().toISOString().split('T')[0]}.docx`;
+      link.click();
+      setShowExportMenu(false);
+    } catch (error) {
+      console.error('Word export error:', error);
+      alert('Failed to export Word document. Please try again.');
+    }
+  };
+
   const renderValue = (value: any): string => {
     if (value === null || value === undefined) return 'N/A';
     if (typeof value === 'object') {
@@ -212,9 +455,80 @@ export default function InventoryManagementPage() {
               : 'Manage your property listings'}
           </p>
         </div>
-        <Button variant="outline" className="gap-2">
-          <Download size={16} /> Export CSV
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
+            <Input
+              type="text"
+              placeholder="Search properties..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-64"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="All">All Status</option>
+            <option value="Approved">Approved</option>
+            <option value="Pending_Approval">Pending</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+
+          {/* Type Filter */}
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="All">All Types</option>
+            <option value="Residential">Residential</option>
+            <option value="Commercial">Commercial</option>
+            <option value="Plots">Plots</option>
+          </select>
+
+          {/* Export Dropdown */}
+          <div className="relative">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              title="Export"
+            >
+              <Download size={16} />
+            </Button>
+            {showExportMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50 py-1">
+                <button
+                  onClick={exportToExcel}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
+                >
+                  <FileSpreadsheet size={16} className="text-emerald-600" />
+                  Export to Excel
+                </button>
+                <button
+                  onClick={exportToPDF}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
+                >
+                  <FileText size={16} className="text-rose-600" />
+                  Export to PDF
+                </button>
+                <button
+                  onClick={exportToWord}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
+                >
+                  <FileText size={16} className="text-blue-600" />
+                  Export to Word
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <Card>
@@ -237,24 +551,25 @@ export default function InventoryManagementPage() {
                 <TableHead>Type</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Flag</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-10">
+                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-10">
                     <Skeleton className="h-4 w-full" />
                   </TableCell>
                 </TableRow>
               ) : properties.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-10 text-slate-400">
+                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-10 text-slate-400">
                     {isAdmin ? 'No properties in queue' : 'No properties posted yet'}
                   </TableCell>
                 </TableRow>
               ) : (
-                properties.map((p) => (
+                filteredProperties.map((p) => (
                   <TableRow key={p.id} className="hover:bg-slate-50/50">
                     <TableCell>
                       <div>
@@ -281,6 +596,16 @@ export default function InventoryManagementPage() {
                         {p.status === 'Pending_Approval' ? 'Pending Approval' : p.status}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      {p.propertyFlag ? (
+                        <Badge variant="secondary" className="bg-orange-500 text-white border-orange-600 font-bold">
+                          <Flag size={14} className="mr-1 fill-white" />
+                          {p.propertyFlag}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-slate-400">-</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         {/* Admin-only approval buttons */}
@@ -302,6 +627,61 @@ export default function InventoryManagementPage() {
                               Reject
                             </Button>
                           </>
+                        )}
+                        {/* Admin-only flag button for approved properties */}
+                        {isAdmin && p.status === 'Approved' && (
+                          <div className="relative inline-block">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={p.propertyFlag ? "bg-orange-50 border-orange-200 text-orange-700" : ""}
+                              onClick={() => setFlaggingPropertyId(flaggingPropertyId === p.id ? null : p.id)}
+                              title="Flag Property"
+                            >
+                              <Flag size={14} className="mr-1" />
+                              {p.propertyFlag || 'Flag'}
+                            </Button>
+                            {flaggingPropertyId === p.id && (
+                              <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-slate-200 z-50 py-1">
+                                {p.listingType === 'Sell' && (
+                                  <button
+                                    onClick={() => {
+                                      handleFlagProperty(p.id, p.propertyFlag === 'Sold' ? null : 'Sold', p.listingType);
+                                      setFlaggingPropertyId(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
+                                  >
+                                    {p.propertyFlag === 'Sold' ? <X size={14} /> : <CheckCircle size={14} />}
+                                    {p.propertyFlag === 'Sold' ? 'Remove Flag' : 'Mark as Sold'}
+                                  </button>
+                                )}
+                                {p.listingType === 'Rent' && (
+                                  <button
+                                    onClick={() => {
+                                      handleFlagProperty(p.id, p.propertyFlag === 'Rented' ? null : 'Rented', p.listingType);
+                                      setFlaggingPropertyId(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
+                                  >
+                                    {p.propertyFlag === 'Rented' ? <X size={14} /> : <CheckCircle size={14} />}
+                                    {p.propertyFlag === 'Rented' ? 'Remove Flag' : 'Mark as Rented'}
+                                  </button>
+                                )}
+                                {p.listingType === 'Lease' && (
+                                  <button
+                                    onClick={() => {
+                                      handleFlagProperty(p.id, p.propertyFlag === 'Leased' ? null : 'Leased', p.listingType);
+                                      setFlaggingPropertyId(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
+                                  >
+                                    {p.propertyFlag === 'Leased' ? <X size={14} /> : <CheckCircle size={14} />}
+                                    {p.propertyFlag === 'Leased' ? 'Remove Flag' : 'Mark as Leased'}
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         )}
                         {/* View button for all */}
                         <Button

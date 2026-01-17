@@ -307,9 +307,9 @@ export default function DashboardSettingsPage() {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Email Section */}
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col">
                 <div className="flex justify-between items-center mb-3">
                   <label className="text-xs font-bold uppercase text-slate-600">Email Address</label>
                   <span className="text-xs font-bold text-emerald-500 uppercase flex items-center gap-1">
@@ -358,7 +358,7 @@ export default function DashboardSettingsPage() {
               </div>
 
               {/* Password Section */}
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col">
                 <label className="text-xs font-bold uppercase text-slate-600 mb-3 block">Password</label>
                 <div className="flex items-center gap-3 mb-3">
                   <Lock size={16} className="text-slate-400" />

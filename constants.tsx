@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { LayoutDashboard, Building2, Users, PieChart, BadgePercent, PhoneCall, CalendarCheck, Settings, CreditCard, LifeBuoy } from 'lucide-react';
-import { Property, Lead, UserRole, Builder, Transaction } from './types.ts';
+import { Property, Lead, UserRole, Builder, Transaction } from './types';
 
 export const MOCK_BUILDERS: Builder[] = [
   { id: 'b1', name: 'Skyline Group', logo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=100', activeProjects: 5, totalInventory: 120, joinedDate: '2023-01-15', status: 'Active' },

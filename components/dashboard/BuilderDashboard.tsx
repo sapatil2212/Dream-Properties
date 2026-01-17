@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Building2, Users, Eye, TrendingUp, Plus, Trash2, Edit2 
+  Building2, Users, Eye, TrendingUp, Plus, Trash2, Edit2, Flag 
 } from 'lucide-react';
 import { 
   Card, Button, DataTable, Badge, StatCard, Skeleton 
@@ -20,7 +20,15 @@ export function BuilderDashboard() {
       if (response.ok) {
         const data = await response.json();
         setMyProperties(data);
-        setStats(prev => ({ ...prev, properties: data.length }));
+        
+        // Calculate total views from all properties
+        const totalViews = data.reduce((sum: number, property: any) => sum + (property.views || 0), 0);
+        
+        setStats(prev => ({ 
+          ...prev, 
+          properties: data.length,
+          views: totalViews
+        }));
       }
     } catch (err) { 
       console.error(err); 
@@ -67,9 +75,8 @@ export function BuilderDashboard() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard label="Total Properties" value={stats.properties.toString()} trend="+2" icon={<Building2 className="text-blue-600" size={20} />} color="bg-blue-50" />
-        <StatCard label="Total Leads" value={stats.leads.toString()} trend="+12%" icon={<Users size={20} className="text-indigo-600" />} color="bg-indigo-50" />
         <StatCard label="Property Views" value={stats.views.toString()} trend="+24%" icon={<Eye size={20} className="text-amber-600" />} color="bg-amber-50" />
         <StatCard label="Conversion Rate" value={`${stats.conversions}%`} trend="+5%" icon={<TrendingUp className="text-emerald-600" size={20} />} color="bg-emerald-50" />
       </div>
@@ -78,47 +85,61 @@ export function BuilderDashboard() {
         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
           <h3 className="font-black uppercase tracking-tight text-slate-900">Your Inventory</h3>
         </div>
-        <DataTable headers={['Property', 'Type', 'Price', 'Status', 'Views', 'Actions']}>
+        <DataTable headers={['Property', 'Type', 'Price', 'Status', 'Sold/Rented', 'Views', 'Actions']}>
           {isLoading ? (
-            <tr><td colSpan={6} className="text-center py-10"><Skeleton className="h-4 w-full" /></td></tr>
+            <tr><td colSpan={7} className="text-center py-10"><Skeleton className="h-4 w-full" /></td></tr>
           ) : myProperties.length === 0 ? (
-            <tr><td colSpan={6} className="text-center py-10 text-slate-400">No properties posted yet</td></tr>
+            <tr><td colSpan={7} className="text-center py-10 text-slate-400">No properties posted yet</td></tr>
           ) : (
             myProperties.map(p => (
               <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4">
-                  <p className="text-sm font-bold text-slate-900">{p.title}</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">{p.location}</p>
+                <td className="px-3 py-2">
+                  <p className="text-xs font-bold text-slate-900">{p.title}</p>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase">{p.location}</p>
                 </td>
-                <td className="px-6 py-4">
-                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{p.type}</p>
+                <td className="px-3 py-2">
+                  <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest">{p.type}</p>
                 </td>
-                <td className="px-6 py-4 font-bold text-slate-900">{p.price}</td>
-                <td className="px-6 py-4">
-                  <Badge variant={p.status === 'Approved' ? 'success' : p.status === 'Rejected' ? 'error' : 'warning'}>
+                <td className="px-3 py-2 text-sm font-bold text-slate-900">{p.price}</td>
+                <td className="px-3 py-2">
+                  <Badge variant={p.status === 'Approved' ? 'success' : p.status === 'Rejected' ? 'error' : 'warning'} className="text-[10px] px-2 py-0.5">
                     {p.status === 'Pending_Approval' ? 'Pending Approval' : p.status}
                   </Badge>
                 </td>
-                <td className="px-6 py-4 text-xs font-bold text-slate-600">0</td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-2">
+                  {p.propertyFlag ? (
+                    <div className="flex items-center gap-1">
+                      <Flag size={12} className="text-orange-600" />
+                      <span className="text-[10px] font-bold text-orange-600 uppercase">{p.propertyFlag}</span>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-slate-400">-</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-[11px] font-bold text-slate-600">{p.views || 0}</td>
+                <td className="px-3 py-2">
                   <div className="flex gap-2">
                     <Link href={`/properties/${p.id}`}>
                       <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="View Property">
                         <Eye size={16} />
                       </button>
                     </Link>
-                    <Link href={`/dashboard/edit-property/${p.id}`}>
-                      <button className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Edit Property">
-                        <Edit2 size={16} />
-                      </button>
-                    </Link>
-                    <button 
-                      onClick={() => handleDeleteProperty(p.id)}
-                      className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                      title="Delete Property"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {!p.propertyFlag && (
+                      <>
+                        <Link href={`/dashboard/edit-property/${p.id}`}>
+                          <button className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Edit Property">
+                            <Edit2 size={16} />
+                          </button>
+                        </Link>
+                        <button 
+                          onClick={() => handleDeleteProperty(p.id)}
+                          className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                          title="Delete Property"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>

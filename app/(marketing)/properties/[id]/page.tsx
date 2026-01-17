@@ -47,7 +47,18 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
     window.scrollTo(0, 0);
     fetchPropertyDetails();
     checkFavoriteStatus();
+    trackPropertyView();
   }, [id]);
+
+  const trackPropertyView = async () => {
+    try {
+      await fetch(`/api/properties/${id}/track-view`, {
+        method: 'POST',
+      });
+    } catch (err) {
+      console.error('Error tracking view:', err);
+    }
+  };
 
   const checkFavoriteStatus = async () => {
     try {
@@ -166,7 +177,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <div className="min-h-screen bg-slate-50 pb-12">
       {/* Redesigned Header Area with Back Button */}
       <div className="bg-white border-b border-slate-200 sticky top-0 md:top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
@@ -217,16 +228,16 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="grid lg:grid-cols-3 gap-6">
           
           {/* Left Column: Media & Details */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {/* Image Gallery */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-4"
+              className="space-y-3"
             >
               <div className="relative aspect-[16/10] rounded-xl overflow-hidden border border-slate-200">
                 <AnimatePresence mode="wait">
@@ -274,8 +285,8 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
             </motion.div>
 
             {/* Property Intro Card */}
-            <Card className="p-6 rounded-xl border-slate-100">
-              <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
+            <Card className="p-5 rounded-xl border-slate-100">
+              <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
                 <div>
                   <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">{property.title}</h1>
                   <div className="flex items-center text-slate-500 font-bold text-[10px] uppercase tracking-wider">
@@ -291,7 +302,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-y border-slate-50">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 py-3 border-y border-slate-50">
                 {property.bedrooms && (
                   <div className="flex flex-col gap-0.5">
                     <div className="flex items-center gap-1.5 text-slate-400">
@@ -331,11 +342,11 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
               </div>
 
               {/* Project Details Section */}
-              <div className="mt-6 pt-6 border-t border-slate-100">
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-4">
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-3">
                   {property.listingType === 'Rent' ? 'Rental Details' : 'Project Details'}
                 </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {/* Rental-specific fields */}
                   {property.listingType === 'Rent' && (
                     <>
@@ -471,7 +482,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
             </Card>
 
             {/* Content Tabs */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200 overflow-x-auto no-scrollbar">
                 {['overview', 'amenities', 'specifications'].map((tab) => (
                   <button
@@ -495,13 +506,13 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -5 }}
                   transition={{ duration: 0.15 }}
-                  className="bg-white p-6 rounded-xl border border-slate-200"
+                  className="bg-white p-5 rounded-xl border border-slate-200"
                 >
                   {activeTab === 'overview' && (
-                    <div className="space-y-5">
+                    <div className="space-y-3">
                       <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">About Property</h3>
                       <p className="text-slate-600 text-sm leading-relaxed font-medium">{property.description}</p>
-                      <div className="grid sm:grid-cols-2 gap-3 pt-2">
+                      <div className="grid sm:grid-cols-2 gap-2 pt-1">
                         {(property.highlights || ['Premium Construction', 'Vastu Compliant']).map((h: string, i: number) => (
                           <div key={i} className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-lg border border-slate-100">
                             <Check className="text-emerald-500" size={14} />
@@ -515,7 +526,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                   {activeTab === 'amenities' && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {property.amenities.map((item: string, idx: number) => (
-                        <div key={idx} className="flex flex-col items-center justify-center p-5 bg-slate-50 rounded-lg border border-slate-100">
+                        <div key={idx} className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-lg border border-slate-100">
                           <Building2 size={18} className="text-blue-600 mb-2" />
                           <span className="text-[9px] font-black uppercase tracking-wider text-slate-700 text-center">{item}</span>
                         </div>
@@ -539,7 +550,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
 
             {/* Property Location Section - Only show if data exists */}
             {(property.nearbyLocations?.length > 0 || (property.mapLink && property.mapLink.startsWith('http'))) && (
-              <Card className="p-6 rounded-xl border-slate-200">
+              <Card className="p-5 rounded-xl border-slate-200">
                 <div className="flex items-center gap-2.5 mb-1">
                   <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
                     <MapPin size={18} className="text-blue-600" />
@@ -550,11 +561,11 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                   </div>
                 </div>
 
-                <div className="mt-6">
+                <div className="mt-4">
                   {property.nearbyLocations && property.nearbyLocations.length > 0 && (
                     <>
-                      <h4 className="text-sm font-black text-slate-900 mb-4">Around This Project</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <h4 className="text-sm font-black text-slate-900 mb-3">Around This Project</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {property.nearbyLocations.map((item: any, i: number) => {
                           const iconMap: any = {
                             'School': <School size={18} className="text-purple-600" />,
@@ -564,7 +575,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                             'Coffee': <Coffee size={18} className="text-amber-600" />
                           };
                           return (
-                            <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-blue-200 transition-all group">
+                            <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-all group">
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-200 group-hover:border-blue-300 transition-all">
                                   {iconMap[item.type] || <MapPin size={18} className="text-blue-600" />}
@@ -587,7 +598,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
 
                   {property.mapLink && property.mapLink.startsWith('http') && (
                     <>
-                      <div className={`rounded-xl overflow-hidden border border-slate-200 aspect-video ${property.nearbyLocations?.length > 0 ? 'mt-6' : ''}`}>
+                      <div className={`rounded-xl overflow-hidden border border-slate-200 aspect-video ${property.nearbyLocations?.length > 0 ? 'mt-4' : ''}`}>
                         <iframe 
                           src={property.mapLink}
                           className="w-full h-full border-0"
@@ -614,13 +625,13 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
           
           {/* Right Column: Sticky Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-32 space-y-4">
+            <div className="sticky top-24 space-y-3">
               {/* Contact Card */}
               <Card className="p-5 rounded-xl border-slate-200">
                 <h3 className="text-lg font-black text-slate-900 mb-0.5">Inquire Now</h3>
-                <p className="text-slate-500 text-[10px] font-medium mb-5">Our experts will call you shortly.</p>
+                <p className="text-slate-500 text-[10px] font-medium mb-4">Our experts will call you shortly.</p>
                 
-                <form onSubmit={handleContactSubmit} className="space-y-3.5">
+                <form onSubmit={handleContactSubmit} className="space-y-3">
                   <Input 
                     label="Name" 
                     placeholder="Full Name" 
@@ -660,7 +671,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                   </Button>
                 </form>
 
-                <div className="mt-5 pt-5 border-t border-slate-100 grid grid-cols-2 gap-2">
+                <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-2">
                   <a href="tel:+919881159245" className="flex flex-col items-center gap-1.5 p-2 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors">
                     <Phone size={14} className="text-blue-600" />
                     <span className="text-[8px] font-black uppercase tracking-widest text-slate-900">Call</span>

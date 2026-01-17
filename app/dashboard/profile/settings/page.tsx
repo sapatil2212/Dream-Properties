@@ -321,7 +321,7 @@ export default function AccountSettingsPage() {
               <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">Security & Access</h2>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col">
                 <div className="flex justify-between items-center mb-2">
                   <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Email Address</label>

@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
 
     const where: any = {
       status: 'Approved',
+      propertyFlag: null, // Hide flagged properties (sold/rented/leased)
     }
 
     if (type && type !== 'All') {

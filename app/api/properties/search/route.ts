@@ -10,16 +10,21 @@ export async function GET(request: NextRequest) {
 
     const where: any = {
       status: 'Approved',
+      propertyFlag: null, // Hide flagged properties (sold/rented/leased)
     }
 
     if (q.trim()) {
+      const searchTerm = q.trim();
       where.OR = [
-        { title: { contains: q.trim() } },
-        { description: { contains: q.trim() } },
-        { location: { contains: q.trim() } },
-        { address: { contains: q.trim() } },
-        { type: { contains: q.trim() } },
-        { propertySubtype: { contains: q.trim() } },
+        { title: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { location: { contains: searchTerm, mode: 'insensitive' } },
+        { address: { contains: searchTerm, mode: 'insensitive' } },
+        { type: { contains: searchTerm, mode: 'insensitive' } },
+        { propertySubtype: { contains: searchTerm, mode: 'insensitive' } },
+        { configurations: { contains: searchTerm, mode: 'insensitive' } },
+        { reraId: { contains: searchTerm, mode: 'insensitive' } },
+        { builder: { name: { contains: searchTerm, mode: 'insensitive' } } },
       ]
     }
 

@@ -87,6 +87,9 @@ export default function PostPropertyPage() {
     nearbyTime: '',
   });
 
+  // Field errors for inline validation
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+
   // Property Type Options
   const propertyTypes = ['Residential', 'Commercial', 'Plots'];
 
@@ -143,19 +146,42 @@ export default function PostPropertyPage() {
   };
 
   const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 8));
-    } else {
-      setAlertConfig({
-        type: 'warning',
-        title: 'Required Fields Missing',
-        message: 'Please fill all required fields before proceeding to the next step.'
-      });
-      setShowAlert(true);
+    // Clear previous errors
+    setFieldErrors({});
+    
+    // Validate and set errors for specific fields
+    const errors: { [key: string]: string } = {};
+    
+    if (currentStep === 1) {
+      if (!formData.type) errors.type = 'Please select a property type';
+      if (!formData.propertySubtype) errors.propertySubtype = 'Please select a property sub-type';
+      if (!formData.listingType) errors.listingType = 'Please select listing type (Sell/Rent/Lease)';
+      if (!formData.title) errors.title = 'Property name/title is required';
+      if (!formData.price) errors.price = 'Price is required';
+      if (!formData.area) errors.area = 'Area is required';
+    } else if (currentStep === 2) {
+      if (!formData.location) errors.location = 'Location is required';
+      if (!formData.address) errors.address = 'Complete address is required';
+      if (!formData.description) errors.description = 'Property description is required';
+    } else if (currentStep === 3) {
+      if (formData.type === 'Residential') {
+        if (!formData.bedrooms) errors.bedrooms = 'Number of bedrooms is required';
+        if (!formData.bathrooms) errors.bathrooms = 'Number of bathrooms is required';
+      }
     }
+    
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    
+    // Proceed to next step if no errors
+    setCurrentStep(prev => Math.min(prev + 1, 8));
   };
 
   const handlePrevious = () => {
+    setFieldErrors({}); // Clear errors when going back
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
@@ -321,11 +347,11 @@ export default function PostPropertyPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
-      {/* Header - Sticky with rounded borders matching form */}
-      <div className="bg-white border-b border-slate-200 sticky top-16 z-40 pt-6">
+      {/* Header - Scrollable with the form */}
+      <div className="pt-6 pb-4">
         <div className="max-w-5xl mx-auto px-4">
-          {/* Header Container with rounded top borders */}
-          <div className="bg-white rounded-t-2xl border border-slate-200 border-b-0 p-6">
+          {/* Header Container with full rounded borders */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
             <div className="flex items-center gap-4 mb-6">
               <button 
                 onClick={() => router.push('/dashboard')} 
@@ -343,24 +369,24 @@ export default function PostPropertyPage() {
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
               {steps.map((step, idx) => (
                 <React.Fragment key={step.number}>
-                  <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-bold transition-all ${
+                  <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                    <div className={`w-8 h-8 rounded-2xl flex items-center justify-center text-[10px] font-bold transition-all ${
                       currentStep > step.number 
                         ? 'bg-emerald-500 text-white shadow-md' 
                         : currentStep === step.number 
                         ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-lg scale-110' 
                         : 'bg-slate-200 text-slate-400'
                     }`}>
-                      {currentStep > step.number ? <Check size={16} /> : step.number}
+                      {currentStep > step.number ? <Check size={14} /> : step.number}
                     </div>
-                    <span className={`text-[9px] font-bold whitespace-nowrap mt-1 ${
+                    <span className={`text-[10px] font-bold whitespace-nowrap ${
                       currentStep === step.number ? 'text-blue-600' : 'text-slate-400'
                     }`}>
                       {step.title}
                     </span>
                   </div>
                   {idx < steps.length - 1 && (
-                    <div className={`h-0.5 w-10 flex-shrink-0 mb-5 ${
+                    <div className={`h-0.5 w-8 flex-shrink-0 mb-5 ${
                       currentStep > step.number ? 'bg-emerald-500' : 'bg-slate-200'
                     }`} />
                   )}
@@ -371,7 +397,7 @@ export default function PostPropertyPage() {
         </div>
       </div>
 
-      {/* Form Content - Connected to header */}
+      {/* Form Content - Separate container with full rounded borders */}
       <div className="max-w-5xl mx-auto px-4">
         <AnimatePresence mode="wait">
           <motion.div
@@ -381,7 +407,7 @@ export default function PostPropertyPage() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
           >
-            <Card className="p-8 rounded-t-none border-t-0">
+            <Card className="p-8">
               {/* Step 1: Property Type & Basic Details */}
               {currentStep === 1 && (
                 <div className="space-y-6">
@@ -391,89 +417,140 @@ export default function PostPropertyPage() {
                   </div>
 
                   <div className="space-y-4">
-                    {/* Property Type */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-700 mb-2 block">Property Type *</label>
-                      <div className="grid grid-cols-3 gap-3">
-                        {propertyTypes.map(type => (
-                          <button
-                            key={type}
-                            type="button"
-                            onClick={() => setFormData({ ...formData, type, propertySubtype: '' })}
-                            className={`p-4 rounded-xl border-2 text-sm font-bold transition-all ${
-                              formData.type === type
-                                ? 'border-blue-600 bg-blue-50 text-blue-600'
-                                : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                            }`}
-                          >
-                            {type}
-                          </button>
-                        ))}
+                    {/* Property Type and Property For - Side by Side */}
+                    <div className="grid grid-cols-2 gap-6">
+                      {/* Property Type */}
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 mb-2 block">Property Type *</label>
+                        <div className="grid grid-cols-3 gap-3">
+                          {propertyTypes.map(type => (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => {
+                                setFormData({ ...formData, type, propertySubtype: '' });
+                                setFieldErrors(prev => ({ ...prev, type: '' }));
+                              }}
+                              className={`p-4 rounded-xl border-2 text-sm font-bold transition-all ${
+                                formData.type === type
+                                  ? 'border-blue-600 bg-blue-50 text-blue-600'
+                                  : fieldErrors.type
+                                  ? 'border-red-300 hover:border-red-400 text-slate-600'
+                                  : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                              }`}
+                            >
+                              {type}
+                            </button>
+                          ))}
+                        </div>
+                        {fieldErrors.type && (
+                          <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.type}</p>
+                        )}
+                      </div>
+
+                      {/* Property For */}
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 mb-2 block">Property For *</label>
+                        <div className="grid grid-cols-3 gap-3">
+                          {listingTypeOptions.map(type => (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => {
+                                setFormData({ ...formData, listingType: type });
+                                setFieldErrors(prev => ({ ...prev, listingType: '' }));
+                              }}
+                              className={`p-4 rounded-xl border-2 text-sm font-bold transition-all ${
+                                formData.listingType === type
+                                  ? 'border-blue-600 bg-blue-50 text-blue-600'
+                                  : fieldErrors.listingType
+                                  ? 'border-red-300 hover:border-red-400 text-slate-600'
+                                  : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                              }`}
+                            >
+                              {type}
+                            </button>
+                          ))}
+                        </div>
+                        {fieldErrors.listingType && (
+                          <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.listingType}</p>
+                        )}
                       </div>
                     </div>
 
-                    {/* Property Sub-Type */}
+                    {/* Property Sub-Type - Full Width Below */}
                     {formData.type && (
                       <div>
                         <label className="text-xs font-bold text-slate-700 mb-2 block">Property Sub-Type *</label>
                         <select
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 ${
+                            fieldErrors.propertySubtype
+                              ? 'border-red-300 focus:ring-red-500'
+                              : 'border-slate-200 focus:ring-blue-500'
+                          }`}
                           value={formData.propertySubtype}
-                          onChange={e => setFormData({ ...formData, propertySubtype: e.target.value })}
+                          onChange={e => {
+                            setFormData({ ...formData, propertySubtype: e.target.value });
+                            setFieldErrors(prev => ({ ...prev, propertySubtype: '' }));
+                          }}
                         >
                           <option value="">Select sub-type</option>
                           {subtypeOptions[formData.type as keyof typeof subtypeOptions]?.map(subtype => (
                             <option key={subtype} value={subtype}>{subtype}</option>
                           ))}
                         </select>
+                        {fieldErrors.propertySubtype && (
+                          <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.propertySubtype}</p>
+                        )}
                       </div>
                     )}
 
-                    {/* Property For */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-700 mb-2 block">Property For *</label>
-                      <div className="grid grid-cols-3 gap-3">
-                        {listingTypeOptions.map(type => (
-                          <button
-                            key={type}
-                            type="button"
-                            onClick={() => setFormData({ ...formData, listingType: type })}
-                            className={`p-4 rounded-xl border-2 text-sm font-bold transition-all ${
-                              formData.listingType === type
-                                ? 'border-blue-600 bg-blue-50 text-blue-600'
-                                : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                            }`}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
                     {/* Property Name/Title */}
-                    <Input
-                      label="Project/Property Name/Title *"
-                      placeholder="e.g., Dream Heights Residency"
-                      value={formData.title}
-                      onChange={e => setFormData({ ...formData, title: e.target.value })}
-                    />
+                    <div>
+                      <Input
+                        label="Project/Property Name/Title *"
+                        placeholder="e.g., Dream Heights Residency"
+                        value={formData.title}
+                        onChange={e => {
+                          setFormData({ ...formData, title: e.target.value });
+                          setFieldErrors(prev => ({ ...prev, title: '' }));
+                        }}
+                      />
+                      {fieldErrors.title && (
+                        <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.title}</p>
+                      )}
+                    </div>
 
                     {/* Price/Rent and Area - Side by Side */}
                     <div className="grid grid-cols-2 gap-4">
-                      <Input
-                        label={formData.listingType === 'Rent' ? 'Rent (Monthly) *' : 'Price *'}
-                        placeholder={formData.listingType === 'Rent' ? 'e.g., ₹25,000/month' : 'e.g., ₹45 Lacs onwards'}
-                        value={formData.price}
-                        onChange={e => setFormData({ ...formData, price: e.target.value })}
-                      />
+                      <div>
+                        <Input
+                          label={formData.listingType === 'Rent' ? 'Rent (Monthly) *' : 'Price *'}
+                          placeholder={formData.listingType === 'Rent' ? 'e.g., ₹25,000/month' : 'e.g., ₹45 Lacs onwards'}
+                          value={formData.price}
+                          onChange={e => {
+                            setFormData({ ...formData, price: e.target.value });
+                            setFieldErrors(prev => ({ ...prev, price: '' }));
+                          }}
+                        />
+                        {fieldErrors.price && (
+                          <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.price}</p>
+                        )}
+                      </div>
                       <div className="flex gap-2">
                         <div className="flex-1">
                           <Input
                             label="Area *"
                             placeholder="e.g., 1200"
                             value={formData.area}
-                            onChange={e => setFormData({ ...formData, area: e.target.value })}
+                            onChange={e => {
+                              setFormData({ ...formData, area: e.target.value });
+                              setFieldErrors(prev => ({ ...prev, area: '' }));
+                            }}
                           />
+                          {fieldErrors.area && (
+                            <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.area}</p>
+                          )}
                         </div>
                         <div className="w-28">
                           <label className="text-xs font-bold text-slate-700 mb-2 block">Unit</label>
@@ -503,28 +580,54 @@ export default function PostPropertyPage() {
                   </div>
 
                   <div className="space-y-4">
-                    <Input
-                      label="Location (City/Area) *"
-                      placeholder="e.g., Nashik Road, Nashik"
-                      value={formData.location}
-                      onChange={e => setFormData({ ...formData, location: e.target.value })}
-                    />
+                    <div>
+                      <Input
+                        label="Location (City/Area) *"
+                        placeholder="e.g., Nashik Road, Nashik"
+                        value={formData.location}
+                        onChange={e => {
+                          setFormData({ ...formData, location: e.target.value });
+                          setFieldErrors(prev => ({ ...prev, location: '' }));
+                        }}
+                      />
+                      {fieldErrors.location && (
+                        <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.location}</p>
+                      )}
+                    </div>
 
-                    <Input
-                      label="Complete Address *"
-                      placeholder="e.g., Plot No. 45, Hill Road, Nashik Road, Nashik - 422101"
-                      value={formData.address}
-                      onChange={e => setFormData({ ...formData, address: e.target.value })}
-                    />
+                    <div>
+                      <Input
+                        label="Complete Address *"
+                        placeholder="e.g., Plot No. 45, Hill Road, Nashik Road, Nashik - 422101"
+                        value={formData.address}
+                        onChange={e => {
+                          setFormData({ ...formData, address: e.target.value });
+                          setFieldErrors(prev => ({ ...prev, address: '' }));
+                        }}
+                      />
+                      {fieldErrors.address && (
+                        <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.address}</p>
+                      )}
+                    </div>
 
                     <div>
                       <label className="text-xs font-bold text-slate-700 mb-2 block">Property Description *</label>
                       <textarea
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium min-h-[150px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium min-h-[150px] focus:outline-none focus:ring-2 ${
+                          fieldErrors.description
+                            ? 'border-red-300 focus:ring-red-500'
+                            : 'border-slate-200 focus:ring-blue-500'
+                        }`}
                         placeholder="Describe the property in detail... Include key features, location advantages, and what makes it special."
                         value={formData.description}
-                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                        onChange={e => {
+                          setFormData({ ...formData, description: e.target.value });
+                          setFieldErrors(prev => ({ ...prev, description: '' }));
+                        }}
                       />
+                      {fieldErrors.description && (
+                        <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.description}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -541,20 +644,36 @@ export default function PostPropertyPage() {
                   <div className="space-y-4">
                     {formData.type === 'Residential' && (
                       <div className="grid grid-cols-2 gap-4">
-                        <Input
-                          label="Bedrooms *"
-                          type="number"
-                          placeholder="e.g., 3"
-                          value={formData.bedrooms}
-                          onChange={e => setFormData({ ...formData, bedrooms: e.target.value })}
-                        />
-                        <Input
-                          label="Bathrooms *"
-                          type="number"
-                          placeholder="e.g., 2"
-                          value={formData.bathrooms}
-                          onChange={e => setFormData({ ...formData, bathrooms: e.target.value })}
-                        />
+                        <div>
+                          <Input
+                            label="Bedrooms *"
+                            type="number"
+                            placeholder="e.g., 3"
+                            value={formData.bedrooms}
+                            onChange={e => {
+                              setFormData({ ...formData, bedrooms: e.target.value });
+                              setFieldErrors(prev => ({ ...prev, bedrooms: '' }));
+                            }}
+                          />
+                          {fieldErrors.bedrooms && (
+                            <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.bedrooms}</p>
+                          )}
+                        </div>
+                        <div>
+                          <Input
+                            label="Bathrooms *"
+                            type="number"
+                            placeholder="e.g., 2"
+                            value={formData.bathrooms}
+                            onChange={e => {
+                              setFormData({ ...formData, bathrooms: e.target.value });
+                              setFieldErrors(prev => ({ ...prev, bathrooms: '' }));
+                            }}
+                          />
+                          {fieldErrors.bathrooms && (
+                            <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.bathrooms}</p>
+                          )}
+                        </div>
                       </div>
                     )}
 

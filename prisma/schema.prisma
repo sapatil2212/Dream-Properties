@@ -123,6 +123,10 @@ model Property {
   totalFloors       String?         @map("total_floors") @db.VarChar(50)
   carParking        String?         @map("car_parking") @db.VarChar(50)
   
+  views             Int             @default(0)
+  propertyFlag      String?         @map("property_flag") @db.VarChar(20)
+  flaggedAt         DateTime?       @map("flagged_at")
+  flaggedBy         Int?            @map("flagged_by")
   createdAt         DateTime        @default(now()) @map("created_at")
   updatedAt         DateTime        @updatedAt @map("updated_at")
   
@@ -194,4 +198,18 @@ model ContactInquiry {
   createdAt DateTime @default(now()) @map("created_at")
   
   @@map("contact_inquiries")
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  type        String   @db.VarChar(50)
+  title       String   @db.VarChar(255)
+  message     String   @db.Text
+  link        String?  @db.VarChar(255)
+  isRead      Boolean  @default(false) @map("is_read")
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@index([userId, isRead])
+  @@map("notifications")
 }

@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import { LayoutGrid, Search, Bell, User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { LayoutGrid, Search, Bell, User, Settings, LogOut, ChevronDown, Check, X } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface DashboardHeaderProps {
   title: string;
@@ -14,11 +15,75 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ title, user }: DashboardHeaderProps) {
+  const router = useRouter();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications');
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const markAsRead = async (notificationId?: number) => {
+    try {
+      await fetch('/api/notifications/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId }),
+      });
+      await fetchNotifications();
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const handleNotificationClick = async (notification: any) => {
+    if (!notification.isRead) {
+      await markAsRead(notification.id);
+    }
+    if (notification.link) {
+      router.push(notification.link);
+    }
+    setShowNotifications(false);
+  };
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -29,11 +94,10 @@ export function DashboardHeader({ title, user }: DashboardHeaderProps) {
 
     setIsSearching(true);
     try {
-      // Search properties
       const response = await fetch(`/api/properties/search?q=${encodeURIComponent(query)}`);
       if (response.ok) {
         const data = await response.json();
-        setSearchResults(data.results || []);
+        setSearchResults(data || []);
         setShowSearchResults(true);
       }
     } catch (error) {
@@ -95,15 +159,77 @@ export function DashboardHeader({ title, user }: DashboardHeaderProps) {
         
         <div className="flex items-center gap-2">
           {/* Notification Bell */}
-          <button className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl relative transition-all">
-            <Bell size={20} />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 border-2 border-white rounded-full"></span>
-          </button>
+          <div className="relative" ref={notificationRef}>
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl relative transition-all"
+            >
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Notifications Dropdown */}
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-lg border border-slate-200 z-[100] max-h-[500px] overflow-hidden flex flex-col">
+                <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                  <h3 className="font-bold text-slate-900 text-sm">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={() => markAsRead()}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                    >
+                      Mark all as read
+                    </button>
+                  )}
+                </div>
+                <div className="overflow-y-auto flex-1">
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <Bell size={32} className="mx-auto text-slate-300 mb-2" />
+                      <p className="text-sm text-slate-500 font-medium">No notifications yet</p>
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <button
+                        key={notification.id}
+                        onClick={() => handleNotificationClick(notification)}
+                        className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 ${
+                          !notification.isRead ? 'bg-blue-50/50' : ''
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                            !notification.isRead ? 'bg-blue-600' : 'bg-transparent'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm text-slate-900 mb-1">{notification.title}</p>
+                            <p className="text-xs text-slate-600 line-clamp-2">{notification.message}</p>
+                            <p className="text-xs text-slate-400 mt-1">
+                              {new Date(notification.createdAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           
           <div className="h-6 w-px bg-slate-100 mx-2"></div>
           
           {/* Profile Dropdown */}
-          <div className="relative">
+          <div className="relative" ref={profileRef}>
             <button
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
               className="flex items-center gap-3 pl-2 group cursor-pointer"
