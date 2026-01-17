@@ -46,7 +46,7 @@ export interface Property {
   total_floors?: string;
   car_parking?: string;
   
-  builder?: string; // For display
+  builder?: string | { name: string }; // For display
   createdAt?: string;
   updatedAt?: string;
 }
