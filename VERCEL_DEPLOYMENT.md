@@ -60,8 +60,10 @@ prisma generate && next build
 
 **Install Command:**
 ```bash
-npm install --legacy-peer-deps
+npm install
 ```
+
+**Note:** The project includes a `.npmrc` file with `legacy-peer-deps=true` to handle dependency conflicts automatically.
 
 **Output Directory:** `.next` (default)
 
