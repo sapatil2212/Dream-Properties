@@ -1,6 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, Inbox, Loader2, Eye, EyeOff } from 'lucide-react';
+import { X, ChevronDown, Inbox, Loader2, Eye, EyeOff, ArrowUpRight } from 'lucide-react';
+
+export const StatCard: React.FC<{ label: string, value: string, trend: string, trendUp?: boolean, icon: React.ReactNode, color: string }> = ({ label, value, trend, trendUp = true, icon, color }) => (
+  <Card className="p-6 group hover:border-blue-200 transition-all duration-300">
+    <div className="flex justify-between items-start mb-6">
+      <div className={`p-3 rounded-2xl ${color} group-hover:scale-110 transition-transform`}>
+        {icon}
+      </div>
+      <div className={`flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-lg ${trendUp ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+        {trendUp ? <ArrowUpRight size={14} /> : null} {trend}
+      </div>
+    </div>
+    <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">{label}</p>
+    <h3 className="text-2xl font-black text-slate-900 tracking-tight">{value}</h3>
+  </Card>
+);
 
 export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger', size?: 'sm' | 'md' | 'lg' | 'icon', isLoading?: boolean }> = ({ children, variant = 'primary', size = 'md', className = '', isLoading = false, ...props }) => {
   const base = "inline-flex items-center justify-center rounded-xl font-bold transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-[10px]";

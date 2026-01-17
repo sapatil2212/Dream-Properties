@@ -1,39 +1,44 @@
-
-export enum UserRole {
-  SUPER_ADMIN = 'SUPER_ADMIN',
-  ADMIN = 'ADMIN',
-  BUILDER = 'BUILDER',
-  TELECALLER = 'TELECALLER',
-  SALES_EXECUTIVE = 'SALES_EXECUTIVE',
-  BUYER = 'BUYER'
-}
+import { UserRole } from '@prisma/client';
+export { UserRole };
 
 export type PropertyCategory = 'Flats' | 'Villa' | 'Shop' | 'Office' | 'Plot' | 'Agricultural' | 'Industrial' | 'Warehouse';
 
 export interface Property {
-  id: string;
+  id: number | string;
+  builderId: number | string;
   title: string;
+  description?: string;
+  price: string;
+  priceRaw?: number;
+  area: string;
   location: string;
   address: string;
-  type: PropertyCategory;
-  listingType: 'buy' | 'rent';
-  price: string;
-  priceRaw: number;
-  pricePerSqft: string;
-  status: 'Available' | 'Sold Out' | 'Fast Filling';
-  images: string[];
+  type: string;
+  status: string;
   bedrooms?: number;
   bathrooms?: number;
-  area: string;
-  builder: string;
-  builderId: string;
-  description: string;
-  amenities: string[];
-  highlights: string[];
-  specifications: { label: string; value: string }[];
-  nearbyPlaces: { name: string; distance: string }[];
-  views: number;
-  leadsCount: number;
+  possession_date?: string;
+  rera_id?: string;
+  amenities: string[] | any;
+  images: string[] | any;
+  highlights?: string[] | any;
+  specifications?: any;
+  project_units?: number;
+  project_area?: string;
+  configurations?: string;
+  avg_price?: string;
+  launch_date?: string;
+  sizes?: string;
+  project_size?: string;
+  area_unit?: string;
+  property_subtype?: string;
+  map_link?: string;
+  nearby_locations?: any;
+  attachments?: any;
+  listing_type?: 'Sell' | 'Rent' | 'Lease';
+  builder?: string; // For display
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Lead {

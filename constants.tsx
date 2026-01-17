@@ -106,4 +106,8 @@ export const NAV_ITEMS = {
     { label: 'My Pipeline', icon: <LayoutDashboard size={20} />, href: '/dashboard' },
     { label: 'Visits', icon: <CalendarCheck size={20} />, href: '/dashboard/site-visits' },
   ],
+  [UserRole.BUYER]: [
+    { label: 'Favorites', icon: <LifeBuoy size={20} />, href: '/dashboard/profile/favorites' },
+    { label: 'Settings', icon: <Settings size={20} />, href: '/dashboard/profile/settings' },
+  ],
 };

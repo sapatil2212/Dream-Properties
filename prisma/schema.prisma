@@ -1,0 +1,187 @@
+// This is your Prisma schema file
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  USER
+  BUILDER
+  ADMIN
+  SUPER_ADMIN
+  SAAS_OWNER
+  TELECALLER
+  SALES_EXECUTIVE
+  BUYER
+}
+
+enum UserStatus {
+  Active
+  Disabled
+}
+
+enum PropertyStatus {
+  Pending_Approval @map("Pending Approval")
+  Approved
+  Rejected
+}
+
+enum ListingType {
+  Sell
+  Rent
+  Lease
+}
+
+// Models
+model User {
+  id               Int       @id @default(autoincrement())
+  name             String    @db.VarChar(255)
+  email            String    @unique @db.VarChar(255)
+  mobile           String    @db.VarChar(20)
+  password         String    @db.VarChar(255)
+  role             UserRole  @default(USER)
+  propertyType     String?   @map("property_type") @db.VarChar(50)
+  lookingTo        String?   @map("looking_to") @db.VarChar(50)
+  projectName      String?   @map("project_name") @db.VarChar(255)
+  propertyAddress  String?   @map("property_address") @db.Text
+  securityKey      String?   @map("security_key") @db.VarChar(50)
+  status           UserStatus @default(Active)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  
+  properties       Property[]
+  favorites        Favorite[]
+  assignedLeads    Lead[]    @relation("AssignedLeads")
+  siteVisits       SiteVisit[] @relation("StaffVisits")
+  
+  @@map("users")
+}
+
+model PendingUser {
+  email            String    @id @db.VarChar(255)
+  name             String    @db.VarChar(255)
+  mobile           String    @db.VarChar(20)
+  password         String    @db.VarChar(255)
+  role             UserRole  @default(USER)
+  propertyType     String?   @map("property_type") @db.VarChar(50)
+  lookingTo        String?   @map("looking_to") @db.VarChar(50)
+  projectName      String?   @map("project_name") @db.VarChar(255)
+  propertyAddress  String?   @map("property_address") @db.Text
+  securityKey      String?   @map("security_key") @db.VarChar(50)
+  status           UserStatus @default(Active)
+  otp              String    @db.VarChar(6)
+  expiresAt        DateTime  @map("expires_at")
+  
+  @@map("pending_users")
+}
+
+model Property {
+  id                Int             @id @default(autoincrement())
+  builderId         Int             @map("builder_id")
+  title             String          @db.VarChar(255)
+  description       String?         @db.Text
+  price             String?         @db.VarChar(100)
+  area              String?         @db.VarChar(100)
+  location          String?         @db.VarChar(255)
+  address           String?         @db.Text
+  type              String?         @db.VarChar(50)
+  status            PropertyStatus  @default(Pending_Approval)
+  bedrooms          Int?
+  bathrooms         Int?
+  possessionDate    String?         @map("possession_date") @db.VarChar(50)
+  reraId            String?         @map("rera_id") @db.VarChar(100)
+  amenities         Json?
+  images            Json?
+  highlights        Json?
+  specifications    Json?
+  projectUnits      Int?            @map("project_units")
+  projectArea       String?         @map("project_area") @db.VarChar(100)
+  configurations    String?         @db.VarChar(255)
+  avgPrice          String?         @map("avg_price") @db.VarChar(100)
+  launchDate        String?         @map("launch_date") @db.VarChar(50)
+  sizes             String?         @db.VarChar(255)
+  projectSize       String?         @map("project_size") @db.VarChar(255)
+  areaUnit          String?         @map("area_unit") @db.VarChar(50)
+  propertySubtype   String?         @map("property_subtype") @db.VarChar(100)
+  mapLink           String?         @map("map_link") @db.Text
+  nearbyLocations   Json?           @map("nearby_locations")
+  attachments       Json?
+  listingType       ListingType     @default(Sell) @map("listing_type")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+  
+  builder           User            @relation(fields: [builderId], references: [id], onDelete: Cascade)
+  favorites         Favorite[]
+  leads             Lead[]
+  siteVisits        SiteVisit[]
+  
+  @@map("properties")
+}
+
+model Favorite {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  propertyId  Int      @map("property_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, propertyId], map: "user_property")
+  @@map("favorites")
+}
+
+model Lead {
+  id                 Int      @id @default(autoincrement())
+  name               String   @db.VarChar(255)
+  email              String   @db.VarChar(255)
+  phone              String   @db.VarChar(20)
+  propertyId         Int      @map("property_id")
+  propertyOfInterest String   @map("property_of_interest") @db.VarChar(255)
+  status             String   @default("New") @db.VarChar(50)
+  source             String   @default("Website") @db.VarChar(50)
+  lastNote           String?  @map("last_note") @db.Text
+  assignedTo         Int?     @map("assigned_to")
+  createdAt          DateTime @default(now()) @map("created_at")
+  
+  property           Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  assignedStaff      User?    @relation("AssignedLeads", fields: [assignedTo], references: [id])
+  siteVisits         SiteVisit[]
+  
+  @@map("leads")
+}
+
+model SiteVisit {
+  id          Int      @id @default(autoincrement())
+  leadId      Int      @map("lead_id")
+  propertyId  Int      @map("property_id")
+  staffId     Int      @map("staff_id")
+  visitDate   DateTime @map("visit_date")
+  status      String   @default("Scheduled") @db.VarChar(50)
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  staff       User     @relation("StaffVisits", fields: [staffId], references: [id])
+
+  @@map("site_visits")
+}
+
+model ContactInquiry {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  email     String   @db.VarChar(255)
+  phone     String   @db.VarChar(20)
+  subject   String?  @db.VarChar(255)
+  message   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@map("contact_inquiries")
+}

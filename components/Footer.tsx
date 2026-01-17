@@ -1,6 +1,6 @@
 import React from 'react';
 import { Instagram, Facebook, Linkedin, Youtube, Mail, Phone, MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 const XIcon = ({ size }: { size: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
@@ -48,10 +48,10 @@ export const Footer: React.FC = () => (
       <div>
         <h4 className="font-black uppercase tracking-widest text-[11px] text-blue-500 mb-6">Quick Navigation</h4>
         <ul className="space-y-4 text-sm font-bold">
-          <li><Link to="/" className="text-slate-400 hover:text-white transition-colors">Home</Link></li>
-          <li><Link to="/properties" className="text-slate-400 hover:text-white transition-colors">Search Properties</Link></li>
-          <li><Link to="/about" className="text-slate-400 hover:text-white transition-colors">Our Story</Link></li>
-          <li><Link to="/contact" className="text-slate-400 hover:text-white transition-colors">Contact Support</Link></li>
+          <li><Link href="/" className="text-slate-400 hover:text-white transition-colors">Home</Link></li>
+          <li><Link href="/properties" className="text-slate-400 hover:text-white transition-colors">Search Properties</Link></li>
+          <li><Link href="/about" className="text-slate-400 hover:text-white transition-colors">Our Story</Link></li>
+          <li><Link href="/contact" className="text-slate-400 hover:text-white transition-colors">Contact Support</Link></li>
         </ul>
       </div>
 
@@ -83,8 +83,8 @@ export const Footer: React.FC = () => (
     <div className="max-w-7xl mx-auto border-t border-slate-800 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest">
       <div>&copy; 2026 Dream Properties Sole Selling Pvt Ltd.</div>
       <div className="flex gap-6">
-        <Link to="/privacy-policy" className="hover:text-white">Privacy Policy</Link>
-        <Link to="/terms-of-service" className="hover:text-white">Terms of Service</Link>
+        <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
+        <Link href="/terms" className="hover:text-white">Terms of Service</Link>
       </div>
     </div>
   </footer>

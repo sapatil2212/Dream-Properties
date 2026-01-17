@@ -1,19 +1,20 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Building2, Info, Phone, User, Home, PlusCircle, Settings, Heart, LogOut, ChevronDown } from 'lucide-react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from './UIComponents.tsx';
-import { UserRole } from '../types.ts';
+import { Button } from './UIComponents';
+import { UserRole } from '../types';
 
-interface NavbarProps {
-  onAuthClick: () => void;
-  user?: { name: string; role: UserRole } | null;
-  onLogout: () => void;
-}
-
-export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
+export const Navbar: React.FC = () => {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
+  const user = session?.user;
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isPropertiesDropdownOpen, setIsPropertiesDropdownOpen] = useState(false);
@@ -36,13 +37,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
 
   const closeMenu = () => setIsMenuOpen(false);
 
+  const handleLogout = async () => {
+    await signOut({ redirect: true, callbackUrl: '/' });
+  };
+
+  const onAuthClick = () => {
+    router.push('/login');
+    closeMenu();
+  };
+
   return (
     <>
       <nav className="bg-white border-b border-gray-100 sticky top-0 transition-all duration-300 z-[50] backdrop-blur-md bg-white/95">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Image Logo Only */}
-            <Link to="/" className="flex items-center" onClick={closeMenu}>
+            <Link href="/" className="flex items-center" onClick={closeMenu}>
               <img 
                 src="/assets/dp-logo.png" 
                 alt="Dream Properties Logo" 
@@ -53,9 +63,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <Link 
-                to="/" 
+                href="/" 
                 className={`text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
-                  location.pathname === '/' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
+                  pathname === '/' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
                 }`}
               >
                 Home
@@ -69,7 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
               >
                 <button 
                   className={`flex items-center gap-1 text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
-                    location.pathname.startsWith('/properties') ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
+                    pathname.startsWith('/properties') ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
                   }`}
                 >
                   Properties
@@ -93,9 +103,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                         ].map((item) => (
                           <Link 
                             key={item.href} 
-                            to={item.href}
+                            href={item.href}
                             className={`flex items-center px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                              location.pathname === item.href ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                              pathname === item.href ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
                             }`}
                           >
                             {item.label}
@@ -108,18 +118,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
               </div>
 
               <Link 
-                to="/about" 
+                href="/about" 
                 className={`text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
-                  location.pathname === '/about' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
+                  pathname === '/about' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
                 }`}
               >
                 About Us
               </Link>
 
               <Link 
-                to="/contact" 
+                href="/contact" 
                 className={`text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
-                  location.pathname === '/contact' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
+                  pathname === '/contact' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
                 }`}
               >
                 Contact
@@ -134,7 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                     className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100"
                   >
                     <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-[11px] font-black uppercase">
-                      {user.name.charAt(0)}
+                      {user.name?.charAt(0)}
                     </div>
                     <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -155,7 +165,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                           </div>
                           
                           <Link 
-                            to="/account-settings" 
+                            href="/dashboard/profile/settings" 
                             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all group"
                             onClick={() => setIsProfileOpen(false)}
                           >
@@ -164,7 +174,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                           </Link>
                           
                           <Link 
-                            to="/properties-interested" 
+                            href="/dashboard/profile/favorites" 
                             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all group"
                             onClick={() => setIsProfileOpen(false)}
                           >
@@ -175,7 +185,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                           <div className="h-px bg-slate-50 my-1" />
 
                           <button 
-                            onClick={() => { setIsProfileOpen(false); onLogout(); }}
+                            onClick={() => { setIsProfileOpen(false); handleLogout(); }}
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-600 hover:bg-rose-50 transition-all group"
                           >
                             <LogOut size={16} className="text-rose-400 group-rose:text-rose-600 transition-colors" />
@@ -224,10 +234,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                 {/* Navigation Links with improved spacing */}
                 <div className="flex flex-col gap-1">
                   <Link
-                    to="/"
+                    href="/"
                     onClick={closeMenu}
                     className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all ${
-                      location.pathname === '/' ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
+                      pathname === '/' ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
                     }`}
                   >
                     <span className="shrink-0 opacity-70"><Home size={16} /></span>
@@ -244,10 +254,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                     ].map((item) => (
                       <Link
                         key={item.href}
-                        to={item.href}
+                        href={item.href}
                         onClick={closeMenu}
                         className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-                          location.pathname === item.href ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
+                          pathname === item.href ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
                         }`}
                       >
                         <span className="text-[10px] uppercase tracking-wider">{item.label}</span>
@@ -256,10 +266,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                   </div>
 
                   <Link
-                    to="/about"
+                    href="/about"
                     onClick={closeMenu}
                     className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all ${
-                      location.pathname === '/about' ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
+                      pathname === '/about' ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
                     }`}
                   >
                     <span className="shrink-0 opacity-70"><Info size={16} /></span>
@@ -267,10 +277,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                   </Link>
 
                   <Link
-                    to="/contact"
+                    href="/contact"
                     onClick={closeMenu}
                     className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all ${
-                      location.pathname === '/contact' ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
+                      pathname === '/contact' ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
                     }`}
                   >
                     <span className="shrink-0 opacity-70"><Phone size={16} /></span>
@@ -287,17 +297,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                     <div className="flex flex-col w-full gap-2">
                       <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100">
                         <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white text-[12px] font-black uppercase">
-                          {user.name.charAt(0)}
+                          {user.name?.charAt(0)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[11px] font-black text-slate-900 truncate uppercase tracking-wider">{user.name}</p>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{user.role}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{(user as any).role}</p>
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-2">
                         <Link 
-                          to="/account-settings" 
+                          href="/dashboard/profile/settings" 
                           onClick={closeMenu}
                           className="flex flex-col items-center justify-center gap-2 p-3 bg-white border border-slate-100 rounded-xl hover:bg-blue-50 hover:border-blue-100 transition-all group"
                         >
@@ -306,7 +316,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                         </Link>
                         
                         <Link 
-                          to="/properties-interested" 
+                          href="/dashboard/profile/favorites" 
                           onClick={closeMenu}
                           className="flex flex-col items-center justify-center gap-2 p-3 bg-white border border-slate-100 rounded-xl hover:bg-blue-50 hover:border-blue-100 transition-all group"
                         >
@@ -318,7 +328,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                       <Button 
                         variant="outline" 
                         className="w-full py-3.5 border-rose-100 text-rose-600 hover:bg-rose-50 hover:border-rose-200 flex items-center justify-center gap-2 rounded-xl font-black uppercase text-[10px] tracking-widest"
-                        onClick={() => { closeMenu(); onLogout(); }}
+                        onClick={() => { closeMenu(); handleLogout(); }}
                       >
                         <LogOut size={16} />
                         Logout
@@ -328,7 +338,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                     <>
                       {/* Post Property Button */}
                       <Link
-                        to="/login"
+                        href="/login"
                         onClick={closeMenu}
                         className="flex-1 flex items-center justify-center gap-1.5 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl px-2 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98]"
                       >
@@ -347,7 +357,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onAuthClick, user, onLogout }) =
                         variant="outline" 
                         size="sm"
                         className="flex-1 py-3.5 rounded-xl font-black uppercase tracking-wider text-[10px] border-2 border-slate-300 hover:border-blue-600 hover:bg-blue-50 hover:text-blue-600 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                        onClick={() => { closeMenu(); onAuthClick(); }}
+                        onClick={onAuthClick}
                       >
                         <User size={15} strokeWidth={2.5} />
                         Login
