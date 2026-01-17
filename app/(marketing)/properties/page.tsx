@@ -9,8 +9,8 @@ import { Filter } from 'lucide-react';
 
 function PropertiesContent() {
   const searchParams = useSearchParams();
-  const initialFilter = (searchParams.get('type') as PropertyCategory) || 'All';
-  const listingType = (searchParams.get('listing_type') || 'All') as 'Sell' | 'Rent' | 'Lease' | 'All';
+  const initialFilter = (searchParams?.get('type') as PropertyCategory) || 'All';
+  const listingType = (searchParams?.get('listing_type') || 'All') as 'Sell' | 'Rent' | 'Lease' | 'All';
   
   const [filter, setFilter] = useState<PropertyCategory | 'All'>(initialFilter);
   const [properties, setProperties] = useState<any[]>([]);
@@ -42,7 +42,7 @@ function PropertiesContent() {
 
   // Sync state if URL changes
   useEffect(() => {
-    const type = searchParams.get('type');
+    const type = searchParams?.get('type');
     if (type) setFilter(type as PropertyCategory);
     else setFilter('All');
   }, [searchParams]);
@@ -51,7 +51,7 @@ function PropertiesContent() {
     const val = newFilter as PropertyCategory | 'All';
     setFilter(val);
     
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     if (val === 'All') {
       params.delete('type');
     } else {

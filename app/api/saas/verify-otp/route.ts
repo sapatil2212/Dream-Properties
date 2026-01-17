@@ -78,17 +78,6 @@ export async function POST(request: NextRequest) {
     });
 
     // Email content for Security Key
-    let adminEmail = null;
-    if (user.role === UserRole.TELECALLER || user.role === UserRole.SALES_EXECUTIVE) {
-      const admin = await prisma.user.findFirst({
-        where: { role: UserRole.ADMIN, status: 'Active' },
-        select: { email: true }
-      });
-      if (admin) {
-        adminEmail = admin.email;
-      }
-    }
-
     const keyEmailHtml = `
       <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee;">
         <h3 style="color: #2563eb;">New ${user.role} Registered</h3>
@@ -108,16 +97,6 @@ export async function POST(request: NextRequest) {
         from: `"Dream Properties Alert" <${process.env.EMAIL_USERNAME}>`,
         to: superAdminEmail,
         subject: `Security Key Generated for ${user.role}: ${user.name}`,
-        html: keyEmailHtml
-      });
-    }
-
-    // If Telecaller/Sales, also send to Admin
-    if (adminEmail && (user.role === UserRole.TELECALLER || user.role === UserRole.SALES_EXECUTIVE)) {
-      await transporter.sendMail({
-        from: `"Dream Properties Alert" <${process.env.EMAIL_USERNAME}>`,
-        to: adminEmail,
-        subject: `Staff Security Key: ${user.name} (${user.role})`,
         html: keyEmailHtml
       });
     }

@@ -9,7 +9,7 @@ export const MOCK_BUILDERS: Builder[] = [
   { id: 'b3', name: 'Greenfield Dev', logo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=100', activeProjects: 8, totalInventory: 210, joinedDate: '2022-11-10', status: 'Active' },
 ];
 
-export const MOCK_PROPERTIES: Property[] = [
+export const MOCK_PROPERTIES: any[] = [
   {
     id: 'f1',
     title: 'Sky Towers',
@@ -17,9 +17,8 @@ export const MOCK_PROPERTIES: Property[] = [
     address: 'Plot No. 45, Hill Road, Worli, Mumbai - 400018',
     price: '₹4.5 Cr onwards',
     priceRaw: 45000000,
-    pricePerSqft: '₹24,324 / sq.ft',
     type: 'Flats',
-    listingType: 'buy',
+    listing_type: 'Sell',
     status: 'Fast Filling',
     images: ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&auto=format&fit=crop&q=80'],
     bedrooms: 3,
@@ -42,9 +41,8 @@ export const MOCK_PROPERTIES: Property[] = [
     address: 'Carter Road, Bandra West',
     price: '₹3.2 Cr onwards',
     priceRaw: 32000000,
-    pricePerSqft: '₹32,000 / sq.ft',
     type: 'Flats',
-    listingType: 'buy',
+    listing_type: 'Sell',
     status: 'Available',
     images: ['https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&auto=format&fit=crop&q=80'],
     bedrooms: 2,
@@ -98,15 +96,7 @@ export const NAV_ITEMS = {
     { label: 'Leads', icon: <Users size={20} />, href: '/dashboard/leads' },
     { label: 'Reports', icon: <PieChart size={20} />, href: '/dashboard/reports' },
   ],
-  [UserRole.TELECALLER]: [
-    { label: 'Lead Queue', icon: <PhoneCall size={20} />, href: '/dashboard' },
-    { label: 'Scheduled', icon: <CalendarCheck size={20} />, href: '/dashboard/follow-ups' },
-  ],
-  [UserRole.SALES_EXECUTIVE]: [
-    { label: 'My Pipeline', icon: <LayoutDashboard size={20} />, href: '/dashboard' },
-    { label: 'Visits', icon: <CalendarCheck size={20} />, href: '/dashboard/site-visits' },
-  ],
-  [UserRole.BUYER]: [
+  [UserRole.USER]: [
     { label: 'Favorites', icon: <LifeBuoy size={20} />, href: '/dashboard/profile/favorites' },
     { label: 'Settings', icon: <Settings size={20} />, href: '/dashboard/profile/settings' },
   ],

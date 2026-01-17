@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { PropertyCard } from '@/pages/Home/PropertyCards';
+import { PropertyCard } from '@/components/Home/FeaturedProperties';
 import { PropertyCategory, Property } from '@/types';
 import { Select } from '@/components/UIComponents';
 import { Filter } from 'lucide-react';
 
 export function PropertiesList({ listingType = 'All' }: { listingType?: 'Sell' | 'Rent' | 'Lease' | 'All' }) {
   const searchParams = useSearchParams();
-  const initialFilter = (searchParams.get('type') as PropertyCategory) || 'All';
+  const initialFilter = (searchParams?.get('type') as PropertyCategory) || 'All';
   const [filter, setFilter] = useState<PropertyCategory | 'All'>(initialFilter);
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +44,7 @@ export function PropertiesList({ listingType = 'All' }: { listingType?: 'Sell' |
   const handleFilterChange = (newFilter: string) => {
     const val = newFilter as PropertyCategory | 'All';
     setFilter(val);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     if (val === 'All') {
       params.delete('type');
     } else {

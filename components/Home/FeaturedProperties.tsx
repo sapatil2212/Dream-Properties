@@ -61,7 +61,7 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
         
         {/* Overlay Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-          <Badge variant="info">{property.propertySubtype || property.type || 'Residential'}</Badge>
+          <Badge variant="info">{property.property_subtype || property.type || 'Residential'}</Badge>
         </div>
 
         {/* Wishlist Button */}

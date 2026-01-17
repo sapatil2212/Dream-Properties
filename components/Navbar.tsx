@@ -79,7 +79,7 @@ export const Navbar: React.FC = () => {
               >
                 <button 
                   className={`flex items-center gap-1 text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
-                    pathname.startsWith('/properties') ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
+                    pathname?.startsWith('/properties') ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
                   }`}
                 >
                   Properties

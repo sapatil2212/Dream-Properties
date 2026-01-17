@@ -29,7 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   //   redirect('/');
   // }
 
-  const title = pathname.split('/').pop()?.replace('-', ' ').toUpperCase() || 'DASHBOARD';
+  const title = pathname?.split('/').pop()?.replace('-', ' ').toUpperCase() || 'DASHBOARD';
 
   return (
     <div className="flex min-h-screen bg-gray-50">
