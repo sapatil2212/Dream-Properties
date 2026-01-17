@@ -321,55 +321,58 @@ export default function PostPropertyPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4 mb-4">
-            <button 
-              onClick={() => router.push('/dashboard')} 
-              className="p-2 rounded-lg bg-slate-50 text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
-            >
-              <ArrowLeft size={18} />
-            </button>
-            <div>
-              <h1 className="text-xl font-black text-slate-900">Post New Property</h1>
-              <p className="text-xs text-slate-500 font-medium">Step {currentStep} of 8</p>
+      {/* Header - Sticky with rounded borders matching form */}
+      <div className="bg-white border-b border-slate-200 sticky top-16 z-40 pt-6">
+        <div className="max-w-5xl mx-auto px-4">
+          {/* Header Container with rounded top borders */}
+          <div className="bg-white rounded-t-2xl border border-slate-200 border-b-0 p-6">
+            <div className="flex items-center gap-4 mb-6">
+              <button 
+                onClick={() => router.push('/dashboard')} 
+                className="p-2 rounded-lg bg-slate-50 text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <div>
+                <h1 className="text-xl font-black text-slate-900">Post New Property</h1>
+                <p className="text-xs text-slate-500 font-medium">Step {currentStep} of 8</p>
+              </div>
             </div>
-          </div>
 
-          {/* Progress Steps */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
-            {steps.map((step, idx) => (
-              <React.Fragment key={step.number}>
-                <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                    currentStep > step.number 
-                      ? 'bg-emerald-500 text-white' 
-                      : currentStep === step.number 
-                      ? 'bg-blue-600 text-white ring-4 ring-blue-100' 
-                      : 'bg-slate-200 text-slate-400'
-                  }`}>
-                    {currentStep > step.number ? <Check size={14} /> : step.number}
+            {/* Progress Steps */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+              {steps.map((step, idx) => (
+                <React.Fragment key={step.number}>
+                  <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-bold transition-all ${
+                      currentStep > step.number 
+                        ? 'bg-emerald-500 text-white shadow-md' 
+                        : currentStep === step.number 
+                        ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-lg scale-110' 
+                        : 'bg-slate-200 text-slate-400'
+                    }`}>
+                      {currentStep > step.number ? <Check size={16} /> : step.number}
+                    </div>
+                    <span className={`text-[9px] font-bold whitespace-nowrap mt-1 ${
+                      currentStep === step.number ? 'text-blue-600' : 'text-slate-400'
+                    }`}>
+                      {step.title}
+                    </span>
                   </div>
-                  <span className={`text-[9px] font-bold whitespace-nowrap ${
-                    currentStep === step.number ? 'text-blue-600' : 'text-slate-400'
-                  }`}>
-                    {step.title}
-                  </span>
-                </div>
-                {idx < steps.length - 1 && (
-                  <div className={`h-0.5 w-8 flex-shrink-0 ${
-                    currentStep > step.number ? 'bg-emerald-500' : 'bg-slate-200'
-                  }`} />
-                )}
-              </React.Fragment>
-            ))}
+                  {idx < steps.length - 1 && (
+                    <div className={`h-0.5 w-10 flex-shrink-0 mb-5 ${
+                      currentStep > step.number ? 'bg-emerald-500' : 'bg-slate-200'
+                    }`} />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Form Content */}
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      {/* Form Content - Connected to header */}
+      <div className="max-w-5xl mx-auto px-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -378,7 +381,7 @@ export default function PostPropertyPage() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
           >
-            <Card className="p-8">
+            <Card className="p-8 rounded-t-none border-t-0">
               {/* Step 1: Property Type & Basic Details */}
               {currentStep === 1 && (
                 <div className="space-y-6">
