@@ -284,7 +284,9 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                   </div>
                 </div>
                 <div className="text-left md:text-right bg-slate-50 p-3 px-5 rounded-lg border border-slate-100">
-                  <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] mb-0.5">Price</p>
+                  <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] mb-0.5">
+                    {property.listingType === 'Rent' ? 'Monthly Rent' : 'Price'}
+                  </p>
                   <p className="text-xl font-black text-blue-600">{property.price}</p>
                 </div>
               </div>
@@ -322,14 +324,67 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                     <Building2 size={14} />
                     <span className="text-[9px] font-bold uppercase tracking-wider">Builder</span>
                   </div>
-                  <p className="text-sm font-black text-slate-900 truncate">{property.builder}</p>
+                  <p className="text-sm font-black text-slate-900 truncate">
+                    {typeof property.builder === 'string' ? property.builder : property.builder?.name || 'N/A'}
+                  </p>
                 </div>
               </div>
 
               {/* Project Details Section */}
               <div className="mt-6 pt-6 border-t border-slate-100">
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-4">Project Details</h3>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-4">
+                  {property.listingType === 'Rent' ? 'Rental Details' : 'Project Details'}
+                </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {/* Rental-specific fields */}
+                  {property.listingType === 'Rent' && (
+                    <>
+                      {property.furnishing && (
+                        <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Furnishing</span>
+                          <p className="text-sm font-black text-slate-900">{property.furnishing}</p>
+                        </div>
+                      )}
+                      {property.listedBy && (
+                        <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Listed By</span>
+                          <p className="text-sm font-black text-slate-900">{property.listedBy}</p>
+                        </div>
+                      )}
+                      {property.bachelorsAllowed && (
+                        <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Bachelors Allowed</span>
+                          <p className="text-sm font-black text-slate-900">{property.bachelorsAllowed}</p>
+                        </div>
+                      )}
+                      {property.carpetArea && (
+                        <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Carpet Area</span>
+                          <p className="text-sm font-black text-slate-900">{property.carpetArea}</p>
+                        </div>
+                      )}
+                      {property.maintenance && (
+                        <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Maintenance (Monthly)</span>
+                          <p className="text-sm font-black text-slate-900">{property.maintenance}</p>
+                        </div>
+                      )}
+                      {property.totalFloors && (
+                        <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Floors</span>
+                          <p className="text-sm font-black text-slate-900">{property.totalFloors}</p>
+                        </div>
+                      )}
+                      {property.carParking && (
+                        <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Car Parking</span>
+                          <p className="text-sm font-black text-slate-900">{property.carParking}</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Project Details (for non-rental properties) */}
                   {/* Project Units */}
                   {property.projectUnits && (
                     <div className="flex flex-col gap-1 p-3 bg-slate-50 rounded-lg border border-slate-100">
@@ -386,10 +441,12 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                     </div>
                   )}
 
-                  {/* Possession Starts */}
+                  {/* Possession Starts / Available From */}
                   {property.possessionDate && (
                     <div className="flex flex-col gap-1 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">Possession Starts</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">
+                        {property.listingType === 'Rent' ? 'Available From' : 'Possession Starts'}
+                      </span>
                       <p className="text-lg font-black text-emerald-600">{property.possessionDate}</p>
                     </div>
                   )}
@@ -480,80 +537,79 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
               </AnimatePresence>
             </div>
 
-            {/* Property Location Section */}
-            <Card className="p-6 rounded-xl border-slate-200">
-              <div className="flex items-center gap-2.5 mb-1">
-                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                  <MapPin size={18} className="text-blue-600" />
+            {/* Property Location Section - Only show if data exists */}
+            {(property.nearbyLocations?.length > 0 || (property.mapLink && property.mapLink.startsWith('http'))) && (
+              <Card className="p-6 rounded-xl border-slate-200">
+                <div className="flex items-center gap-2.5 mb-1">
+                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                    <MapPin size={18} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Property Location</h3>
+                    <p className="text-[10px] font-medium text-slate-500">{property.address || property.location}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Property Location</h3>
-                  <p className="text-[10px] font-medium text-slate-500">{property.address || property.location}</p>
-                </div>
-              </div>
 
-              <div className="mt-6">
-                <h4 className="text-sm font-black text-slate-900 mb-4">Around This Project</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {property.nearbyLocations && property.nearbyLocations.length > 0 ? (
-                    property.nearbyLocations.map((item: any, i: number) => {
-                      const iconMap: any = {
-                        'School': <School size={18} className="text-purple-600" />,
-                        'Bus Stand': <Bus size={18} className="text-orange-600" />,
-                        'Shopping': <ShoppingCart size={18} className="text-blue-600" />,
-                        'Hospital': <Hospital size={18} className="text-red-600" />,
-                        'Coffee': <Coffee size={18} className="text-amber-600" />
-                      };
-                      return (
-                        <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-blue-200 transition-all group">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-200 group-hover:border-blue-300 transition-all">
-                              {iconMap[item.type] || <MapPin size={18} className="text-blue-600" />}
+                <div className="mt-6">
+                  {property.nearbyLocations && property.nearbyLocations.length > 0 && (
+                    <>
+                      <h4 className="text-sm font-black text-slate-900 mb-4">Around This Project</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {property.nearbyLocations.map((item: any, i: number) => {
+                          const iconMap: any = {
+                            'School': <School size={18} className="text-purple-600" />,
+                            'Bus Stand': <Bus size={18} className="text-orange-600" />,
+                            'Shopping': <ShoppingCart size={18} className="text-blue-600" />,
+                            'Hospital': <Hospital size={18} className="text-red-600" />,
+                            'Coffee': <Coffee size={18} className="text-amber-600" />
+                          };
+                          return (
+                            <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-blue-200 transition-all group">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-200 group-hover:border-blue-300 transition-all">
+                                  {iconMap[item.type] || <MapPin size={18} className="text-blue-600" />}
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold text-slate-900">{item.name}</p>
+                                  <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider">{item.type}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs font-black text-slate-900">{item.time}</p>
+                                <p className="text-[9px] text-slate-400 font-medium">({item.distance})</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-xs font-bold text-slate-900">{item.name}</p>
-                              <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider">{item.type}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs font-black text-slate-900">{item.time}</p>
-                            <p className="text-[9px] text-slate-400 font-medium">({item.distance})</p>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-xs text-slate-400 italic sm:col-span-2">No nearby locations provided</p>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {property.mapLink && property.mapLink.startsWith('http') && (
+                    <>
+                      <div className={`rounded-xl overflow-hidden border border-slate-200 aspect-video ${property.nearbyLocations?.length > 0 ? 'mt-6' : ''}`}>
+                        <iframe 
+                          src={property.mapLink}
+                          className="w-full h-full border-0"
+                          allowFullScreen
+                          loading="lazy"
+                          referrerPolicy="no-referrer-when-downgrade"
+                        />
+                      </div>
+                      <div className="mt-4 text-center">
+                        <button 
+                          onClick={() => window.open(property.mapLink, '_blank')}
+                          className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors inline-flex items-center gap-1.5"
+                        >
+                          <Map size={12} />
+                          View on Google Maps
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
-
-                {property.mapLink && (
-                  <div className="mt-6 rounded-xl overflow-hidden border border-slate-200 aspect-video">
-                    <iframe 
-                      src={property.mapLink}
-                      className="w-full h-full border-0"
-                      allowFullScreen
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                    />
-                  </div>
-                )}
-
-                <div className="mt-4 text-center">
-                  <button 
-                    onClick={() => {
-                      if (property.mapLink) {
-                        window.open(property.mapLink, '_blank');
-                      }
-                    }}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors inline-flex items-center gap-1.5"
-                  >
-                    <Map size={12} />
-                    View on Google Maps
-                  </button>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            )}
           </div>
           
           {/* Right Column: Sticky Sidebar */}
@@ -613,46 +669,6 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                     <MessageCircle size={14} className="text-emerald-600" />
                     <span className="text-[8px] font-black uppercase tracking-widest text-slate-900">Chat</span>
                   </a>
-                </div>
-              </Card>
-
-              {/* Price Tag & Details Card */}
-              <div className="bg-slate-900 p-5 rounded-xl text-white">
-                <div className="flex items-center gap-2 mb-1 opacity-60 uppercase tracking-widest text-[8px] font-black">
-                  <IndianRupee size={10} />
-                  Starting Price
-                </div>
-                <p className="text-xl font-black mb-3">{property.price}</p>
-                <div className="h-px bg-slate-800 mb-3" />
-                <div className="flex items-center gap-2.5">
-                   <div className="w-7 h-7 rounded-md bg-slate-800 flex items-center justify-center">
-                     <Calendar size={12} className="text-blue-400" />
-                   </div>
-                   <div>
-                     <p className="text-[8px] font-black uppercase tracking-widest text-slate-500">Possession</p>
-                     <p className="text-[10px] font-bold">Dec 2025</p>
-                   </div>
-                </div>
-              </div>
-
-              {/* Map Container */}
-              <Card className="p-4 rounded-xl border-slate-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin size={12} className="text-rose-500" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-900">Project Location</span>
-                </div>
-                <div className="aspect-video bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 overflow-hidden relative">
-                  <div className="text-center p-2">
-                    <div className="w-8 h-8 bg-white rounded flex items-center justify-center text-rose-500 mx-auto mb-1 shadow-sm">
-                      <MapPin size={16} />
-                    </div>
-                    <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">Map View</p>
-                  </div>
-                  <div className="absolute inset-0 bg-blue-500/5 pointer-events-none" />
-                </div>
-                <div className="mt-3">
-                   <p className="text-[9px] text-slate-500 font-medium line-clamp-1">{property.address || property.location}</p>
-                   <button className="text-[9px] text-blue-600 font-bold hover:underline mt-1">Get Directions</button>
                 </div>
               </Card>
             </div>

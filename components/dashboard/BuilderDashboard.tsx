@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Building2, Users, Eye, TrendingUp, Plus, Trash2 
+  Building2, Users, Eye, TrendingUp, Plus, Trash2, Edit2 
 } from 'lucide-react';
 import { 
   Card, Button, DataTable, Badge, StatCard, Skeleton 
@@ -95,17 +95,27 @@ export function BuilderDashboard() {
                 </td>
                 <td className="px-6 py-4 font-bold text-slate-900">{p.price}</td>
                 <td className="px-6 py-4">
-                  <Badge variant={p.status === 'Approved' ? 'success' : p.status === 'Rejected' ? 'error' : 'warning'}>{p.status}</Badge>
+                  <Badge variant={p.status === 'Approved' ? 'success' : p.status === 'Rejected' ? 'error' : 'warning'}>
+                    {p.status === 'Pending_Approval' ? 'Pending Approval' : p.status}
+                  </Badge>
                 </td>
                 <td className="px-6 py-4 text-xs font-bold text-slate-600">0</td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
                     <Link href={`/properties/${p.id}`}>
-                      <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><Eye size={16} /></button>
+                      <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="View Property">
+                        <Eye size={16} />
+                      </button>
+                    </Link>
+                    <Link href={`/dashboard/edit-property/${p.id}`}>
+                      <button className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Edit Property">
+                        <Edit2 size={16} />
+                      </button>
                     </Link>
                     <button 
                       onClick={() => handleDeleteProperty(p.id)}
                       className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                      title="Delete Property"
                     >
                       <Trash2 size={16} />
                     </button>

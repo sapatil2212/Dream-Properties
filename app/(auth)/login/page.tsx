@@ -24,7 +24,7 @@ export default function LoginPage() {
     }
   }, [session, router]);
 
-  const [role, setRole] = useState<UserRole | ''>('');
+  const [role, setRole] = useState<UserRole | 'OWNER' | ''>('');
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [propertyType, setPropertyType] = useState('Residential');
@@ -148,11 +148,11 @@ export default function LoginPage() {
 
     if (role === 'BUILDER') {
       if (!formData.projectName.trim()) {
-        setSignupProjectNameError('Please enter project name');
+        setSignupProjectNameError('Please enter firm name');
         hasError = true;
       }
       if (!formData.propertyAddress.trim()) {
-        setSignupPropertyAddressError('Please enter property address');
+        setSignupPropertyAddressError('Please enter office address');
         hasError = true;
       }
     }
@@ -388,7 +388,7 @@ export default function LoginPage() {
               </Link>
               <div className="mb-6 text-center md:text-left">
                 <h1 className="text-xl md:text-2xl font-black text-slate-900 mb-1 uppercase tracking-tight">{isLogin ? 'Sign In' : 'Create Account'}</h1>
-                <p className="text-slate-400 text-[11px] font-medium">{isLogin ? 'Enter your credentials to access your dashboard' : 'Register as a builder or buyer to get started'}</p>
+                <p className="text-slate-400 text-[11px] font-medium mb-2">Register as a builder or buyer to get started</p>
               </div>
 
               <div className="space-y-3">
@@ -471,7 +471,7 @@ export default function LoginPage() {
                     <select
                       value={role}
                       onChange={(e) => {
-                        const newRole = e.target.value as UserRole;
+                        const newRole = e.target.value as UserRole | 'OWNER';
                         setRole(newRole);
                         setSignupRoleError('');
                         setLookingTo(newRole === UserRole.USER ? 'Buy' : 'Rent');
@@ -482,7 +482,8 @@ export default function LoginPage() {
                     >
                       <option value="" disabled>Select your role</option>
                       <option value={UserRole.USER}>Buyer / User</option>
-                      <option value={UserRole.BUILDER}>Owner / Builder</option>
+                      <option value={UserRole.BUILDER}>Builder</option>
+                      <option value="OWNER">Individual Owner</option>
                     </select>
                     {signupRoleError && (
                       <p className="text-[10px] text-red-500 mt-1">{signupRoleError}</p>
@@ -495,8 +496,8 @@ export default function LoginPage() {
                     {role === 'BUILDER' && (
                       <div className="space-y-3 pt-1">
                         <Input 
-                          label="Project Name" 
-                          placeholder="e.g., Dream Heights Residency" 
+                          label="Firm Name" 
+                          placeholder="e.g., ABC Builders Pvt Ltd" 
                           icon={<Building2 size={18} />} 
                           value={formData.projectName}
                           error={signupProjectNameError}
@@ -506,7 +507,7 @@ export default function LoginPage() {
                           }}
                         />
                         <Input 
-                          label="Property Address" 
+                          label="Office Address" 
                           placeholder="e.g., Sector 21, Pune" 
                           icon={<Home size={18} />} 
                           value={formData.propertyAddress}
@@ -653,6 +654,7 @@ export default function LoginPage() {
               }`} 
               onClick={handleVerifyOTP}
               disabled={isVerified}
+              isLoading={isLoading && !isVerified}
             >
               {isVerified ? (
                 <motion.div 

@@ -36,6 +36,16 @@ export interface Property {
   nearby_locations?: any;
   attachments?: any;
   listing_type?: 'Sell' | 'Rent' | 'Lease';
+  
+  // Rental-specific fields
+  furnishing?: string;
+  listed_by?: string;
+  bachelors_allowed?: string;
+  carpet_area?: string;
+  maintenance?: string;
+  total_floors?: string;
+  car_parking?: string;
+  
   builder?: string; // For display
   createdAt?: string;
   updatedAt?: string;

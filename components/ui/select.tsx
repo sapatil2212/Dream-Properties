@@ -19,6 +19,7 @@ const SelectTrigger = React.forwardRef<
       "flex h-10 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium shadow-sm transition-all placeholder:text-slate-400 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
       className
     )}
+    suppressHydrationWarning
     {...props}
   >
     {children}

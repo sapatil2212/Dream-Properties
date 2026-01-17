@@ -10,17 +10,17 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
   const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [favoriteChecked, setFavoriteChecked] = useState(false);
 
-  useEffect(() => {
-    checkFavoriteStatus();
-  }, [property.id]);
-
+  // Only check favorite status when user interacts, not on mount
   const checkFavoriteStatus = async () => {
+    if (favoriteChecked) return;
     try {
       const response = await fetch(`/api/profile/favorites/check/${property.id}`);
       if (response.ok) {
         const data = await response.json();
         setIsFavorite(data.isFavorite);
+        setFavoriteChecked(true);
       }
     } catch (err) {
       // Ignore
@@ -29,6 +29,12 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
 
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Check favorite status first if not already checked
+    if (!favoriteChecked) {
+      await checkFavoriteStatus();
+    }
+    
     try {
       const endpoint = isFavorite ? 'remove' : 'add';
       const response = await fetch(`/api/profile/favorites/${endpoint}`, {
@@ -81,7 +87,9 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
 
         {/* Builder Badge Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
-          <p className="text-white/90 text-[9px] font-bold uppercase tracking-widest">{property.builder}</p>
+          <p className="text-white/90 text-[9px] font-bold uppercase tracking-widest">
+            {typeof property.builder === 'string' ? property.builder : property.builder?.name || 'N/A'}
+          </p>
         </div>
       </div>
 
@@ -119,7 +127,9 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
         {/* Pricing and Action Buttons */}
         <div className="mt-auto pt-3 border-t border-slate-50">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Starting From</span>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+              {property.listing_type === 'Rent' ? 'Monthly Rent' : 'Starting From'}
+            </span>
             <p className="text-blue-600 font-black text-base">{property.price.split(' ')[0]}</p>
           </div>
           

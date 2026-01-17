@@ -67,6 +67,8 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           role: user.role,
           mobile: user.mobile,
+          firmName: user.projectName,
+          officeAddress: user.propertyAddress,
         }
       }
     })
@@ -81,11 +83,21 @@ export const authOptions: NextAuthOptions = {
     error: '/login',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id
         token.role = user.role
         token.mobile = user.mobile
+        token.firmName = user.firmName
+        token.officeAddress = user.officeAddress
+      }
+      // Handle session updates
+      if (trigger === 'update' && session) {
+        token.name = session.user?.name || token.name
+        token.email = session.user?.email || token.email
+        token.mobile = session.user?.mobile || token.mobile
+        token.firmName = session.user?.firmName || token.firmName
+        token.officeAddress = session.user?.officeAddress || token.officeAddress
       }
       return token
     },
@@ -94,6 +106,10 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string
         session.user.role = token.role as any
         session.user.mobile = token.mobile as string
+        session.user.name = token.name as string
+        session.user.email = token.email as string
+        session.user.firmName = token.firmName as string | null
+        session.user.officeAddress = token.officeAddress as string | null
       }
       return session
     }

@@ -99,6 +99,14 @@ export async function PUT(
         nearbyLocations: body.nearbyLocations,
         attachments: body.attachments,
         listingType: body.listingType,
+        // Rental-specific fields
+        furnishing: body.furnishing,
+        listedBy: body.listedBy,
+        bachelorsAllowed: body.bachelorsAllowed,
+        carpetArea: body.carpetArea,
+        maintenance: body.maintenance,
+        totalFloors: body.totalFloors,
+        carParking: body.carParking,
         status: 'Pending_Approval', // Reset status on update
       },
     })

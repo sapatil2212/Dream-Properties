@@ -68,7 +68,7 @@ export const QuickBookingForm: React.FC = () => {
         transition={{ delay: 0.2 }}
         className="max-w-5xl mx-auto"
       >
-        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200/60 relative overflow-hidden">
+        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200/60 relative">
           {/* Subtle gradient overlay for depth */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-blue-50/20 pointer-events-none"></div>
           
@@ -121,7 +121,7 @@ export const QuickBookingForm: React.FC = () => {
             <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
               {/* Mobile: Dropdown and Search side by side */}
               <div className="flex gap-2 md:hidden">
-                <div className="w-[140px] relative z-50">
+                <div className="w-[140px] relative z-[9999]">
                   <Select
                     options={propertyTypeOptions}
                     value={propType}
@@ -143,7 +143,7 @@ export const QuickBookingForm: React.FC = () => {
               </div>
 
               {/* Desktop: Original layout */}
-              <div className="hidden md:flex md:w-[180px] relative z-50">
+              <div className="hidden md:flex md:w-[180px] relative z-[9999]">
                 <Select
                   options={propertyTypeOptions}
                   value={propType}

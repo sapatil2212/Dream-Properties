@@ -49,8 +49,8 @@ model User {
   role             UserRole  @default(USER)
   propertyType     String?   @map("property_type") @db.VarChar(50)
   lookingTo        String?   @map("looking_to") @db.VarChar(50)
-  projectName      String?   @map("project_name") @db.VarChar(255)
-  propertyAddress  String?   @map("property_address") @db.Text
+  projectName      String?   @map("firm_name") @db.VarChar(255)
+  propertyAddress  String?   @map("office_address") @db.Text
   securityKey      String?   @map("security_key") @db.VarChar(50)
   status           UserStatus @default(Active)
   createdAt        DateTime  @default(now()) @map("created_at")
@@ -71,8 +71,8 @@ model PendingUser {
   role             UserRole  @default(USER)
   propertyType     String?   @map("property_type") @db.VarChar(50)
   lookingTo        String?   @map("looking_to") @db.VarChar(50)
-  projectName      String?   @map("project_name") @db.VarChar(255)
-  propertyAddress  String?   @map("property_address") @db.Text
+  projectName      String?   @map("firm_name") @db.VarChar(255)
+  propertyAddress  String?   @map("office_address") @db.Text
   securityKey      String?   @map("security_key") @db.VarChar(50)
   status           UserStatus @default(Active)
   otp              String    @db.VarChar(6)
@@ -113,6 +113,16 @@ model Property {
   nearbyLocations   Json?           @map("nearby_locations")
   attachments       Json?
   listingType       ListingType     @default(Sell) @map("listing_type")
+  
+  // Rental-specific fields
+  furnishing        String?         @db.VarChar(50)
+  listedBy          String?         @map("listed_by") @db.VarChar(50)
+  bachelorsAllowed  String?         @map("bachelors_allowed") @db.VarChar(10)
+  carpetArea        String?         @map("carpet_area") @db.VarChar(100)
+  maintenance       String?         @db.VarChar(100)
+  totalFloors       String?         @map("total_floors") @db.VarChar(50)
+  carParking        String?         @map("car_parking") @db.VarChar(50)
+  
   createdAt         DateTime        @default(now()) @map("created_at")
   updatedAt         DateTime        @updatedAt @map("updated_at")
   

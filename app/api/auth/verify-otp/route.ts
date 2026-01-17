@@ -35,14 +35,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create user
+    // Create user (convert OWNER to BUILDER for database)
+    const finalRole = (pendingUser.role as string) === 'OWNER' ? 'BUILDER' : pendingUser.role;
     const user = await prisma.user.create({
       data: {
         name: pendingUser.name,
         email: pendingUser.email,
         mobile: pendingUser.mobile,
         password: pendingUser.password,
-        role: pendingUser.role,
+        role: finalRole,
         propertyType: pendingUser.propertyType,
         lookingTo: pendingUser.lookingTo,
         projectName: pendingUser.projectName,
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
               <ul>
                 <li>Email: ${user.email}</li>
                 <li>Mobile: ${user.mobile}</li>
-                <li>Project: ${user.projectName || 'N/A'}</li>
+                <li>Firm: ${user.projectName || 'N/A'}</li>
               </ul>
               <p>You can now log in to your dashboard and start managing your properties.</p>
             </div>
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
                 <li><strong>Name:</strong> ${user.name}</li>
                 <li><strong>Email:</strong> ${user.email}</li>
                 <li><strong>Mobile:</strong> ${user.mobile}</li>
-                <li><strong>Project:</strong> ${user.projectName || 'N/A'}</li>
+                <li><strong>Firm:</strong> ${user.projectName || 'N/A'}</li>
               </ul>
             </div>
           </div>

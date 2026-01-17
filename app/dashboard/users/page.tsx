@@ -239,7 +239,7 @@ export default function UsersPage() {
               {selectedUser.role === 'BUILDER' && selectedUser.projectName && (
                 <>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Project Name</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Firm Name</p>
                     <p className="text-sm font-bold text-slate-900">{selectedUser.projectName}</p>
                   </div>
                   <div>
@@ -247,7 +247,7 @@ export default function UsersPage() {
                     <p className="text-sm font-bold text-slate-900">{selectedUser.propertyType}</p>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Property Address</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Office Address</p>
                     <p className="text-sm font-bold text-slate-900">{selectedUser.propertyAddress}</p>
                   </div>
                 </>

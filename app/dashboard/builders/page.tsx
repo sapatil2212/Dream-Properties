@@ -190,7 +190,7 @@ export default function BuildersPage() {
                 <Badge variant={selectedBuilder.status === 'Active' ? 'success' : 'error'}>{selectedBuilder.status}</Badge>
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Project Name</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Firm Name</p>
                 <p className="text-sm font-bold text-slate-900">{selectedBuilder.projectName || 'N/A'}</p>
               </div>
               <div>
@@ -198,7 +198,7 @@ export default function BuildersPage() {
                 <p className="text-sm font-bold text-slate-900">{selectedBuilder.propertyType || 'N/A'}</p>
               </div>
               <div className="col-span-2">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Property Address</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Office Address</p>
                 <p className="text-sm font-bold text-slate-900">{selectedBuilder.propertyAddress || 'N/A'}</p>
               </div>
               <div>
@@ -224,15 +224,15 @@ export default function BuildersPage() {
               readOnly
             />
             <Input 
-              label="Project Name" 
+              label="Firm Name" 
               defaultValue={selectedBuilder.projectName}
-              placeholder="Project name"
+              placeholder="Firm name"
               readOnly
             />
             <Input 
-              label="Property Address" 
+              label="Office Address" 
               defaultValue={selectedBuilder.propertyAddress}
-              placeholder="Property address"
+              placeholder="Office address"
               readOnly
             />
             <p className="text-[10px] text-slate-500 italic font-bold uppercase tracking-wider">Note: Builder details are verified at registration. Manual edits are restricted.</p>

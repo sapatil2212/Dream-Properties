@@ -92,8 +92,7 @@ export const NAV_ITEMS = {
   ],
   [UserRole.BUILDER]: [
     { label: 'Insights', icon: <LayoutDashboard size={20} />, href: '/dashboard' },
-    { label: 'Inventory', icon: <Building2 size={20} />, href: '/dashboard/properties' },
-    { label: 'Leads', icon: <Users size={20} />, href: '/dashboard/leads' },
+    { label: 'Properties', icon: <Building2 size={20} />, href: '/dashboard/properties' },
     { label: 'Reports', icon: <PieChart size={20} />, href: '/dashboard/reports' },
   ],
   [UserRole.USER]: [

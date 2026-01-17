@@ -2,12 +2,19 @@
 const nextConfig = {
   images: {
     domains: ['res.cloudinary.com', 'images.unsplash.com'],
+    formats: ['image/avif', 'image/webp'],
   },
   experimental: {
     serverActions: {
       bodySizeLimit: '50mb',
     },
   },
+  // Performance optimizations
+  swcMinify: true,
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
+  
   // Fix for the workspace root warning
   outputFileTracingRoot: process.cwd(),
 }

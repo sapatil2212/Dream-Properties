@@ -22,6 +22,9 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
+    console.log('Properties fetched for approval:', properties.length)
+    console.log('Properties statuses:', properties.map(p => ({ id: p.id, status: p.status })))
+
     const formatted = properties.map(p => ({
       ...p,
       builder_name: p.builder.name,

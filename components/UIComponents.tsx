@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, Inbox, Loader2, Eye, EyeOff, ArrowUpRight } from 'lucide-react';
+import { X, ChevronDown, Inbox, Loader2, Eye, EyeOff, ArrowUpRight, CheckCircle, XCircle, AlertCircle, AlertTriangle } from 'lucide-react';
 
 export const StatCard: React.FC<{ label: string, value: string, trend: string, trendUp?: boolean, icon: React.ReactNode, color: string }> = ({ label, value, trend, trendUp = true, icon, color }) => (
   <Card className="p-6 group hover:border-blue-200 transition-all duration-300">
@@ -34,7 +34,7 @@ export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { 
   };
 
   return (
-    <button className={`${base} ${variants[variant]} ${sizes[size]} ${className}`} disabled={isLoading || props.disabled} {...props}>
+    <button className={`${base} ${variants[variant]} ${sizes[size]} ${className}`} disabled={isLoading || props.disabled} suppressHydrationWarning {...props}>
       {isLoading ? <Loader2 className="animate-spin mr-2" size={14} /> : null}
       {children}
     </button>
@@ -86,12 +86,14 @@ export const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { lab
           } ${className}`}
           {...props}
           type={type}
+          suppressHydrationWarning
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+            suppressHydrationWarning
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
@@ -141,6 +143,7 @@ export const Select: React.FC<{
         className={`w-full flex items-center justify-between bg-white border border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none transition-all ${
           size === 'sm' ? 'px-3 py-1 text-[9px]' : 'px-3.5 py-2 text-[13px]'
         }`}
+        suppressHydrationWarning
       >
         <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
         <ChevronDown size={size === 'sm' ? 10 : 14} className={`ml-2 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -149,10 +152,10 @@ export const Select: React.FC<{
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute z-[100] top-full left-0 w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden py-2"
+            exit={{ opacity: 0, y: 10 }}
+            className="absolute z-[9999] bottom-full left-0 w-full mb-2 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden py-2"
           >
             {options.map((option) => (
               <button
@@ -162,6 +165,7 @@ export const Select: React.FC<{
                   onChange(option.value);
                   setIsOpen(false);
                 }}
+                suppressHydrationWarning
               >
                 {option.label}
               </button>
@@ -193,7 +197,7 @@ export const Modal: React.FC<{ isOpen: boolean, onClose: () => void, title: stri
           >
             <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
               <h3 className="font-black uppercase tracking-tight text-slate-900">{title}</h3>
-              <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 transition-colors">
+              <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 transition-colors" suppressHydrationWarning>
                 <X size={20} />
               </button>
             </div>
@@ -243,3 +247,188 @@ export const DataTable: React.FC<{
     </table>
   </div>
 );
+
+// Alert/Notification Component
+export const Alert: React.FC<{
+  isOpen: boolean,
+  onClose: () => void,
+  type: 'success' | 'error' | 'warning' | 'info',
+  title: string,
+  message: string,
+  autoClose?: boolean,
+  duration?: number
+}> = ({ isOpen, onClose, type, title, message, autoClose = true, duration = 3000 }) => {
+  useEffect(() => {
+    if (isOpen && autoClose) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, duration);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, autoClose, duration, onClose]);
+
+  const styles = {
+    success: {
+      bg: 'bg-emerald-50',
+      border: 'border-emerald-200',
+      icon: <CheckCircle size={24} className="text-emerald-600" />,
+      iconBg: 'bg-emerald-100',
+      title: 'text-emerald-900',
+      message: 'text-emerald-700'
+    },
+    error: {
+      bg: 'bg-rose-50',
+      border: 'border-rose-200',
+      icon: <XCircle size={24} className="text-rose-600" />,
+      iconBg: 'bg-rose-100',
+      title: 'text-rose-900',
+      message: 'text-rose-700'
+    },
+    warning: {
+      bg: 'bg-amber-50',
+      border: 'border-amber-200',
+      icon: <AlertTriangle size={24} className="text-amber-600" />,
+      iconBg: 'bg-amber-100',
+      title: 'text-amber-900',
+      message: 'text-amber-700'
+    },
+    info: {
+      bg: 'bg-blue-50',
+      border: 'border-blue-200',
+      icon: <AlertCircle size={24} className="text-blue-600" />,
+      iconBg: 'bg-blue-100',
+      title: 'text-blue-900',
+      message: 'text-blue-700'
+    }
+  };
+
+  const style = styles[type];
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[10000]"
+          />
+          <div className="fixed inset-0 flex items-start justify-center pt-20 p-4 z-[10001] pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: -20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: -20 }}
+              className={`${style.bg} ${style.border} border-2 rounded-2xl shadow-2xl w-full max-w-md pointer-events-auto overflow-hidden`}
+            >
+              <div className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className={`${style.iconBg} p-3 rounded-full flex-shrink-0`}>
+                    {style.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`text-lg font-black ${style.title} mb-1`}>{title}</h3>
+                    <p className={`text-sm font-medium ${style.message}`}>{message}</p>
+                  </div>
+                  <button
+                    onClick={onClose}
+                    className="p-1 rounded-lg hover:bg-white/50 transition-colors flex-shrink-0"
+                  >
+                    <X size={18} className="text-slate-600" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// Confirmation Dialog Component
+export const ConfirmDialog: React.FC<{
+  isOpen: boolean,
+  onClose: () => void,
+  onConfirm: () => void,
+  title: string,
+  message: string,
+  confirmText?: string,
+  cancelText?: string,
+  type?: 'danger' | 'warning' | 'info',
+  isLoading?: boolean
+}> = ({ isOpen, onClose, onConfirm, title, message, confirmText = 'Confirm', cancelText = 'Cancel', type = 'danger', isLoading = false }) => {
+  const styles = {
+    danger: {
+      bg: 'bg-rose-50',
+      icon: <XCircle size={32} className="text-rose-600" />,
+      iconBg: 'bg-rose-100',
+      button: 'bg-rose-600 hover:bg-rose-700'
+    },
+    warning: {
+      bg: 'bg-amber-50',
+      icon: <AlertTriangle size={32} className="text-amber-600" />,
+      iconBg: 'bg-amber-100',
+      button: 'bg-amber-600 hover:bg-amber-700'
+    },
+    info: {
+      bg: 'bg-blue-50',
+      icon: <AlertCircle size={32} className="text-blue-600" />,
+      iconBg: 'bg-blue-100',
+      button: 'bg-blue-600 hover:bg-blue-700'
+    }
+  };
+
+  const style = styles[type];
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[10000]"
+          />
+          <div className="fixed inset-0 flex items-center justify-center p-4 z-[10001] pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-md pointer-events-auto overflow-hidden"
+            >
+              <div className="p-8 text-center">
+                <div className={`${style.iconBg} w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6`}>
+                  {style.icon}
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-3">{title}</h3>
+                <p className="text-sm text-slate-600 font-medium leading-relaxed mb-8">{message}</p>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={isLoading}
+                    className="flex-1"
+                  >
+                    {cancelText}
+                  </Button>
+                  <button
+                    onClick={onConfirm}
+                    disabled={isLoading}
+                    className={`flex-1 ${style.button} text-white font-bold text-xs uppercase tracking-widest px-6 py-2.5 rounded-xl transition-all disabled:opacity-50 inline-flex items-center justify-center gap-2`}
+                  >
+                    {isLoading && <Loader2 className="animate-spin" size={14} />}
+                    {confirmText}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};

@@ -9,6 +9,8 @@ declare module 'next-auth' {
     name: string
     role: UserRole
     mobile: string
+    firmName?: string | null
+    officeAddress?: string | null
   }
 
   interface Session {
@@ -18,6 +20,8 @@ declare module 'next-auth' {
       name: string
       role: UserRole
       mobile: string
+      firmName?: string | null
+      officeAddress?: string | null
     }
   }
 }
@@ -27,5 +31,9 @@ declare module 'next-auth/jwt' {
     id: string
     role: UserRole
     mobile: string
+    name: string
+    email: string
+    firmName?: string | null
+    officeAddress?: string | null
   }
 }

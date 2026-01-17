@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
         location: body.location,
         address: body.address,
         type: body.type,
+        status: 'Pending_Approval',
         bedrooms: body.bedrooms ? parseInt(body.bedrooms) : null,
         bathrooms: body.bathrooms ? parseInt(body.bathrooms) : null,
         possessionDate: body.possessionDate,
@@ -98,8 +99,18 @@ export async function POST(request: NextRequest) {
         nearbyLocations: body.nearbyLocations || [],
         attachments: body.attachments || [],
         listingType: body.listingType || 'Sell',
+        // Rental-specific fields
+        furnishing: body.furnishing,
+        listedBy: body.listedBy,
+        bachelorsAllowed: body.bachelorsAllowed,
+        carpetArea: body.carpetArea,
+        maintenance: body.maintenance,
+        totalFloors: body.totalFloors,
+        carParking: body.carParking,
       },
     })
+
+    console.log('Property created with ID:', property.id, 'Status:', property.status)
 
     return NextResponse.json({
       message: 'Property submitted for approval',
