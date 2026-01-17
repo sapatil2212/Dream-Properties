@@ -16,7 +16,7 @@ export default function LoginPage() {
   
   useEffect(() => {
     if (session) {
-      if (session.user.role === UserRole.BUYER) {
+      if (session.user.role === UserRole.USER) {
         router.push('/');
       } else {
         router.push('/dashboard');
@@ -474,14 +474,14 @@ export default function LoginPage() {
                         const newRole = e.target.value as UserRole;
                         setRole(newRole);
                         setSignupRoleError('');
-                        setLookingTo(newRole === UserRole.BUYER ? 'Buy' : 'Rent');
+                        setLookingTo(newRole === UserRole.USER ? 'Buy' : 'Rent');
                       }}
                       className={`w-full p-2.5 bg-slate-50 border rounded-xl text-[13px] font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none ${
                         signupRoleError ? 'border-red-500' : 'border-slate-200'
                       }`}
                     >
                       <option value="" disabled>Select your role</option>
-                      <option value={UserRole.BUYER}>Buyer / User</option>
+                      <option value={UserRole.USER}>Buyer / User</option>
                       <option value={UserRole.BUILDER}>Owner / Builder</option>
                     </select>
                     {signupRoleError && (
@@ -547,7 +547,7 @@ export default function LoginPage() {
                     <div className="space-y-2 pt-1">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Looking to</label>
                       <div className={`grid grid-cols-2 gap-1.5`}>
-                        {(role === UserRole.BUYER 
+                        {(role === UserRole.USER 
                           ? ['Buy', 'Rent'] 
                           : ['Rent', 'Sell', 'Lease', 'Resale']
                         ).map((option) => (
@@ -589,6 +589,16 @@ export default function LoginPage() {
                     {isLogin ? "Don't have an account?" : "Already have an account?"}
                     <button onClick={() => setIsLogin(!isLogin)} className="ml-2 text-blue-600 hover:text-blue-700 font-black border-none bg-transparent cursor-pointer p-0">{isLogin ? 'Sign Up Now' : 'Sign In Instead'}</button>
                   </p>
+                </div>
+
+                <div className="flex items-center gap-3 mt-6 pt-6 border-t border-slate-100">
+                  <ShieldCheck size={16} className="text-slate-400" />
+                  <Link 
+                    href="/saas" 
+                    className="text-slate-500 hover:text-blue-600 text-[10px] font-bold uppercase tracking-widest transition-colors"
+                  >
+                    Super Admin & SaaS Owner Login
+                  </Link>
                 </div>
               </div>
             </motion.div>
