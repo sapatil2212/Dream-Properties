@@ -28,15 +28,14 @@ import {
   Coffee,
   Map,
 } from 'lucide-react';
-import { Badge, Button, Card, Input } from '@/components/UIComponents';
+import { Badge, Button, Card } from '@/components/UIComponents';
+import { PropertyInquiryForm } from '@/components/PropertyInquiryForm';
 
 export default function PropertyDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('overview');
-  const [contactData, setContactData] = useState({ name: '', phone: '', email: '', message: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [property, setProperty] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -138,35 +137,6 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
       </div>
     );
   }
-
-  const handleContactSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    try {
-      const response = await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...contactData,
-          propertyId: id,
-          propertyTitle: property.title,
-          source: 'Website Property Page'
-        })
-      });
-
-      if (response.ok) {
-        alert("Inquiry Sent! Our team will contact you shortly.");
-        setContactData({ name: '', phone: '', email: '', message: '' });
-      } else {
-        alert("Failed to send inquiry. Please try again.");
-      }
-    } catch (err) {
-      alert("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % property.images.length);
@@ -630,46 +600,12 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
               <Card className="p-5 rounded-xl border-slate-200">
                 <h3 className="text-lg font-black text-slate-900 mb-0.5">Inquire Now</h3>
                 <p className="text-slate-500 text-[10px] font-medium mb-4">Our experts will call you shortly.</p>
-                
-                <form onSubmit={handleContactSubmit} className="space-y-3">
-                  <Input 
-                    label="Name" 
-                    placeholder="Full Name" 
-                    required 
-                    className="text-xs" 
-                    value={contactData.name}
-                    onChange={(e) => setContactData({ ...contactData, name: e.target.value })}
-                  />
-                  <Input 
-                    label="Phone" 
-                    placeholder="+91 988XX XXXXX" 
-                    required 
-                    className="text-xs" 
-                    value={contactData.phone}
-                    onChange={(e) => setContactData({ ...contactData, phone: e.target.value })}
-                  />
-                  <Input 
-                    label="Email" 
-                    placeholder="your@email.com" 
-                    type="email"
-                    required 
-                    className="text-xs" 
-                    value={contactData.email}
-                    onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
-                  />
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Message</label>
-                    <textarea 
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-blue-500 outline-none text-xs font-medium min-h-[70px]"
-                      placeholder="I'm interested in this project..."
-                      value={contactData.message}
-                      onChange={(e) => setContactData({ ...contactData, message: e.target.value })}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full py-2.5 rounded-lg font-black uppercase tracking-widest text-xs" disabled={isSubmitting}>
-                    {isSubmitting ? 'Sending...' : 'Connect Now'}
-                  </Button>
-                </form>
+                <PropertyInquiryForm
+                  propertyId={id}
+                  propertyTitle={property.title}
+                  source="Website Property Page"
+                  onSubmitted={() => {}}
+                />
 
                 <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-2">
                   <a href="tel:+919881159245" className="flex flex-col items-center gap-1.5 p-2 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors">

@@ -59,7 +59,10 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session || session.user.role !== 'BUILDER') {
+    if (
+      !session || 
+      !['BUILDER', 'SUPER_ADMIN', 'ADMIN'].includes(session.user.role as string)
+    ) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 401 }

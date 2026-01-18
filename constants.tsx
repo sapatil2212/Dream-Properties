@@ -76,10 +76,10 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
 export const NAV_ITEMS = {
   [UserRole.SUPER_ADMIN]: [
     { label: 'Overview', icon: <LayoutDashboard size={20} />, href: '/dashboard' },
-    { label: 'Builders', icon: <Building2 size={20} />, href: '/dashboard/builders' },
     { label: 'Marketplace', icon: <Building2 size={20} />, href: '/dashboard/properties' },
+    { label: 'Builders', icon: <Building2 size={20} />, href: '/dashboard/builders' },
     { label: 'Accounts', icon: <Users size={20} />, href: '/dashboard/users' },
-    { label: 'Billing', icon: <CreditCard size={20} />, href: '/dashboard/billing' },
+    { label: 'Leads Hub', icon: <Users size={20} />, href: '/dashboard/leads' },
     { label: 'Analytics', icon: <PieChart size={20} />, href: '/dashboard/reports' },
     { label: 'Settings', icon: <Settings size={20} />, href: '/dashboard/settings' },
   ],
@@ -94,6 +94,18 @@ export const NAV_ITEMS = {
     { label: 'Insights', icon: <LayoutDashboard size={20} />, href: '/dashboard' },
     { label: 'Properties', icon: <Building2 size={20} />, href: '/dashboard/properties' },
     { label: 'Reports', icon: <PieChart size={20} />, href: '/dashboard/reports' },
+  ],
+  [UserRole.TELECALLER]: [
+    { label: 'Dashboard', icon: <LayoutDashboard size={20} />, href: '/saas/dashboard' },
+    { label: 'Leads Queue', icon: <PhoneCall size={20} />, href: '/dashboard/leads' },
+    { label: 'Follow-ups', icon: <CalendarCheck size={20} />, href: '/dashboard/follow-ups' },
+    { label: 'Calendar', icon: <CalendarCheck size={20} />, href: '/dashboard/calendar' },
+  ],
+  [UserRole.SALES_EXECUTIVE]: [
+    { label: 'Dashboard', icon: <LayoutDashboard size={20} />, href: '/saas/dashboard' },
+    { label: 'Site Visits', icon: <CalendarCheck size={20} />, href: '/dashboard/site-visits' },
+    { label: 'Leads Hub', icon: <Users size={20} />, href: '/dashboard/leads' },
+    { label: 'Calendar', icon: <CalendarCheck size={20} />, href: '/dashboard/calendar' },
   ],
   [UserRole.USER]: [
     { label: 'Favorites', icon: <LifeBuoy size={20} />, href: '/dashboard/profile/favorites' },

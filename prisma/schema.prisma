@@ -59,6 +59,7 @@ model User {
   favorites        Favorite[]
   assignedLeads    Lead[]    @relation("AssignedLeads")
   siteVisits       SiteVisit[] @relation("StaffVisits")
+  salesExecLeads   Lead[]    @relation("SalesExecutiveLeads")
   
   @@map("users")
 }
@@ -162,10 +163,14 @@ model Lead {
   source             String   @default("Website") @db.VarChar(50)
   lastNote           String?  @map("last_note") @db.Text
   assignedTo         Int?     @map("assigned_to")
+  salesExecutiveId   Int?     @map("sales_executive_id")
   createdAt          DateTime @default(now()) @map("created_at")
+  followUpAt         DateTime? @map("follow_up_at")
+  lastContactAt      DateTime? @map("last_contact_at")
   
   property           Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   assignedStaff      User?    @relation("AssignedLeads", fields: [assignedTo], references: [id])
+  salesExecutive     User?    @relation("SalesExecutiveLeads", fields: [salesExecutiveId], references: [id])
   siteVisits         SiteVisit[]
   
   @@map("leads")

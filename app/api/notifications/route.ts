@@ -10,6 +10,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    if (session.user.id === 'superadmin') {
+      return NextResponse.json({ notifications: [], unreadCount: 0 });
+    }
+
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });

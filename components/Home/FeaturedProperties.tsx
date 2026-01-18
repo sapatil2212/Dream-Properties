@@ -2,15 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, MapPin, Bed, Maximize, Heart, Info, Send } from 'lucide-react';
-import { Card, Badge, Button } from '@/components/UIComponents';
+import { Card, Badge, Button, Modal } from '@/components/UIComponents';
 import { Property } from '@/types';
 import { useRouter } from 'next/navigation';
+import { PropertyInquiryForm } from '@/components/PropertyInquiryForm';
 
 export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => {
   const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [favoriteChecked, setFavoriteChecked] = useState(false);
+  const [showInquiry, setShowInquiry] = useState(false);
 
   // Only check favorite status when user interacts, not on mount
   const checkFavoriteStatus = async () => {
@@ -52,6 +54,10 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
     } catch (err) {
       console.error('Error toggling favorite:', err);
     }
+  };
+
+  const handleInquirySubmitted = () => {
+    setShowInquiry(false);
   };
 
   return (
@@ -147,6 +153,7 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
               variant="primary" 
               size="sm" 
               className="w-full py-2 rounded-xl font-bold text-[10px] gap-1.5 shadow-none"
+              onClick={() => setShowInquiry(true)}
             >
               <Send size={12} />
               Inquire
@@ -154,6 +161,24 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
           </div>
         </div>
       </div>
+      <Modal
+        isOpen={showInquiry}
+        onClose={() => setShowInquiry(false)}
+        title="Inquire About This Property"
+        size="md"
+      >
+        <div className="space-y-3">
+          <p className="text-[11px] text-slate-500 font-medium">
+            Share a few details and our team will connect with you shortly.
+          </p>
+          <PropertyInquiryForm
+            propertyId={property.id}
+            propertyTitle={property.title}
+            source="Website Property Card"
+            onSubmitted={handleInquirySubmitted}
+          />
+        </div>
+      </Modal>
     </Card>
   );
 };

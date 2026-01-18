@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Download, Eye, Trash2, Edit2, X, Flag, CheckCircle, Search, Filter, FileText, FileSpreadsheet } from 'lucide-react';
+import { Download, Eye, Trash2, Edit2, X, Flag, CheckCircle, Search, Filter, FileText, FileSpreadsheet, Plus, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -32,6 +33,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, ConfirmDialog } from '@/components/UIComponents';
 
 export default function InventoryManagementPage() {
   const { data: session } = useSession();
@@ -47,7 +49,17 @@ export default function InventoryManagementPage() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [shareMenuPropertyId, setShareMenuPropertyId] = useState<number | null>(null);
   const [filteredProperties, setFilteredProperties] = useState<any[]>([]);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    type: 'success' as 'success' | 'error' | 'warning' | 'info',
+    title: '',
+    message: '',
+  });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Determine user role
   const isAdmin = session?.user?.role === 'SUPER_ADMIN' || session?.user?.role === 'ADMIN';
@@ -110,31 +122,66 @@ export default function InventoryManagementPage() {
         body: JSON.stringify({ propertyId, status }),
       });
       if (response.ok) {
-        alert(`Property ${status.toLowerCase()} successfully`);
+        setAlertConfig({
+          type: 'success',
+          title: status === 'Approved' ? 'Property Approved' : 'Property Rejected',
+          message:
+            status === 'Approved'
+              ? 'The property has been approved and the builder has been notified.'
+              : 'The property has been rejected and the builder has been notified.',
+        });
+        setShowAlert(true);
         fetchProperties();
         if (selectedProperty?.id === propertyId) {
           setIsModalOpen(false);
           setSelectedProperty(null);
         }
+      } else {
+        const data = await response.json();
+        setAlertConfig({
+          type: 'error',
+          title: 'Action Failed',
+          message: data.message || 'Failed to update property status.',
+        });
+        setShowAlert(true);
       }
     } catch (err) {
-      alert('Failed to update property status');
+      setAlertConfig({
+        type: 'error',
+        title: 'Network Error',
+        message: 'Failed to update property status. Please try again.',
+      });
+      setShowAlert(true);
     }
   };
 
   const handleFlagProperty = async (propertyId: number, flag: string | null, listingType: string) => {
-    // Validate flag matches listing type
     if (flag) {
       if (listingType === 'Sell' && flag !== 'Sold') {
-        alert('Properties for sale can only be flagged as "Sold"');
+        setAlertConfig({
+          type: 'warning',
+          title: 'Invalid Flag',
+          message: 'Properties for sale can only be flagged as "Sold".',
+        });
+        setShowAlert(true);
         return;
       }
       if (listingType === 'Rent' && flag !== 'Rented') {
-        alert('Properties for rent can only be flagged as "Rented"');
+        setAlertConfig({
+          type: 'warning',
+          title: 'Invalid Flag',
+          message: 'Properties for rent can only be flagged as "Rented".',
+        });
+        setShowAlert(true);
         return;
       }
       if (listingType === 'Lease' && flag !== 'Leased') {
-        alert('Properties for lease can only be flagged as "Leased"');
+        setAlertConfig({
+          type: 'warning',
+          title: 'Invalid Flag',
+          message: 'Properties for lease can only be flagged as "Leased".',
+        });
+        setShowAlert(true);
         return;
       }
     }
@@ -147,26 +194,33 @@ export default function InventoryManagementPage() {
       });
       if (response.ok) {
         const data = await response.json();
-        alert(data.message);
+        setAlertConfig({
+          type: 'success',
+          title: 'Flag Updated',
+          message: data.message || 'Property flag updated successfully.',
+        });
+        setShowAlert(true);
         fetchProperties();
       } else {
         const error = await response.json();
-        alert(error.message || 'Failed to flag property');
+        setAlertConfig({
+          type: 'error',
+          title: 'Flagging Failed',
+          message: error.message || 'Failed to flag property.',
+        });
+        setShowAlert(true);
       }
     } catch (err) {
-      alert('Failed to flag property');
+      setAlertConfig({
+        type: 'error',
+        title: 'Network Error',
+        message: 'Failed to flag property. Please try again.',
+      });
+      setShowAlert(true);
     }
   };
 
   const handleDelete = async (propertyId: number) => {
-    if (
-      !confirm(
-        'Are you sure you want to delete this property? This action cannot be undone.'
-      )
-    ) {
-      return;
-    }
-
     try {
       // Use the general delete endpoint that works for both admin and builder
       const response = await fetch(`/api/properties/${propertyId}`, {
@@ -174,7 +228,12 @@ export default function InventoryManagementPage() {
       });
 
       if (response.ok) {
-        alert('Property deleted successfully');
+        setAlertConfig({
+          type: 'success',
+          title: 'Property Deleted',
+          message: 'The property has been deleted successfully.',
+        });
+        setShowAlert(true);
         fetchProperties();
         if (selectedProperty?.id === propertyId) {
           setIsModalOpen(false);
@@ -182,11 +241,35 @@ export default function InventoryManagementPage() {
         }
       } else {
         const data = await response.json();
-        alert(data.message || 'Failed to delete property');
+        setAlertConfig({
+          type: 'error',
+          title: 'Delete Failed',
+          message: data.message || 'Failed to delete property.',
+        });
+        setShowAlert(true);
       }
     } catch (err) {
-      alert('Failed to delete property');
+      setAlertConfig({
+        type: 'error',
+        title: 'Network Error',
+        message: 'Failed to delete property. Please try again.',
+      });
+      setShowAlert(true);
     }
+  };
+
+  const openDeleteConfirm = (propertyId: number) => {
+    setDeleteTargetId(propertyId);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
+    await handleDelete(deleteTargetId);
+    setIsDeleting(false);
+    setShowDeleteConfirm(false);
+    setDeleteTargetId(null);
   };
 
   const handleViewDetails = async (propertyId: number) => {
@@ -198,9 +281,21 @@ export default function InventoryManagementPage() {
         setEditedProperty(data);
         setIsModalOpen(true);
         setIsEditing(false);
+      } else {
+        setAlertConfig({
+          type: 'error',
+          title: 'Load Failed',
+          message: 'Failed to load property details.',
+        });
+        setShowAlert(true);
       }
     } catch (err) {
-      alert('Failed to load property details');
+      setAlertConfig({
+        type: 'error',
+        title: 'Network Error',
+        message: 'Failed to load property details. Please try again.',
+      });
+      setShowAlert(true);
     }
   };
 
@@ -228,15 +323,31 @@ export default function InventoryManagementPage() {
       });
       
       if (response.ok) {
-        alert('Property updated successfully');
+        setAlertConfig({
+          type: 'success',
+          title: 'Property Updated',
+          message: 'Property details have been updated successfully.',
+        });
+        setShowAlert(true);
         setSelectedProperty(editedProperty);
         setIsEditing(false);
         fetchProperties();
       } else {
-        alert('Failed to update property');
+        const data = await response.json();
+        setAlertConfig({
+          type: 'error',
+          title: 'Update Failed',
+          message: data.message || 'Failed to update property.',
+        });
+        setShowAlert(true);
       }
     } catch (err) {
-      alert('Failed to update property');
+      setAlertConfig({
+        type: 'error',
+        title: 'Network Error',
+        message: 'Failed to update property. Please try again.',
+      });
+      setShowAlert(true);
     } finally {
       setIsSaving(false);
     }
@@ -442,37 +553,52 @@ export default function InventoryManagementPage() {
     return String(value);
   };
 
+  const buildShareMessage = (property: any, url: string) => {
+    const parts = [
+      'Check out this property on Dream Properties:',
+      property.title || 'Property',
+      property.location ? `Location: ${property.location}` : null,
+      property.price ? `Price: ${property.price}` : null,
+      url,
+    ].filter(Boolean);
+    return parts.join('\n');
+  };
+
+  const handleShareWhatsApp = (property: any) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${origin}/properties/${property.id}`;
+    const message = buildShareMessage(property, url);
+    const shareUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(shareUrl, '_blank');
+  };
+
+  const handleShareEmail = (property: any) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${origin}/properties/${property.id}`;
+    const message = buildShareMessage(property, url);
+    const subject = `Property Details: ${property.title || 'Property'}`;
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+    window.location.href = mailto;
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-semibold text-slate-900">
-            {isAdmin ? 'Property Inventory' : 'My Properties'}
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            {isAdmin 
-              ? 'Review and approve property submissions' 
-              : 'Manage your property listings'}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Search Input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
-            <Input
-              type="text"
-              placeholder="Search properties..."
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <div className="relative w-full sm:w-auto mb-2 sm:mb-0">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+            <Input 
+              placeholder="Search properties..." 
+              className="pl-8 py-1 h-9 text-xs sm:text-sm w-full sm:w-48 md:w-56 lg:w-64" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-64"
             />
           </div>
 
-          {/* Status Filter */}
-          <select
+          <select 
+            className="px-2 py-1.5 h-9 rounded-md border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="All">All Status</option>
             <option value="Approved">Approved</option>
@@ -480,49 +606,63 @@ export default function InventoryManagementPage() {
             <option value="Rejected">Rejected</option>
           </select>
 
-          {/* Type Filter */}
-          <select
+          <select 
+            className="px-2 py-1.5 h-9 rounded-md border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="All">All Types</option>
             <option value="Residential">Residential</option>
             <option value="Commercial">Commercial</option>
             <option value="Plots">Plots</option>
           </select>
+        </div>
 
-          {/* Export Dropdown */}
+        <div className="flex items-center gap-2 ml-auto">
+          {(isAdmin || isBuilder) && (
+            <Link href="/dashboard/post-property">
+              <Button
+                size="sm"
+                className="gap-1.5 h-9 px-3 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <Plus size={14} />
+                <span className="hidden sm:inline">Post New Property</span>
+              </Button>
+            </Link>
+          )}
+
           <div className="relative">
             <Button 
               variant="outline" 
-              size="icon"
+              size="sm" 
+              className="gap-1.5 h-9 px-3 text-xs sm:text-sm"
               onClick={() => setShowExportMenu(!showExportMenu)}
-              title="Export"
             >
-              <Download size={16} />
+              <Download size={14} />
+              <span className="hidden sm:inline">{showExportMenu ? 'Cancel' : 'Export'}</span>
             </Button>
+
             {showExportMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50 py-1">
+              <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
                 <button
                   onClick={exportToExcel}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
+                  className="w-full text-left px-3 py-1.5 text-xs sm:text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-2"
                 >
-                  <FileSpreadsheet size={16} className="text-emerald-600" />
+                  <FileSpreadsheet size={14} className="text-emerald-500" />
                   Export to Excel
                 </button>
                 <button
                   onClick={exportToPDF}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
+                  className="w-full text-left px-3 py-1.5 text-xs sm:text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-2"
                 >
-                  <FileText size={16} className="text-rose-600" />
+                  <FileText size={14} className="text-rose-500" />
                   Export to PDF
                 </button>
                 <button
                   onClick={exportToWord}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
+                  className="w-full text-left px-3 py-1.5 text-xs sm:text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-2"
                 >
-                  <FileText size={16} className="text-blue-600" />
+                  <FileText size={14} className="text-blue-500" />
                   Export to Word
                 </button>
               </div>
@@ -542,19 +682,20 @@ export default function InventoryManagementPage() {
               : 'View and manage all your posted properties'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Property Details</TableHead>
-                {isAdmin && <TableHead>Builder</TableHead>}
-                <TableHead>Type</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Flag</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+        <CardContent className="px-2 sm:px-6">
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="whitespace-nowrap">Property Details</TableHead>
+                  {isAdmin && <TableHead className="whitespace-nowrap hidden md:table-cell">Builder</TableHead>}
+                  <TableHead className="whitespace-nowrap hidden sm:table-cell">Type</TableHead>
+                  <TableHead className="whitespace-nowrap">Price</TableHead>
+                  <TableHead className="whitespace-nowrap hidden sm:table-cell">Status</TableHead>
+                  <TableHead className="whitespace-nowrap hidden sm:table-cell">Flag</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
@@ -573,8 +714,20 @@ export default function InventoryManagementPage() {
                   <TableRow key={p.id} className="hover:bg-slate-50/50">
                     <TableCell>
                       <div>
-                        <p className="font-medium text-slate-900">{p.title}</p>
+                        <p className="font-medium text-slate-900 text-sm">{p.title}</p>
                         <p className="text-xs text-slate-500">{p.location}</p>
+                        <div className="flex flex-wrap gap-1 mt-1 sm:hidden">
+                          <span className="text-xs font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{p.type}</span>
+                          <Badge variant={getStatusVariant(p.status)} className="text-[10px] h-5">
+                            {p.status === 'Pending_Approval' ? 'Pending' : p.status}
+                          </Badge>
+                          {p.propertyFlag && (
+                            <Badge variant="secondary" className="bg-orange-500 text-white border-orange-600 font-bold text-[10px] h-5">
+                              <Flag size={10} className="mr-0.5 fill-white" />
+                              {p.propertyFlag}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     {isAdmin && (
@@ -587,19 +740,19 @@ export default function InventoryManagementPage() {
                         </div>
                       </TableCell>
                     )}
-                    <TableCell>
-                      <span className="text-sm font-medium text-blue-600">{p.type}</span>
+                    <TableCell className="hidden sm:table-cell">
+                      <span className="text-xs sm:text-sm font-medium text-blue-600">{p.type}</span>
                     </TableCell>
                     <TableCell className="font-medium">{p.price}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusVariant(p.status)}>
-                        {p.status === 'Pending_Approval' ? 'Pending Approval' : p.status}
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant={getStatusVariant(p.status)} className="text-xs">
+                        {p.status === 'Pending_Approval' ? 'Pending' : p.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {p.propertyFlag ? (
-                        <Badge variant="secondary" className="bg-orange-500 text-white border-orange-600 font-bold">
-                          <Flag size={14} className="mr-1 fill-white" />
+                        <Badge variant="secondary" className="bg-orange-500 text-white border-orange-600 font-bold text-xs">
+                          <Flag size={12} className="mr-0.5 fill-white" />
                           {p.propertyFlag}
                         </Badge>
                       ) : (
@@ -607,24 +760,26 @@ export default function InventoryManagementPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1 sm:gap-2">
                         {/* Admin-only approval buttons */}
                         {isAdmin && (p.status === 'Pending_Approval' || p.status === 'Pending Approval') && (
                           <>
                             <Button
                               size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-700"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-xs h-8 px-2 sm:px-3"
                               onClick={() => handleApproval(p.id, 'Approved')}
                             >
-                              Approve
+                              <span className="hidden sm:inline">Approve</span>
+                              <CheckCircle size={14} className="sm:hidden" />
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="text-rose-600 border-rose-200 hover:bg-rose-50"
+                              className="text-rose-600 border-rose-200 hover:bg-rose-50 text-xs h-8 px-2 sm:px-3"
                               onClick={() => handleApproval(p.id, 'Rejected')}
                             >
-                              Reject
+                              <span className="hidden sm:inline">Reject</span>
+                              <X size={14} className="sm:hidden" />
                             </Button>
                           </>
                         )}
@@ -634,12 +789,12 @@ export default function InventoryManagementPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className={p.propertyFlag ? "bg-orange-50 border-orange-200 text-orange-700" : ""}
+                              className={`${p.propertyFlag ? "bg-orange-50 border-orange-200 text-orange-700" : ""} text-xs h-8 px-2`}
                               onClick={() => setFlaggingPropertyId(flaggingPropertyId === p.id ? null : p.id)}
                               title="Flag Property"
                             >
-                              <Flag size={14} className="mr-1" />
-                              {p.propertyFlag || 'Flag'}
+                              <Flag size={14} className="sm:mr-1" />
+                              <span className="hidden sm:inline">{p.propertyFlag || 'Flag'}</span>
                             </Button>
                             {flaggingPropertyId === p.id && (
                               <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-slate-200 z-50 py-1">
@@ -683,36 +838,73 @@ export default function InventoryManagementPage() {
                             )}
                           </div>
                         )}
-                        {/* View button for all */}
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="h-8 w-8"
                           onClick={() => handleViewDetails(p.id)}
                           title="View Details"
                         >
-                          <Eye size={16} />
+                          <Eye size={14} />
                         </Button>
-                        {/* Builder-only edit button */}
+                        <div className="relative inline-block">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() =>
+                              setShareMenuPropertyId(
+                                shareMenuPropertyId === p.id ? null : p.id,
+                              )
+                            }
+                            title="Share Property"
+                          >
+                            <Share2 size={14} />
+                          </Button>
+                          {shareMenuPropertyId === p.id && (
+                            <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-slate-200 z-50 py-1">
+                              <button
+                                onClick={() => {
+                                  handleShareWhatsApp(p);
+                                  setShareMenuPropertyId(null);
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs sm:text-sm hover:bg-slate-50 flex items-center gap-2"
+                              >
+                                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                <span>Share via WhatsApp</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleShareEmail(p);
+                                  setShareMenuPropertyId(null);
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs sm:text-sm hover:bg-slate-50 flex items-center gap-2"
+                              >
+                                <span className="w-2 h-2 rounded-full bg-blue-500" />
+                                <span>Share via Email</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
                         {isBuilder && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-8 w-8"
                             onClick={() => window.location.href = `/dashboard/edit-property/${p.id}`}
                             title="Edit Property"
                           >
-                            <Edit2 size={16} />
+                            <Edit2 size={14} />
                           </Button>
                         )}
-                        {/* Delete button for all */}
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-                          onClick={() => handleDelete(p.id)}
+                          className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-8 w-8"
+                          onClick={() => openDeleteConfirm(p.id)}
                           title="Delete Property"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </Button>
                       </div>
                     </TableCell>
@@ -721,6 +913,7 @@ export default function InventoryManagementPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -1041,6 +1234,30 @@ export default function InventoryManagementPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Alert
+        isOpen={showAlert}
+        onClose={() => setShowAlert(false)}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        autoClose={alertConfig.type === 'success'}
+        duration={3000}
+      />
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          if (isDeleting) return;
+          setShowDeleteConfirm(false);
+          setDeleteTargetId(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Property"
+        message="Are you sure you want to delete this property? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

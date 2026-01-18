@@ -15,8 +15,11 @@ export default function SaasAuthPage() {
   const [isLogin, setIsLogin] = useState(true);
 
   useEffect(() => {
-    if (session && session.user.role !== (UserRole as any).BUYER) {
-      router.push('/dashboard');
+    if (!session) return;
+    if (session.user.role === (UserRole as any).BUYER) {
+      router.push('/');
+    } else {
+      router.push('/saas/dashboard');
     }
   }, [session, router]);
 
@@ -130,7 +133,7 @@ export default function SaasAuthPage() {
       if (result?.error) {
         setError(result.error);
       } else {
-        router.refresh();
+        router.push('/saas/dashboard');
       }
     } catch (err) {
       setError('Network error');

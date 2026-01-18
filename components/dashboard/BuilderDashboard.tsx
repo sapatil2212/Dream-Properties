@@ -5,7 +5,7 @@ import {
   Building2, Users, Eye, TrendingUp, Plus, Trash2, Edit2, Flag 
 } from 'lucide-react';
 import { 
-  Card, Button, DataTable, Badge, StatCard, Skeleton 
+  Card, Button, DataTable, Badge, StatCard, Skeleton, Alert, ConfirmDialog 
 } from '@/components/UIComponents';
 import Link from 'next/link';
 
@@ -13,6 +13,15 @@ export function BuilderDashboard() {
   const [stats, setStats] = useState({ properties: 0, leads: 0, views: 0, conversions: 0 });
   const [myProperties, setMyProperties] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    type: 'success' as 'success' | 'error' | 'warning' | 'info',
+    title: '',
+    message: '',
+  });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchMyProperties = async () => {
     try {
@@ -42,23 +51,49 @@ export function BuilderDashboard() {
   }, []);
 
   const handleDeleteProperty = async (propertyId: number) => {
-    if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
-      return;
-    }
-
     try {
       const response = await fetch(`/api/superadmin/delete-property/${propertyId}`, {
         method: 'DELETE',
       });
       if (response.ok) {
-        alert('Property deleted successfully');
+        setAlertConfig({
+          type: 'success',
+          title: 'Property Deleted',
+          message: 'The property has been deleted successfully.',
+        });
+        setShowAlert(true);
         fetchMyProperties();
       } else {
-        alert('Failed to delete property');
+        const data = await response.json();
+        setAlertConfig({
+          type: 'error',
+          title: 'Delete Failed',
+          message: data.message || 'Failed to delete property.',
+        });
+        setShowAlert(true);
       }
     } catch (err) {
-      alert('Failed to delete property');
+      setAlertConfig({
+        type: 'error',
+        title: 'Network Error',
+        message: 'Failed to delete property. Please try again.',
+      });
+      setShowAlert(true);
     }
+  };
+
+  const openDeleteConfirm = (propertyId: number) => {
+    setDeleteTargetId(propertyId);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
+    await handleDeleteProperty(deleteTargetId);
+    setIsDeleting(false);
+    setShowDeleteConfirm(false);
+    setDeleteTargetId(null);
   };
 
   return (
@@ -132,7 +167,7 @@ export function BuilderDashboard() {
                           </button>
                         </Link>
                         <button 
-                          onClick={() => handleDeleteProperty(p.id)}
+                          onClick={() => openDeleteConfirm(p.id)}
                           className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                           title="Delete Property"
                         >
@@ -147,6 +182,30 @@ export function BuilderDashboard() {
           )}
         </DataTable>
       </Card>
+      <Alert
+        isOpen={showAlert}
+        onClose={() => setShowAlert(false)}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        autoClose={alertConfig.type === 'success'}
+        duration={3000}
+      />
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          if (isDeleting) return;
+          setShowDeleteConfirm(false);
+          setDeleteTargetId(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Property"
+        message="Are you sure you want to delete this property? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

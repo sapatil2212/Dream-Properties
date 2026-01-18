@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, Building2, Info, Phone, User, Home, PlusCircle, Settings, Heart, LogOut, ChevronDown, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ export const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isPropertiesDropdownOpen, setIsPropertiesDropdownOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -45,6 +46,22 @@ export const Navbar: React.FC = () => {
     router.push('/login');
     closeMenu();
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    if (isProfileOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileOpen]);
 
   return (
     <>
@@ -138,7 +155,7 @@ export const Navbar: React.FC = () => {
               <div className="h-4 w-px bg-gray-200" />
               
               {user ? (
-                <div className="relative">
+                <div className="relative" ref={profileRef}>
                   <button 
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
                     className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100"
@@ -151,14 +168,12 @@ export const Navbar: React.FC = () => {
 
                   <AnimatePresence>
                     {isProfileOpen && (
-                      <>
-                        <div className="fixed inset-0 z-[60]" onClick={() => setIsProfileOpen(false)} />
-                        <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl shadow-slate-200/50 p-2 z-[70] overflow-hidden"
-                        >
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl p-2 z-[70] overflow-hidden"
+                      >
                           <div className="px-3 py-2 border-b border-slate-50 mb-1">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Signed in as</p>
                             <p className="text-[12px] font-black text-slate-900 truncate">{user.name}</p>
@@ -203,20 +218,34 @@ export const Navbar: React.FC = () => {
                             <span className="text-[11px] font-black uppercase tracking-wider">Logout</span>
                           </button>
                         </motion.div>
-                      </>
                     )}
                   </AnimatePresence>
                 </div>
               ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={onAuthClick} 
-                  className="font-black text-[10px] uppercase tracking-widest px-5 border-slate-200 hover:border-blue-600 hover:text-blue-600 flex items-center gap-2 rounded-xl"
-                >
-                  <User size={14} />
-                  Login
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/login"
+                    className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl hover:bg-emerald-100 hover:border-emerald-200 hover:text-emerald-800 transition-all"
+                  >
+                    <PlusCircle size={14} />
+                    <span className="flex items-center gap-1">
+                      Post Property
+                      <span className="relative overflow-hidden bg-emerald-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                        FREE
+                        <span className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                      </span>
+                    </span>
+                  </Link>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={onAuthClick} 
+                    className="font-black text-[10px] uppercase tracking-widest px-5 border-slate-200 hover:border-blue-600 hover:text-blue-600 flex items-center gap-2 rounded-xl"
+                  >
+                    <User size={14} />
+                    Login
+                  </Button>
+                </div>
               )}
             </div>
 

@@ -45,7 +45,7 @@ export const Card: React.FC<{ children: React.ReactNode, className?: string }> =
   <motion.div
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
-    className={`bg-white rounded-2xl border border-slate-200 overflow-hidden ${className}`}
+    className={`bg-white rounded-2xl border border-slate-200 ${className}`}
   >
     {children}
   </motion.div>
@@ -152,9 +152,9 @@ export const Select: React.FC<{
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
+            exit={{ opacity: 0, y: -10 }}
             className="absolute z-[9999] bottom-full left-0 w-full mb-2 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden py-2"
           >
             {options.map((option) => (

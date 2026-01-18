@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Users, User, Briefcase, Building2, Download, ArrowUpRight 
+  Users, User, Briefcase, Building2, ArrowUpRight 
 } from 'lucide-react';
 import { 
   Card, Button, DataTable, Badge, StatCard, Skeleton 
@@ -11,7 +11,6 @@ import {
 import Link from 'next/link';
 
 export function SuperAdminDashboard() {
-  const [isExporting, setIsExporting] = useState(false);
   const [dataSummary, setDataSummary] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -46,27 +45,19 @@ export function SuperAdminDashboard() {
   ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5) : [];
 
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Accounts" value={stats.total.toString()} trend="+12%" icon={<Users className="text-blue-600" size={20} />} color="bg-blue-50" />
         <StatCard label="Buyer / Users" value={stats.buyers.toString()} trend="+8%" icon={<User size={20} className="text-indigo-600" />} color="bg-indigo-50" />
         <StatCard label="Agency Staff" value={stats.staff.toString()} trend="+4%" icon={<Briefcase size={20} className="text-amber-600" />} color="bg-amber-50" />
         <StatCard label="Partner Builders" value={stats.builders.toString()} trend="+18%" icon={<Building2 className="text-emerald-600" size={20} />} color="bg-emerald-50" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-8 space-y-4">
           <Card>
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <h3 className="font-black uppercase tracking-tight text-slate-900">Recent Registrations</h3>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" isLoading={isExporting} onClick={() => {
-                  setIsExporting(true);
-                  setTimeout(() => setIsExporting(false), 2000);
-                }}>
-                  <Download size={14} className="mr-2" /> Export
-                </Button>
-              </div>
             </div>
             <DataTable headers={['Name', 'Role', 'Joined', 'Status', 'Actions']}>
               {isLoading ? (
@@ -108,10 +99,10 @@ export function SuperAdminDashboard() {
           </Card>
         </div>
 
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-4">
           <Card className="p-6">
             <h3 className="font-black uppercase tracking-tight text-slate-900 mb-6">Revenue Distribution</h3>
-            <div className="space-y-6">
+            <div className="space-y-4">
               {[
                 { label: 'Platform Subs', amount: '₹4.2M', percentage: 34, color: 'bg-blue-500' },
                 { label: 'Commission Fees', amount: '₹6.8M', percentage: 55, color: 'bg-emerald-500' },
@@ -133,6 +124,35 @@ export function SuperAdminDashboard() {
               ))}
             </div>
             <Button variant="outline" className="w-full mt-8 rounded-xl border-slate-100 text-slate-400">View Detailed Report</Button>
+          </Card>
+          
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-black uppercase tracking-tight text-slate-900">Properties Listed</h3>
+                <p className="text-[10px] font-medium uppercase tracking-widest text-slate-400 mt-1">Export full inventory reports</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <Link href="/dashboard/reports?tab=properties">
+                <Button variant="secondary" size="sm" className="w-full justify-center text-[9px]">
+                  PDF
+                </Button>
+              </Link>
+              <Link href="/dashboard/reports?tab=properties">
+                <Button variant="secondary" size="sm" className="w-full justify-center text-[9px]">
+                  Excel
+                </Button>
+              </Link>
+              <Link href="/dashboard/reports?tab=properties">
+                <Button variant="secondary" size="sm" className="w-full justify-center text-[9px]">
+                  Word
+                </Button>
+              </Link>
+            </div>
+            <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+              Use the detailed reports workspace to generate export-ready files for all properties across the marketplace.
+            </p>
           </Card>
         </div>
       </div>

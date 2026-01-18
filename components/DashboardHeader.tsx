@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { LayoutGrid, Search, Bell, User, Settings, LogOut, ChevronDown, Check, X } from 'lucide-react';
+import { LayoutGrid, Search, Bell, User, Settings, LogOut, ChevronDown, Check, X, Menu } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,9 +12,11 @@ interface DashboardHeaderProps {
     name: string;
     role: string;
   };
+  onMenuClick?: () => void;
+  isSidebarCollapsed?: boolean;
 }
 
-export function DashboardHeader({ title, user }: DashboardHeaderProps) {
+export function DashboardHeader({ title, user, onMenuClick, isSidebarCollapsed = true }: DashboardHeaderProps) {
   const router = useRouter();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -108,18 +110,26 @@ export function DashboardHeader({ title, user }: DashboardHeaderProps) {
   };
 
   return (
-    <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-8 sticky top-0 z-50">
-      <div className="flex items-center gap-4">
-        <div className="p-2 bg-slate-50 rounded-lg text-slate-400 hidden lg:block">
-           <LayoutGrid size={18} />
+    <header className="h-14 md:h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-50">
+      <div className="flex items-center gap-3">
+        {/* Mobile menu button */}
+        <button 
+          onClick={onMenuClick}
+          className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg lg:hidden transition-colors"
+        >
+          <Menu size={20} />
+        </button>
+        
+        <div className="p-1.5 bg-slate-50 rounded-lg text-slate-400 hidden lg:flex">
+           <LayoutGrid size={16} />
         </div>
-        <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
+        <h1 className="text-base md:text-lg font-semibold text-slate-900 truncate">{title}</h1>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-3 md:gap-5">
         {/* Search Bar with Results */}
-        <div className="relative hidden md:block">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+        <div className="relative hidden sm:block">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
           <input
             type="text"
             placeholder="Search properties..."
@@ -127,7 +137,7 @@ export function DashboardHeader({ title, user }: DashboardHeaderProps) {
             onChange={(e) => handleSearch(e.target.value)}
             onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
             onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
-            className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:outline-none focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 w-64 transition-all"
+            className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg text-xs md:text-sm focus:outline-none focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 w-40 md:w-56 lg:w-64 transition-all"
           />
           
           {/* Search Results Dropdown */}
@@ -162,11 +172,11 @@ export function DashboardHeader({ title, user }: DashboardHeaderProps) {
           <div className="relative" ref={notificationRef}>
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl relative transition-all"
+              className="p-1.5 md:p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg relative transition-all"
             >
-              <Bell size={20} />
+              <Bell size={18} />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                <span className="absolute top-0.5 right-0.5 min-w-[16px] h-[16px] bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -174,7 +184,7 @@ export function DashboardHeader({ title, user }: DashboardHeaderProps) {
 
             {/* Notifications Dropdown */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-lg border border-slate-200 z-[100] max-h-[500px] overflow-hidden flex flex-col">
+              <div className="absolute right-0 mt-2 w-[280px] sm:w-96 bg-white rounded-lg shadow-lg border border-slate-200 z-[100] max-h-[400px] sm:max-h-[500px] overflow-hidden flex flex-col">
                 <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                   <h3 className="font-bold text-slate-900 text-sm">Notifications</h3>
                   {unreadCount > 0 && (
@@ -226,34 +236,34 @@ export function DashboardHeader({ title, user }: DashboardHeaderProps) {
             )}
           </div>
           
-          <div className="h-6 w-px bg-slate-100 mx-2"></div>
+          <div className="h-5 w-px bg-slate-100 mx-1 md:mx-2"></div>
           
           {/* Profile Dropdown */}
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-              className="flex items-center gap-3 pl-2 group cursor-pointer"
+              className="flex items-center gap-2 pl-1 group cursor-pointer"
             >
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-slate-900 leading-tight">{user.name}</p>
-                <p className="text-xs text-slate-500">{user.role.replace('_', ' ')}</p>
+                <p className="text-xs md:text-sm font-medium text-slate-900 leading-tight">{user.name}</p>
+                <p className="text-[10px] md:text-xs text-slate-500">{user.role.replace('_', ' ')}</p>
               </div>
-              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-200 group-hover:border-blue-400 group-hover:bg-blue-50 transition-all overflow-hidden">
-                <User size={20} className="text-slate-400 group-hover:text-blue-600" />
+              <div className="w-8 h-8 md:w-9 md:h-9 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 group-hover:border-blue-400 group-hover:bg-blue-50 transition-all overflow-hidden">
+                <User size={16} className="text-slate-400 group-hover:text-blue-600" />
               </div>
-              <ChevronDown size={16} className={`text-slate-400 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} />
+              <ChevronDown size={14} className={`text-slate-400 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Dropdown Menu */}
             {showProfileDropdown && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-[100]">
+              <div className="absolute right-0 mt-2 w-48 sm:w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-[100]">
                 <Link
                   href={user.role === 'USER' || user.role === 'BUYER' ? '/dashboard/profile/settings' : '/dashboard/settings'}
-                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 transition-colors"
                   onClick={() => setShowProfileDropdown(false)}
                 >
-                  <Settings size={18} className="text-slate-400" />
-                  <span className="text-sm font-medium text-slate-700">Profile Settings</span>
+                  <Settings size={16} className="text-slate-400" />
+                  <span className="text-xs font-medium text-slate-700">Profile Settings</span>
                 </Link>
                 <div className="border-t border-slate-100 my-1"></div>
                 <button
@@ -261,10 +271,10 @@ export function DashboardHeader({ title, user }: DashboardHeaderProps) {
                     setShowProfileDropdown(false);
                     signOut({ callbackUrl: '/' });
                   }}
-                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-rose-50 transition-colors w-full text-left"
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-rose-50 transition-colors w-full text-left"
                 >
-                  <LogOut size={18} className="text-rose-500" />
-                  <span className="text-sm font-medium text-rose-600">Logout</span>
+                  <LogOut size={16} className="text-rose-500" />
+                  <span className="text-xs font-medium text-rose-600">Logout</span>
                 </button>
               </div>
             )}

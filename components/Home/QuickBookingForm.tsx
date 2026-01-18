@@ -61,17 +61,14 @@ export const QuickBookingForm: React.FC = () => {
   };
 
   return (
-    <div className="relative z-20 px-4 -mt-24 md:-mt-40 pb-8 md:pb-12">
+    <div className="relative z-20 px-4 -mt-8 md:-mt-20 pb-10 md:pb-16">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="max-w-5xl mx-auto"
       >
-        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200/60 relative">
-          {/* Subtle gradient overlay for depth */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-blue-50/20 pointer-events-none"></div>
-          
+        <div className="bg-white rounded-2xl md:rounded-3xl shadow-xl shadow-slate-900/10 border border-slate-200/70 relative">
           {/* Tabs Header */}
           <div className="relative flex items-center justify-between border-b border-slate-100">
             <div className="flex items-center overflow-x-auto no-scrollbar">

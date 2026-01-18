@@ -1,12 +1,31 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Plus, Download, Search } from 'lucide-react';
-import { Card, Badge, Button, Input, DataTable, Skeleton } from '@/components/UIComponents';
+import { useSession } from 'next-auth/react';
+import { User, Plus, Download, Eye, Edit2, Share2 } from 'lucide-react';
+import { Card, Badge, Button, Input, DataTable, Skeleton, Select, Modal } from '@/components/UIComponents';
 
 export default function LeadsPage() {
+  const { data: session } = useSession();
   const [leads, setLeads] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [staff, setStaff] = useState<any[]>([]);
+  const [assigningId, setAssigningId] = useState<number | null>(null);
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [detailLead, setDetailLead] = useState<any | null>(null);
+  const [editLead, setEditLead] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '' });
+  const [isSavingLead, setIsSavingLead] = useState(false);
+  const [newLead, setNewLead] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    propertyId: '',
+    propertyTitle: '',
+    source: 'Manual',
+    message: '',
+  });
 
   const fetchLeads = async () => {
     try {
@@ -22,9 +41,114 @@ export default function LeadsPage() {
     }
   };
 
+  const fetchStaff = async () => {
+    try {
+      const response = await fetch('/api/superadmin/accounts-summary');
+      if (response.ok) {
+        const data = await response.json();
+        setStaff(data.staff || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchLeads();
+    fetchStaff();
   }, []);
+
+  const telecallers = staff.filter((s: any) => s.role === 'TELECALLER');
+  const salesExecutives = staff.filter((s: any) => s.role === 'SALES_EXECUTIVE');
+
+  const handleCreateLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLead.name || !newLead.email || !newLead.phone || !newLead.propertyId) {
+      alert('Name, email, phone and property ID are required');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newLead.name,
+          email: newLead.email,
+          phone: newLead.phone,
+          propertyId: newLead.propertyId,
+          propertyTitle: newLead.propertyTitle,
+          source: newLead.source || 'Manual',
+          message: newLead.message,
+        }),
+      });
+      if (response.ok) {
+        setShowNewModal(false);
+        setNewLead({
+          name: '',
+          email: '',
+          phone: '',
+          propertyId: '',
+          propertyTitle: '',
+          source: 'Manual',
+          message: '',
+        });
+        setIsLoading(true);
+        await fetchLeads();
+      } else {
+        alert('Failed to create lead');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error creating lead');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditLeadSave = async () => {
+    if (!editLead) return;
+    setIsSavingLead(true);
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: editLead.id,
+          name: editForm.name,
+          email: editForm.email,
+          phone: editForm.phone,
+        }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        const updatedLead = result.lead || result;
+        setLeads(prev =>
+          prev.map(item =>
+            item.id === updatedLead.id ? { ...item, ...updatedLead } : item
+          )
+        );
+        setDetailLead(prev =>
+          prev && prev.id === updatedLead.id ? { ...prev, ...updatedLead } : prev
+        );
+        setEditLead(null);
+      } else {
+        alert('Failed to update lead information');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error updating lead information');
+    } finally {
+      setIsSavingLead(false);
+    }
+  };
+
+  const role = session?.user?.role;
+  const isAdminView = role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'SAAS_OWNER';
+
+  const headers = isAdminView
+    ? ['Prospect Info', 'Inquiry Property', 'Telecaller', 'Sales Executive', 'Status', 'Last Contact', 'Actions']
+    : ['Prospect Info', 'Inquiry Property', 'Status', 'Last Contact', 'Actions'];
 
   return (
     <div className="space-y-6">
@@ -34,37 +158,37 @@ export default function LeadsPage() {
           <p className="text-xs font-medium text-slate-500 uppercase tracking-widest mt-1">Lifecycle management for all inquiries</p>
         </div>
         <div className="flex gap-2">
-           <div className="flex -space-x-2">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500">
-                  <User size={14} />
-                </div>
-              ))}
-              <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-600 flex items-center justify-center text-[8px] font-black text-white">+{leads.length}</div>
-           </div>
-           <Button className="gap-2 shadow-none"><Plus size={18} /> New Inquiry</Button>
+          <div className="flex -space-x-2">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500">
+                <User size={14} />
+              </div>
+            ))}
+            <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-600 flex items-center justify-center text-[8px] font-black text-white">+{leads.length}</div>
+          </div>
+          <Button className="gap-2 shadow-none" onClick={() => setShowNewModal(true)}><Plus size={18} /> New Inquiry</Button>
         </div>
       </div>
 
       <Card>
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-           <div className="flex gap-4 items-center">
-              <div className="flex bg-slate-100 p-1 rounded-xl">
-                 {['All', 'Hot', 'Interested', 'Closed'].map(t => (
-                   <button key={t} className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-white/50 transition-colors">
-                     {t}
-                   </button>
-                 ))}
-              </div>
-              <Input placeholder="Filter by phone/name..." className="w-48" />
-           </div>
-           <Button variant="outline" size="sm" className="gap-2"><Download size={14} /> Report</Button>
+          <div className="flex gap-4 items-center">
+            <div className="flex bg-slate-100 p-1 rounded-xl">
+              {['All', 'Hot', 'Interested', 'Closed'].map(t => (
+                <button key={t} className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-white/50 transition-colors">
+                  {t}
+                </button>
+              ))}
+            </div>
+            <Input placeholder="Filter by phone/name..." className="w-48" />
+          </div>
+          <Button variant="outline" size="sm" className="gap-2"><Download size={14} /> Report</Button>
         </div>
-        <DataTable headers={['Prospect Info', 'Inquiry Property', 'Assigned To', 'Status', 'Last Contact']}>
+        <DataTable headers={headers}>
           {isLoading ? (
-            <tr><td colSpan={5} className="px-6 py-4 text-center text-slate-400 font-bold">Loading leads...</td></tr>
+            <tr><td colSpan={headers.length} className="px-6 py-4 text-center text-slate-400 font-bold">Loading leads...</td></tr>
           ) : leads.length === 0 ? (
-            <tr><td colSpan={5} className="px-6 py-4 text-center text-slate-400 font-bold">No leads found</td></tr>
+            <tr><td colSpan={headers.length} className="px-6 py-4 text-center text-slate-400 font-bold">No leads found</td></tr>
           ) : (
             leads.map(l => (
               <tr key={l.id} className="hover:bg-slate-50 transition-colors">
@@ -76,22 +200,373 @@ export default function LeadsPage() {
                   <p className="text-xs font-black text-slate-700">{l.propertyOfInterest || l.property?.title}</p>
                   <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">{l.source}</p>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                     <div className="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><User size={12} /></div>
-                     <p className="text-xs font-bold text-slate-600">Rahul J.</p>
-                  </div>
-                </td>
+                {isAdminView && (
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <User size={12} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <p className="text-[10px] font-bold text-slate-600">
+                          {l.assignedStaff?.name || 'Unassigned'}
+                        </p>
+                        <Select
+                          options={
+                            telecallers.map((s) => ({
+                              label: `${s.name} (${s.role})`,
+                              value: s.id.toString(),
+                            }))
+                          }
+                          value={l.assignedStaff?.id?.toString() || ''}
+                          onChange={async (value: string) => {
+                            if (!value) return;
+                            setAssigningId(l.id);
+                            try {
+                              const res = await fetch('/api/leads/assign', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ leadId: l.id, staffId: value }),
+                              });
+                              if (res.ok) {
+                                const result = await res.json();
+                                setLeads(prev =>
+                                  prev.map(item =>
+                                    item.id === l.id ? { ...item, assignedStaff: result.lead.assignedStaff } : item
+                                  )
+                                );
+                              } else {
+                                alert('Failed to assign lead');
+                              }
+                            } catch (err) {
+                              alert('Error assigning lead');
+                            } finally {
+                              setAssigningId(null);
+                            }
+                          }}
+                          placeholder={assigningId === l.id ? 'Assigning...' : 'Assign telecaller...'}
+                          className="text-[10px]"
+                          size="sm"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                )}
+                {isAdminView && (
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <User size={12} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <p className="text-[10px] font-bold text-slate-600">
+                          {l.salesExecutive?.name || 'Unassigned'}
+                        </p>
+                        <Select
+                          options={salesExecutives.map((s: any) => ({
+                            label: `${s.name} (${s.role})`,
+                            value: s.id.toString(),
+                          }))}
+                          value={l.salesExecutive?.id?.toString() || ''}
+                          onChange={async (value: string) => {
+                            if (!value) return;
+                            setAssigningId(l.id);
+                            try {
+                              const res = await fetch('/api/leads/assign-sales-executive', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ leadId: l.id, staffId: value }),
+                              });
+                              if (res.ok) {
+                                const result = await res.json();
+                                setLeads(prev =>
+                                  prev.map(item =>
+                                    item.id === l.id ? { ...item, salesExecutive: result.lead.salesExecutive } : item
+                                  )
+                                );
+                              } else {
+                                alert('Failed to assign sales executive');
+                              }
+                            } catch (err) {
+                              alert('Error assigning sales executive');
+                            } finally {
+                              setAssigningId(null);
+                            }
+                          }}
+                          placeholder={assigningId === l.id ? 'Assigning...' : 'Assign sales executive...'}
+                          className="text-[10px]"
+                          size="sm"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                )}
                 <td className="px-6 py-4">
                   <Badge variant={l.status === 'Closed' ? 'success' : l.status === 'New' ? 'info' : 'warning'}>{l.status}</Badge>
                 </td>
                 <td className="px-6 py-4 text-xs font-bold text-slate-500">{new Date(l.createdAt).toLocaleDateString()}</td>
+                <td className="px-6 py-4 text-right">
+                  <div className="flex items-center gap-2 justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-slate-400 hover:text-amber-600"
+                      onClick={() => {
+                        setEditLead(l);
+                        setEditForm({
+                          name: l.name || '',
+                          email: l.email || '',
+                          phone: l.phone || '',
+                        });
+                      }}
+                    >
+                      <Edit2 size={16} />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-slate-400 hover:text-emerald-600"
+                      onClick={async () => {
+                        const shareText = `Lead
+Name: ${l.name}
+Phone: ${l.phone}
+Email: ${l.email}
+Status: ${l.status}
+Property: ${l.propertyOfInterest || l.property?.title || ''}`;
+                        try {
+                          if (navigator.share) {
+                            await navigator.share({
+                              title: `Lead - ${l.name}`,
+                              text: shareText,
+                            });
+                          } else if (navigator.clipboard) {
+                            await navigator.clipboard.writeText(shareText);
+                            alert('Lead details copied to clipboard');
+                          } else {
+                            alert(shareText);
+                          }
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }}
+                    >
+                      <Share2 size={16} />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-slate-400 hover:text-blue-600"
+                      onClick={() => setDetailLead(l)}
+                    >
+                      <Eye size={16} />
+                    </Button>
+                  </div>
+                </td>
               </tr>
             ))
           )}
         </DataTable>
       </Card>
+      <Modal
+        isOpen={showNewModal}
+        onClose={() => !isSubmitting && setShowNewModal(false)}
+        title="New Inquiry"
+      >
+        <form onSubmit={handleCreateLead} className="p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Name"
+              placeholder="Full name"
+              value={newLead.name}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLead({ ...newLead, name: e.target.value })}
+              required
+            />
+            <Input
+              label="Email"
+              type="email"
+              placeholder="email@example.com"
+              value={newLead.email}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLead({ ...newLead, email: e.target.value })}
+              required
+            />
+            <Input
+              label="Phone"
+              placeholder="+91 9XXXXXXXXX"
+              value={newLead.phone}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLead({ ...newLead, phone: e.target.value })}
+              required
+            />
+            <Input
+              label="Property ID"
+              placeholder="Enter property ID"
+              value={newLead.propertyId}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLead({ ...newLead, propertyId: e.target.value })}
+              required
+            />
+            <Input
+              label="Property Title"
+              placeholder="Optional property title"
+              value={newLead.propertyTitle}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLead({ ...newLead, propertyTitle: e.target.value })}
+            />
+            <Input
+              label="Source"
+              placeholder="Source of lead"
+              value={newLead.source}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLead({ ...newLead, source: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
+              Notes
+            </label>
+            <textarea
+              className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-blue-500 outline-none text-xs font-medium min-h-[80px]"
+              placeholder="Add any additional context or requirements"
+              value={newLead.message}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewLead({ ...newLead, message: e.target.value })}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => !isSubmitting && setShowNewModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              className="px-4"
+              isLoading={isSubmitting}
+            >
+              Create Lead
+            </Button>
+          </div>
+        </form>
+      </Modal>
+      <Modal
+        isOpen={!!editLead}
+        onClose={() => {
+          if (isSavingLead) return;
+          setEditLead(null);
+        }}
+        title="Edit Lead"
+      >
+        <div className="p-6 space-y-4">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
+              Lead Information
+            </p>
+            <p className="text-xs text-slate-500">
+              Update the client details for this inquiry.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Name"
+              value={editForm.name}
+              onChange={e =>
+                setEditForm(prev => ({
+                  ...prev,
+                  name: e.target.value,
+                }))
+              }
+            />
+            <Input
+              label="Phone"
+              value={editForm.phone}
+              onChange={e =>
+                setEditForm(prev => ({
+                  ...prev,
+                  phone: e.target.value,
+                }))
+              }
+            />
+            <Input
+              label="Email"
+              value={editForm.email}
+              onChange={e =>
+                setEditForm(prev => ({
+                  ...prev,
+                  email: e.target.value,
+                }))
+              }
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                if (isSavingLead) return;
+                setEditLead(null);
+              }}
+              disabled={isSavingLead}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleEditLeadSave} isLoading={isSavingLead}>
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={!!detailLead}
+        onClose={() => setDetailLead(null)}
+        title="Lead Details"
+      >
+        <div className="p-6 space-y-4">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">Prospect</p>
+            <p className="text-sm font-bold text-slate-900">
+              {detailLead?.name}{' '}
+              <span className="text-[11px] text-slate-400 font-medium">
+                {detailLead?.phone}
+              </span>
+            </p>
+            <p className="text-[11px] text-slate-500 font-medium">
+              {detailLead?.email}
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">Property</p>
+            <p className="text-xs font-bold text-slate-900">
+              {detailLead?.property?.title || detailLead?.propertyOfInterest || 'Not specified'}
+            </p>
+            <p className="text-[11px] text-slate-500 font-medium">
+              {detailLead?.property?.address || detailLead?.property?.location || 'Address not available'}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-[11px]">
+            <div>
+              <p className="font-black uppercase tracking-widest text-slate-500 mb-1">Status</p>
+              <p className="font-semibold text-slate-900">{detailLead?.status}</p>
+            </div>
+            <div>
+              <p className="font-black uppercase tracking-widest text-slate-500 mb-1">Source</p>
+              <p className="font-semibold text-slate-900">{detailLead?.source}</p>
+            </div>
+            <div>
+              <p className="font-black uppercase tracking-widest text-slate-500 mb-1">Created On</p>
+              <p className="font-semibold text-slate-900">
+                {detailLead?.createdAt ? new Date(detailLead.createdAt).toLocaleString() : '-'}
+              </p>
+            </div>
+          </div>
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">Latest Notes</p>
+            <p className="text-xs text-slate-600 whitespace-pre-line">
+              {detailLead?.lastNote || 'No notes added yet'}
+            </p>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
-
