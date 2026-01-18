@@ -165,7 +165,6 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
         isOpen={showInquiry}
         onClose={() => setShowInquiry(false)}
         title="Inquire About This Property"
-        size="md"
       >
         <div className="space-y-3">
           <p className="text-[11px] text-slate-500 font-medium">
