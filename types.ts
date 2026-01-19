@@ -1,5 +1,15 @@
-import { UserRole } from '@prisma/client';
-export { UserRole };
+export const UserRole = {
+  USER: 'USER',
+  BUILDER: 'BUILDER',
+  ADMIN: 'ADMIN',
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  SAAS_OWNER: 'SAAS_OWNER',
+  TELECALLER: 'TELECALLER',
+  SALES_EXECUTIVE: 'SALES_EXECUTIVE',
+  BUYER: 'BUYER'
+} as const;
+
+export type UserRole = typeof UserRole[keyof typeof UserRole];
 
 export type PropertyCategory = 'Flats' | 'Villa' | 'Shop' | 'Office' | 'Plot' | 'Agricultural' | 'Industrial' | 'Warehouse';
 

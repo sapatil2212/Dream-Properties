@@ -68,12 +68,17 @@ export async function PUT(
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
     }
 
+    const normalizedPrice =
+      typeof body.price === 'string' && body.price.trim() !== ''
+        ? body.price
+        : 'NA'
+
     const updated = await prisma.property.update({
       where: { id: propertyId },
       data: {
         title: body.title,
         description: body.description,
-        price: body.price,
+        price: normalizedPrice,
         area: body.area,
         location: body.location,
         address: body.address,

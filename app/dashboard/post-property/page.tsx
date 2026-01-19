@@ -132,7 +132,7 @@ export default function PostPropertyPage() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(formData.type && formData.propertySubtype && formData.listingType && formData.title && formData.price && formData.area);
+        return !!(formData.type && formData.propertySubtype && formData.listingType && formData.title && formData.area);
       case 2:
         return !!(formData.location && formData.address && formData.description);
       case 3:
@@ -157,7 +157,6 @@ export default function PostPropertyPage() {
       if (!formData.propertySubtype) errors.propertySubtype = 'Please select a property sub-type';
       if (!formData.listingType) errors.listingType = 'Please select listing type (Sell/Rent/Lease)';
       if (!formData.title) errors.title = 'Property name/title is required';
-      if (!formData.price) errors.price = 'Price is required';
       if (!formData.area) errors.area = 'Area is required';
     } else if (currentStep === 2) {
       if (!formData.location) errors.location = 'Location is required';
@@ -525,7 +524,7 @@ export default function PostPropertyPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Input
-                          label={formData.listingType === 'Rent' ? 'Rent (Monthly) *' : 'Price *'}
+                          label={formData.listingType === 'Rent' ? 'Rent (Monthly)' : 'Price'}
                           placeholder={formData.listingType === 'Rent' ? 'e.g., ₹25,000/month' : 'e.g., ₹45 Lacs onwards'}
                           value={formData.price}
                           onChange={e => {
@@ -533,9 +532,6 @@ export default function PostPropertyPage() {
                             setFieldErrors(prev => ({ ...prev, price: '' }));
                           }}
                         />
-                        {fieldErrors.price && (
-                          <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.price}</p>
-                        )}
                       </div>
                       <div className="flex gap-2">
                         <div className="flex-1">

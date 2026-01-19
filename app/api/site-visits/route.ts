@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { transporter } from '@/lib/mailer';
 
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/types';
 
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions);

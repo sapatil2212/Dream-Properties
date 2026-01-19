@@ -97,9 +97,11 @@ export default function FavoritesPage() {
                     <span className="text-[11px] font-bold uppercase tracking-wider">{property.location}</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-black text-blue-600 tracking-tight">{property.price}</p>
-                </div>
+                {property.price && property.price !== 'NA' && (
+                  <div className="text-right">
+                    <p className="text-lg font-black text-blue-600 tracking-tight">{property.price}</p>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2">

@@ -1,40 +1,55 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { QuickBookingForm } from './QuickBookingForm';
+import Hero1 from "../../public/assets/hero-1.png"
+import Hero2 from "../../public/assets/hero-2.png"
+const HERO_IMAGES = [
+  Hero1,Hero2
+ 
+];
 
 export const HeroSection: React.FC = () => {
-  return (
-    <section className="relative min-h-[600px] md:min-h-[700px] overflow-visible mb-8">
-      {/* Hero Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1920"
-          className="absolute inset-0 w-full h-full object-cover"
-          alt="Luxury Real Estate Background"
-        />
-        <div className="absolute inset-0 bg-slate-900/70" />
-      </div>
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-      {/* Hero Text Content */}
-      <div className="relative z-10 container mx-auto px-4 text-center text-white pt-24 md:pt-32 pb-[240px] md:pb-[240px]">
-        <motion.div
-          initial={{ opacity: 0, y: -15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-xl md:text-5xl font-black mb-3 tracking-tight leading-tight uppercase">
-            Discover Your <br className="md:hidden" /><span className="text-blue-400">Perfect Home</span>
-          </h1>
-          <p className="text-[10px] md:text-lg text-white/80 font-medium max-w-xl mx-auto px-4">
-            Nashik's Premier Multi-Tenant Real Estate Hub connecting you with verified premium developments.
-          </p>
-        </motion.div>
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <section className="relative md:h-[600px] overflow-visible mb-[160px] md:mb-8 flex flex-col">
+      {/* Mobile Height Spacer */}
+      <img 
+        src={typeof HERO_IMAGES[0] === 'string' ? HERO_IMAGES[0] : (HERO_IMAGES[0] as any).src}
+        className="w-full h-auto md:hidden invisible block"
+        alt="Spacer"
+        aria-hidden="true"
+      />
+
+      {/* Hero Background Image */}
+      <div className="absolute inset-0 z-0 bg-slate-900">
+        <AnimatePresence mode="popLayout">
+          <motion.img
+            key={currentImageIndex}
+            src={typeof HERO_IMAGES[currentImageIndex] === 'string' ? HERO_IMAGES[currentImageIndex] : (HERO_IMAGES[currentImageIndex] as any).src}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1 }}
+            className="absolute inset-0 w-full h-full object-cover"
+            alt="Luxury Real Estate Background"
+          />
+        </AnimatePresence>
       </div>
 
       {/* Quick Booking Form */}
-      <QuickBookingForm />
+      <div className="absolute bottom-0 w-full translate-y-[70%] md:translate-y-12 z-10">
+        <QuickBookingForm />
+      </div>
     </section>
   );
 };

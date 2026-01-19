@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { LayoutDashboard, Building2, Users, PieChart, BadgePercent, PhoneCall, CalendarCheck, Settings, CreditCard, LifeBuoy } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, PieChart, BadgePercent, PhoneCall, CalendarCheck, Settings, CreditCard, LifeBuoy, Megaphone } from 'lucide-react';
 import { Property, Lead, UserRole, Builder, Transaction } from './types';
 
+// Mock Data
 export const MOCK_BUILDERS: Builder[] = [
   { id: 'b1', name: 'Skyline Group', logo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=100', activeProjects: 5, totalInventory: 120, joinedDate: '2023-01-15', status: 'Active' },
   { id: 'b2', name: 'Metro Build', logo: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=100', activeProjects: 2, totalInventory: 45, joinedDate: '2023-05-20', status: 'Active' },
@@ -79,16 +80,23 @@ export const NAV_ITEMS = {
     { label: 'Marketplace', icon: <Building2 size={20} />, href: '/dashboard/properties' },
     { label: 'Builders', icon: <Building2 size={20} />, href: '/dashboard/builders' },
     { label: 'Accounts', icon: <Users size={20} />, href: '/dashboard/users' },
+    { label: 'Employee Management', icon: <Users size={20} />, href: '/dashboard/employees' },
     { label: 'Leads Hub', icon: <Users size={20} />, href: '/dashboard/leads' },
     { label: 'Analytics', icon: <PieChart size={20} />, href: '/dashboard/reports' },
+    { label: 'Promotion', icon: <Megaphone size={20} />, href: '/dashboard/promotions' },
     { label: 'Settings', icon: <Settings size={20} />, href: '/dashboard/settings' },
   ],
   [UserRole.ADMIN]: [
-    { label: 'Dashboard', icon: <LayoutDashboard size={20} />, href: '/dashboard' },
+    { label: 'Overview', icon: <LayoutDashboard size={20} />, href: '/dashboard' },
+    { label: 'Marketplace', icon: <Building2 size={20} />, href: '/dashboard/properties' },
+    { label: 'Builders', icon: <Building2 size={20} />, href: '/dashboard/builders' },
     { label: 'Accounts', icon: <Users size={20} />, href: '/dashboard/users' },
-    { label: 'Sales Team', icon: <Users size={20} />, href: '/dashboard/employees' },
+    { label: 'Employee Management', icon: <Users size={20} />, href: '/dashboard/employees' },
     { label: 'Leads Hub', icon: <Users size={20} />, href: '/dashboard/leads' },
     { label: 'Finances', icon: <BadgePercent size={20} />, href: '/dashboard/finance' },
+    { label: 'Analytics', icon: <PieChart size={20} />, href: '/dashboard/reports' },
+    { label: 'Promotion', icon: <Megaphone size={20} />, href: '/dashboard/promotions' },
+    { label: 'Settings', icon: <Settings size={20} />, href: '/dashboard/settings' },
   ],
   [UserRole.BUILDER]: [
     { label: 'Insights', icon: <LayoutDashboard size={20} />, href: '/dashboard' },

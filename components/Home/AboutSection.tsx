@@ -38,11 +38,11 @@ export const AboutSection: React.FC = () => {
             transition={{ duration: 0.6 }}
             className="flex flex-col"
           >
-            <span className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mb-4">
-              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full" /> ABOUT US
+            <span className="flex items-center gap-2 text-blue-600 font-black text-[10px] md:text-xs uppercase tracking-[0.3em] mb-4">
+              <span className="w-1.5 h-1.5 bg-blue-600 rounded-full" /> ABOUT US
             </span>
             
-            <h2 className="text-xl md:text-4xl font-black text-[#0f2e33] leading-tight mb-6 uppercase">
+            <h2 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight mb-6 uppercase tracking-tight">
               Why choose us for all your <br />
               <span className="text-blue-600">real estate needs</span>
             </h2>

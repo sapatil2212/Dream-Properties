@@ -31,11 +31,11 @@ export const CTASection: React.FC = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <span className="text-blue-400 font-black text-[8px] md:text-[10px] uppercase tracking-[0.4em] mb-2 block">
+              <span className="text-blue-400 font-black text-[10px] md:text-xs uppercase tracking-[0.3em] mb-2 block">
                 Take the next step
               </span>
               
-              <h2 className="text-xl md:text-3xl font-black text-white leading-tight mb-4">
+              <h2 className="text-2xl md:text-3xl font-black text-white leading-tight mb-4">
                 Your <span className="text-blue-400">Dream Home</span> is just a click away.
               </h2>
               

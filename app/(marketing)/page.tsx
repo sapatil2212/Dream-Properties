@@ -6,10 +6,12 @@ import { ExploreNearby } from '@/components/Home/ExploreNearby';
 import { ProcessSteps } from '@/components/Home/ProcessSteps';
 import { AboutSection } from '@/components/Home/AboutSection';
 import { CTASection } from '@/components/Home/CTASection';
+import { PromotionModal } from '@/components/Home/PromotionModal';
 
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
+      <PromotionModal />
       <HeroSection />
       
       {/* Category Navigation Section */}

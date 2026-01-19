@@ -121,8 +121,8 @@ export const CategoryGrid: React.FC = () => {
   return (
     <section className="py-12 bg-white overflow-hidden relative border-b border-slate-50">
       <div className="max-w-7xl mx-auto px-4 md:px-8 mb-6 text-center">
-        <span className="text-blue-600 font-black text-[10px] uppercase tracking-[0.3em] mb-2 block">Marketplace</span>
-        <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-tight uppercase">Explore Categories</h2>
+        <span className="text-blue-600 font-black text-[10px] md:text-xs uppercase tracking-[0.3em] mb-2 block">Marketplace</span>
+        <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-tight uppercase">Explore Categories</h2>
       </div>
 
       <div 
@@ -132,12 +132,14 @@ export const CategoryGrid: React.FC = () => {
       >
         <button 
           onClick={() => handleStepScroll('left')}
+          suppressHydrationWarning
           className="absolute left-0 md:left-2 top-1/2 -translate-y-1/2 z-30 w-7 h-7 md:w-9 md:h-9 bg-white border border-slate-200 flex items-center justify-center rounded-full text-slate-900 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
         >
           <ChevronLeft size={16} />
         </button>
         <button 
           onClick={() => handleStepScroll('right')}
+          suppressHydrationWarning
           className="absolute right-0 md:right-2 top-1/2 -translate-y-1/2 z-30 w-7 h-7 md:w-9 md:h-9 bg-white border border-slate-200 flex items-center justify-center rounded-full text-slate-900 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
         >
           <ChevronRight size={16} />

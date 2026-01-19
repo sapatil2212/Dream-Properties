@@ -46,7 +46,7 @@ model User {
   email            String    @unique @db.VarChar(255)
   mobile           String    @db.VarChar(20)
   password         String    @db.VarChar(255)
-  role             UserRole  @default(USER)
+  role             String    @default("USER") @db.VarChar(50)
   propertyType     String?   @map("property_type") @db.VarChar(50)
   lookingTo        String?   @map("looking_to") @db.VarChar(50)
   projectName      String?   @map("firm_name") @db.VarChar(255)
@@ -61,6 +61,11 @@ model User {
   siteVisits       SiteVisit[] @relation("StaffVisits")
   salesExecLeads   Lead[]    @relation("SalesExecutiveLeads")
   
+  employeeProfile  EmployeeProfile?
+  attendance       Attendance[]
+  leaveRequests    LeaveRequest[]
+  salarySlips      SalarySlip[]
+
   @@map("users")
 }
 
@@ -69,7 +74,7 @@ model PendingUser {
   name             String    @db.VarChar(255)
   mobile           String    @db.VarChar(20)
   password         String    @db.VarChar(255)
-  role             UserRole  @default(USER)
+  role             String    @default("USER") @db.VarChar(50)
   propertyType     String?   @map("property_type") @db.VarChar(50)
   lookingTo        String?   @map("looking_to") @db.VarChar(50)
   projectName      String?   @map("firm_name") @db.VarChar(255)
@@ -193,6 +198,16 @@ model SiteVisit {
   @@map("site_visits")
 }
 
+model Promotion {
+  id          Int      @id @default(autoincrement())
+  imageUrl    String   @map("image_url") @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("promotions")
+}
+
 model ContactInquiry {
   id        Int      @id @default(autoincrement())
   name      String   @db.VarChar(255)
@@ -217,4 +232,85 @@ model Notification {
   
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+model EmployeeProfile {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @unique @map("user_id")
+  user            User      @relation(fields: [userId], references: [id])
+  designation     String?
+  department      String?
+  joiningDate     DateTime? @map("joining_date")
+  basicSalary     Float     @default(0) @map("basic_salary")
+  hra             Float     @default(0)
+  allowances      Float     @default(0)
+  specialAllowance Float    @default(0) @map("special_allowance")
+  medicalAllowance Float    @default(0) @map("medical_allowance")
+  pf               Float    @default(0)
+  professionalTax  Float    @default(0) @map("professional_tax")
+  healthInsurance  Float    @default(0) @map("health_insurance")
+  
+  // Custom Components (JSON)
+  customEarnings   Json?    @map("custom_earnings")
+  customDeductions Json?    @map("custom_deductions")
+
+  leavesAllotted  Int       @default(12) @map("leaves_allotted")
+  leavesTaken     Int       @default(0) @map("leaves_taken")
+  accountNumber   String?   @map("account_number")
+  bankName        String?   @map("bank_name")
+  ifscCode        String?   @map("ifsc_code")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  
+  @@map("employee_profiles")
+}
+
+model Attendance {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  date      DateTime @db.Date 
+  checkIn   DateTime @default(now()) @map("check_in")
+  checkOut  DateTime? @map("check_out")
+  status    String   @default("Present") 
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, date]) 
+  @@map("attendance")
+}
+
+model LeaveRequest {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  reason    String   @db.Text
+  status    String   @default("Pending") 
+  type      String   @default("Paid") 
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@map("leave_requests")
+}
+
+model SalarySlip {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  user          User     @relation(fields: [userId], references: [id])
+  month         Int
+  year          Int
+  basicSalary   Float    @map("basic_salary")
+  hra           Float
+  allowances    Float
+  deductions    Float    @default(0)
+  netSalary     Float    @map("net_salary")
+  details       Json?    // Stores full breakdown: basic, hra, special, medical, pf, pt, insurance
+  generatedDate DateTime @default(now()) @map("generated_date")
+  
+  @@map("salary_slips")
 }

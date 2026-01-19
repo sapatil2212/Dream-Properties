@@ -61,7 +61,7 @@ export const QuickBookingForm: React.FC = () => {
   };
 
   return (
-    <div className="relative z-20 px-4 -mt-8 md:-mt-20 pb-10 md:pb-16">
+    <div className="relative z-20 px-4 mt-0 md:-mt-20 pb-10 md:pb-16">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -70,13 +70,14 @@ export const QuickBookingForm: React.FC = () => {
       >
         <div className="bg-white rounded-2xl md:rounded-3xl shadow-xl shadow-slate-900/10 border border-slate-200/70 relative">
           {/* Tabs Header */}
-          <div className="relative flex items-center justify-between border-b border-slate-100">
+          <div className="relative flex items-center justify-between border-b border-slate-100 overflow-hidden rounded-t-2xl md:rounded-t-3xl">
             <div className="flex items-center overflow-x-auto no-scrollbar">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`relative px-6 md:px-8 py-3 text-[10px] md:text-[11px] font-bold uppercase tracking-wide transition-all whitespace-nowrap ${
+                  suppressHydrationWarning
+                  className={`relative px-5 md:px-8 py-2.5 md:py-3 text-[9px] md:text-[11px] font-bold uppercase tracking-wide transition-all whitespace-nowrap ${
                     activeTab === tab.id
                       ? "text-blue-600"
                       : "text-slate-500 hover:text-slate-900"
@@ -118,23 +119,24 @@ export const QuickBookingForm: React.FC = () => {
             <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
               {/* Mobile: Dropdown and Search side by side */}
               <div className="flex gap-2 md:hidden">
-                <div className="w-[140px] relative z-[9999]">
+                <div className="w-[120px] relative z-[9999]">
                   <Select
                     options={propertyTypeOptions}
                     value={propType}
                     onChange={setPropType}
                     placeholder="Type"
-                    size="md"
+                    size="sm"
                   />
                 </div>
 
                 <div className="flex-1 relative">
                   <Input
-                    placeholder='Search properties...'
+                    placeholder='Search...'
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={handleKeyPress}
-                    icon={<Search size={16} />}
+                    icon={<Search size={14} />}
+                    className="py-1 text-[9px]"
                   />
                 </div>
               </div>
@@ -172,16 +174,16 @@ export const QuickBookingForm: React.FC = () => {
             {/* Mobile: Search and Post Property side by side */}
             <div className="flex md:hidden gap-2 mt-3">
               <Button
-                size="lg"
+                size="md"
                 onClick={handleSearch}
-                className="flex-1"
+                className="flex-1 text-[10px]"
               >
                 Search
               </Button>
               
               <Link 
                 href="/login" 
-                className="flex flex-1 items-center justify-center gap-1.5 px-4 py-2.5 text-[10px] font-bold uppercase tracking-wide text-slate-700 hover:text-emerald-600 transition-all border border-slate-200 rounded-lg group bg-white shadow-sm whitespace-nowrap"
+                className="flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-[9px] font-bold uppercase tracking-wide text-slate-700 hover:text-emerald-600 transition-all border border-slate-200 rounded-lg group bg-white shadow-sm whitespace-nowrap"
               >
                 <PlusCircle size={14} className="group-hover:rotate-90 transition-transform duration-300" />
                 <span>Post</span>

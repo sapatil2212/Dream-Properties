@@ -70,13 +70,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+
+    const normalizedPrice =
+      typeof body.price === 'string' && body.price.trim() !== ''
+        ? body.price
+        : 'NA'
     
     const property = await prisma.property.create({
       data: {
         builderId: parseInt(session.user.id),
         title: body.title,
         description: body.description,
-        price: body.price,
+        price: normalizedPrice,
         area: body.area,
         location: body.location,
         address: body.address,

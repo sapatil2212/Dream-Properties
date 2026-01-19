@@ -237,7 +237,7 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
 
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label={formData.listingType === 'Rent' ? 'Rent (Monthly) *' : 'Price *'}
+                  label={formData.listingType === 'Rent' ? 'Rent (Monthly)' : 'Price'}
                   value={formData.price}
                   onChange={e => setFormData({ ...formData, price: e.target.value })}
                   placeholder={formData.listingType === 'Rent' ? 'e.g., ₹25,000/month' : 'e.g., ₹45 Lacs'}

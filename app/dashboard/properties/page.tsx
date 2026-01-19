@@ -558,7 +558,7 @@ export default function InventoryManagementPage() {
       'Check out this property on Dream Properties:',
       property.title || 'Property',
       property.location ? `Location: ${property.location}` : null,
-      property.price ? `Price: ${property.price}` : null,
+      property.price && property.price !== 'NA' ? `Price: ${property.price}` : null,
       url,
     ].filter(Boolean);
     return parts.join('\n');

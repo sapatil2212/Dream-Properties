@@ -37,8 +37,8 @@ export const ProcessSteps: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <span className="text-blue-600 font-black text-[9px] uppercase tracking-[0.4em] mb-2 block">The Process</span>
-          <h2 className="text-lg md:text-4xl font-black text-slate-900 tracking-tight uppercase">How It Works</h2>
+          <span className="text-blue-600 font-black text-[10px] md:text-xs uppercase tracking-[0.3em] mb-2 block">The Process</span>
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight uppercase">How It Works</h2>
           <div className="w-12 h-1.5 bg-blue-600 mx-auto mt-4 rounded-full" />
         </div>
 

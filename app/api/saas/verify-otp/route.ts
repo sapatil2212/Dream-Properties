@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { UserRole } from '@prisma/client'
+import { UserRole } from '@/types'
 import nodemailer from 'nodemailer'
 
 const transporter = nodemailer.createTransport({

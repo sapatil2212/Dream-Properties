@@ -264,12 +264,14 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                     {property.address || property.location}
                   </div>
                 </div>
-                <div className="text-left md:text-right bg-slate-50 p-3 px-5 rounded-lg border border-slate-100">
-                  <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] mb-0.5">
-                    {property.listingType === 'Rent' ? 'Monthly Rent' : 'Price'}
-                  </p>
-                  <p className="text-xl font-black text-blue-600">{property.price}</p>
-                </div>
+                {property.price && property.price !== 'NA' && (
+                  <div className="text-left md:text-right bg-slate-50 p-3 px-5 rounded-lg border border-slate-100">
+                    <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] mb-0.5">
+                      {property.listingType === 'Rent' ? 'Monthly Rent' : 'Price'}
+                    </p>
+                    <p className="text-xl font-black text-blue-600">{property.price}</p>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 py-3 border-y border-slate-50">

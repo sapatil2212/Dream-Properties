@@ -142,186 +142,184 @@ export function PropertyInquiryForm({ propertyId, propertyTitle, source, onSubmi
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div className="space-y-3">
-            <Input
-              label="Name"
-              placeholder="Full Name"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <Input
-              label="Email"
-              placeholder="your@email.com"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <Input
-              label="Phone No"
-              placeholder="+91 988XX XXXXX"
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="text-center mb-4">
+        <p className="text-sm font-medium text-slate-600">Our experts will call you shortly.</p>
+      </div>
 
-          <div className="space-y-2">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Basic Information</p>
-            <div className="space-y-3 rounded-xl border border-slate-200 p-3 bg-slate-50/40">
-              <div>
-                <p className="text-[10px] font-bold text-slate-700 mb-1">
-                  Your reason to buy is
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
-                    <input
-                      type="radio"
-                      name="reasonToBuy"
-                      className="h-3 w-3"
-                      checked={reasonToBuy === 'Investment'}
-                      onChange={() => setReasonToBuy('Investment')}
-                    />
-                    Investment
-                  </label>
-                  <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
-                    <input
-                      type="radio"
-                      name="reasonToBuy"
-                      className="h-3 w-3"
-                      checked={reasonToBuy === 'Self Use'}
-                      onChange={() => setReasonToBuy('Self Use')}
-                    />
-                    Self Use
-                  </label>
-                </div>
+      <div className="space-y-4">
+        <div className="space-y-3">
+          <Input
+            label="Name"
+            placeholder="Full Name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Input
+            label="Email"
+            placeholder="your@email.com"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <Input
+            label="Phone No"
+            placeholder="+91 988XX XXXXX"
+            required
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Basic Information</p>
+          <div className="space-y-3 rounded-xl border border-slate-200 p-3 bg-slate-50/40">
+            <div>
+              <p className="text-[10px] font-bold text-slate-700 mb-1">
+                Your reason to buy is
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
+                  <input
+                    type="radio"
+                    name="reasonToBuy"
+                    className="h-3 w-3"
+                    checked={reasonToBuy === 'Investment'}
+                    onChange={() => setReasonToBuy('Investment')}
+                  />
+                  Investment
+                </label>
+                <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
+                  <input
+                    type="radio"
+                    name="reasonToBuy"
+                    className="h-3 w-3"
+                    checked={reasonToBuy === 'Self Use'}
+                    onChange={() => setReasonToBuy('Self Use')}
+                  />
+                  Self Use
+                </label>
               </div>
-
-              <div>
-                <p className="text-[10px] font-bold text-slate-700 mb-1">
-                  Are you a property dealer
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
-                    <input
-                      type="radio"
-                      name="isDealer"
-                      className="h-3 w-3"
-                      checked={isDealer === 'yes'}
-                      onChange={() => setIsDealer('yes')}
-                    />
-                    Yes
-                  </label>
-                  <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
-                    <input
-                      type="radio"
-                      name="isDealer"
-                      className="h-3 w-3"
-                      checked={isDealer === 'no'}
-                      onChange={() => setIsDealer('no')}
-                    />
-                    No
-                  </label>
-                </div>
-              </div>
-
-              {isDealer === 'yes' && (
-                <Input
-                  label="Dealer / Firm Name"
-                  placeholder="Name"
-                  value={dealerName}
-                  onChange={(e) => setDealerName(e.target.value)}
-                />
-              )}
             </div>
+
+            <div>
+              <p className="text-[10px] font-bold text-slate-700 mb-1">
+                Are you a property dealer
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
+                  <input
+                    type="radio"
+                    name="isDealer"
+                    className="h-3 w-3"
+                    checked={isDealer === 'yes'}
+                    onChange={() => setIsDealer('yes')}
+                  />
+                  Yes
+                </label>
+                <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
+                  <input
+                    type="radio"
+                    name="isDealer"
+                    className="h-3 w-3"
+                    checked={isDealer === 'no'}
+                    onChange={() => setIsDealer('no')}
+                  />
+                  No
+                </label>
+              </div>
+            </div>
+
+            {isDealer === 'yes' && (
+              <Input
+                label="Dealer / Firm Name"
+                placeholder="Name"
+                value={dealerName}
+                onChange={(e) => setDealerName(e.target.value)}
+              />
+            )}
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Optional Information</p>
-            <div className="space-y-3 rounded-xl border border-slate-200 p-3 bg-slate-50/40">
-              <div>
-                <p className="text-[10px] font-bold text-slate-700 mb-1">
-                  By when you are planning to buy the property?
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
-                    <input
-                      type="checkbox"
-                      className="h-3 w-3"
-                      checked={planningTimeline === 'now'}
-                      onChange={() => setPlanningTimeline(planningTimeline === 'now' ? '' : 'now')}
-                    />
-                    Now
-                  </label>
-                  <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
-                    <input
-                      type="checkbox"
-                      className="h-3 w-3"
-                      checked={planningTimeline === '3m'}
-                      onChange={() => setPlanningTimeline(planningTimeline === '3m' ? '' : '3m')}
-                    />
-                    3 months
-                  </label>
-                  <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
-                    <input
-                      type="checkbox"
-                      className="h-3 w-3"
-                      checked={planningTimeline === '6m'}
-                      onChange={() => setPlanningTimeline(planningTimeline === '6m' ? '' : '6m')}
-                    />
-                    6 months
-                  </label>
-                  <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
-                    <input
-                      type="checkbox"
-                      className="h-3 w-3"
-                      checked={planningTimeline === '6m_plus'}
-                      onChange={() => setPlanningTimeline(planningTimeline === '6m_plus' ? '' : '6m_plus')}
-                    />
-                    More than 6 months
-                  </label>
-                </div>
-              </div>
-
-              <div className="space-y-1">
+        <div className="space-y-2">
+          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Optional Information</p>
+          <div className="space-y-3 rounded-xl border border-slate-200 p-3 bg-slate-50/40">
+            <div>
+              <p className="text-[10px] font-bold text-slate-700 mb-1">
+                By when you are planning to buy the property?
+              </p>
+              <div className="grid grid-cols-2 gap-2">
                 <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
                   <input
                     type="checkbox"
                     className="h-3 w-3"
-                    checked={interestedHomeLoan}
-                    onChange={(e) => setInterestedHomeLoan(e.target.checked)}
+                    checked={planningTimeline === 'now'}
+                    onChange={() => setPlanningTimeline(planningTimeline === 'now' ? '' : 'now')}
                   />
-                  I am interested in home loan
+                  Now
                 </label>
                 <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
                   <input
                     type="checkbox"
                     className="h-3 w-3"
-                    checked={interestedSiteVisit}
-                    onChange={(e) => setInterestedSiteVisit(e.target.checked)}
+                    checked={planningTimeline === '3m'}
+                    onChange={() => setPlanningTimeline(planningTimeline === '3m' ? '' : '3m')}
                   />
-                  I am interested in site visits.
+                  3 months
                 </label>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                  Basic Information / Notes
+                <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
+                  <input
+                    type="checkbox"
+                    className="h-3 w-3"
+                    checked={planningTimeline === '6m'}
+                    onChange={() => setPlanningTimeline(planningTimeline === '6m' ? '' : '6m')}
+                  />
+                  6 months
                 </label>
-                <textarea
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-blue-500 outline-none text-xs font-medium min-h-[70px]"
-                  placeholder="Any additional details you would like to share..."
-                  value={otherMessage}
-                  onChange={(e) => setOtherMessage(e.target.value)}
-                />
+                <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
+                  <input
+                    type="checkbox"
+                    className="h-3 w-3"
+                    checked={planningTimeline === '6m_plus'}
+                    onChange={() => setPlanningTimeline(planningTimeline === '6m_plus' ? '' : '6m_plus')}
+                  />
+                  More than 6 months
+                </label>
               </div>
             </div>
+
+            <div className="space-y-1">
+              <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
+                <input
+                  type="checkbox"
+                  className="h-3 w-3"
+                  checked={interestedHomeLoan}
+                  onChange={(e) => setInterestedHomeLoan(e.target.checked)}
+                />
+                I am interested in home loan
+              </label>
+            </div>
+
+            <div className="space-y-1">
+              <label className="inline-flex items-center gap-1.5 text-[10px] font-medium text-slate-600">
+                <input
+                  type="checkbox"
+                  className="h-3 w-3"
+                  checked={interestedSiteVisit}
+                  onChange={(e) => setInterestedSiteVisit(e.target.checked)}
+                />
+                I am interested in site visits
+              </label>
+            </div>
+            
+            <Input
+              label="Other Requirements"
+              placeholder="Any specific requirements..."
+              value={otherMessage}
+              onChange={(e) => setOtherMessage(e.target.value)}
+            />
           </div>
         </div>
       </div>

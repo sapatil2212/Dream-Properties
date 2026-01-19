@@ -38,6 +38,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [pathname]);
 
+  // Auto-mark attendance for employees
+  useEffect(() => {
+    if (session?.user && ['SALES_EXECUTIVE', 'TELECALLER'].includes(session.user.role)) {
+      fetch('/api/attendance/mark', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.message === 'Checked in successfully') {
+                console.log('Attendance marked for today');
+            }
+        })
+        .catch(err => console.error('Auto check-in failed', err));
+    }
+  }, [session]);
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">

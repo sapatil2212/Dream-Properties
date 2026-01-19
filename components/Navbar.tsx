@@ -95,6 +95,7 @@ export const Navbar: React.FC = () => {
                 onMouseLeave={() => setIsPropertiesDropdownOpen(false)}
               >
                 <button 
+                  suppressHydrationWarning
                   className={`flex items-center gap-1 text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
                     pathname?.startsWith('/properties') ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
                   }`}
@@ -252,6 +253,7 @@ export const Navbar: React.FC = () => {
             {/* Mobile Burger Toggle */}
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              suppressHydrationWarning
               className="md:hidden p-1.5 text-gray-900 hover:bg-gray-50 rounded-lg transition-all"
               aria-label="Toggle Menu"
             >
