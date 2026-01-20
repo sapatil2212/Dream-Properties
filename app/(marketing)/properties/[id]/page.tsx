@@ -235,6 +235,9 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
 
                 <div className="absolute top-4 left-4 flex gap-2">
                   <Badge variant="info" className="px-3 py-1 rounded-md">{property.propertySubtype || property.type || 'Residential'}</Badge>
+                  {property.isFeatured && (
+                    <Badge className="bg-amber-500 text-white border-none shadow-sm px-3 py-1 rounded-md">Featured</Badge>
+                  )}
                 </div>
               </div>
 

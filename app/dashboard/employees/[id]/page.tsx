@@ -58,6 +58,9 @@ interface EmployeeDetail {
         accountNumber: string;
         bankName: string;
         ifscCode: string;
+        workingHours: number;
+        shiftStartTime: string;
+        lateMarkDeduction: number;
     } | null;
     attendance: any[];
     salarySlips: any[];
@@ -175,7 +178,10 @@ export default function EmployeeDetailPage() {
         leavesAllotted: '',
         accountNumber: '',
         bankName: '',
-        ifscCode: ''
+        ifscCode: '',
+        workingHours: '',
+        shiftStartTime: '',
+        lateMarkDeduction: ''
     });
 
     useEffect(() => {
@@ -198,7 +204,10 @@ export default function EmployeeDetailPage() {
                 leavesAllotted: employee.employeeProfile?.leavesAllotted?.toString() || '12',
                 accountNumber: employee.employeeProfile?.accountNumber || '',
                 bankName: employee.employeeProfile?.bankName || '',
-                ifscCode: employee.employeeProfile?.ifscCode || ''
+                ifscCode: employee.employeeProfile?.ifscCode || '',
+                workingHours: employee.employeeProfile?.workingHours?.toString() || '9',
+                shiftStartTime: employee.employeeProfile?.shiftStartTime || '09:00',
+                lateMarkDeduction: employee.employeeProfile?.lateMarkDeduction?.toString() || '0'
             });
             
             setSalaryStructure({
@@ -689,6 +698,25 @@ export default function EmployeeDetailPage() {
                                     </div>
                                 </div>
 
+                                {/* Working Rules */}
+                                <div className="space-y-4">
+                                    <h3 className="font-semibold text-lg border-b pb-2">Working Rules</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="workingHours">Working Hours (per day)</Label>
+                                            <Input id="workingHours" name="workingHours" type="number" step="0.5" value={editFormData.workingHours} onChange={handleEditInputChange} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="shiftStartTime">Shift Start Time</Label>
+                                            <Input id="shiftStartTime" name="shiftStartTime" type="time" value={editFormData.shiftStartTime} onChange={handleEditInputChange} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="lateMarkDeduction">Late Mark Deduction (₹/hr)</Label>
+                                            <Input id="lateMarkDeduction" name="lateMarkDeduction" type="number" value={editFormData.lateMarkDeduction} onChange={handleEditInputChange} />
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div className="flex justify-end gap-2 pt-4">
                                     <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
                                     <Button type="submit" disabled={isSaving}>
@@ -736,6 +764,10 @@ export default function EmployeeDetailPage() {
                             <div className="flex items-center gap-3">
                                 <Building2 className="w-4 h-4 text-slate-400" />
                                 <span className="text-sm">Joined: {employee.employeeProfile?.joiningDate ? new Date(employee.employeeProfile.joiningDate).toLocaleDateString() : 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <Calendar className="w-4 h-4 text-slate-400" />
+                                <span className="text-sm">Shift: {employee.employeeProfile?.shiftStartTime || '09:00'} ({employee.employeeProfile?.workingHours || 9}h)</span>
                             </div>
                             <div className="pt-4 border-t">
                                 <h4 className="font-medium mb-2 text-sm">Bank Details</h4>
@@ -1301,6 +1333,12 @@ export default function EmployeeDetailPage() {
                                             <td className="p-1 border-b border-slate-100">Health Insurance</td>
                                             <td className="p-1 border-b border-slate-100 text-right">{(viewSlip.details?.healthInsurance || 0).toFixed(2)}</td>
                                         </tr>
+                                        {viewSlip.details?.lateMarkDeductionAmount > 0 && (
+                                            <tr>
+                                                <td className="p-1 border-b border-slate-100">Late Mark Deduction ({viewSlip.details.totalLateHours?.toFixed(1) || 0} hrs)</td>
+                                                <td className="p-1 border-b border-slate-100 text-right">{(viewSlip.details.lateMarkDeductionAmount).toFixed(2)}</td>
+                                            </tr>
+                                        )}
                                         {viewSlip.details?.customDeductions?.map((item: any, idx: number) => (
                                             <tr key={idx}>
                                                 <td className="p-1 border-b border-slate-100">{item.name}</td>
@@ -1444,6 +1482,12 @@ export default function EmployeeDetailPage() {
                                                     <td className="p-2 border-b border-slate-100">Health Insurance</td>
                                                     <td className="p-2 border-b border-slate-100 text-right">{(viewSlip.details?.healthInsurance || 0).toFixed(2)}</td>
                                                 </tr>
+                                                {viewSlip.details?.lateMarkDeductionAmount > 0 && (
+                                                    <tr>
+                                                        <td className="p-2 border-b border-slate-100">Late Mark Deduction ({viewSlip.details.totalLateHours?.toFixed(1) || 0} hrs)</td>
+                                                        <td className="p-2 border-b border-slate-100 text-right">{(viewSlip.details.lateMarkDeductionAmount).toFixed(2)}</td>
+                                                    </tr>
+                                                )}
                                                 {viewSlip.details?.customDeductions?.map((item: any, idx: number) => (
                                                     <tr key={idx}>
                                                         <td className="p-2 border-b border-slate-100">{item.name}</td>

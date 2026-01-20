@@ -83,6 +83,7 @@ export async function PUT(
         location: body.location,
         address: body.address,
         type: body.type,
+        isFeatured: body.isFeatured,
         bedrooms: body.bedrooms ? parseInt(body.bedrooms) : null,
         bathrooms: body.bathrooms ? parseInt(body.bathrooms) : null,
         possessionDate: body.possessionDate,

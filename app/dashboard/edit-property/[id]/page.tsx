@@ -26,6 +26,7 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
     type: '',
     propertySubtype: '',
     listingType: '',
+    isFeatured: false,
     title: '',
     price: '',
     area: '',
@@ -74,6 +75,7 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
           type: data.type || '',
           propertySubtype: data.propertySubtype || '',
           listingType: data.listingType || '',
+          isFeatured: data.isFeatured || false,
           title: data.title || '',
           price: data.price || '',
           area: data.area || '',
@@ -234,6 +236,20 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                 placeholder="e.g., Dream Heights Residency"
               />
+
+              {/* Featured Checkbox */}
+              <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                <input
+                  type="checkbox"
+                  id="isFeatured"
+                  checked={formData.isFeatured}
+                  onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="isFeatured" className="text-sm font-bold text-slate-700 cursor-pointer select-none">
+                  Mark as Featured Property
+                </label>
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <Input

@@ -69,22 +69,49 @@ export async function POST(request: NextRequest) {
             totalUnpaidDays += days;
         }
 
-        // Fetch Present Days count
-        const presentDaysCount = await prisma.attendance.count({
+        // Fetch Attendance Records
+        const attendanceRecords = await prisma.attendance.findMany({
             where: {
                 userId: employeeId,
                 date: {
                     gte: startDate,
                     lte: endDate
-                },
-                status: 'Present'
+                }
             }
         });
+
+        const presentDaysCount = attendanceRecords.filter(r => r.status === 'Present').length;
+
+        // Calculate Late Mark Deductions
+        let totalLateHours = 0;
+        let lateMarkDeductionAmount = 0;
+        const shiftStartTime = employee.employeeProfile.shiftStartTime || "09:00";
+        const deductionRate = employee.employeeProfile.lateMarkDeduction || 0;
+
+        if (deductionRate > 0) {
+            const [startHour, startMinute] = shiftStartTime.split(':').map(Number);
+            
+            for (const record of attendanceRecords) {
+                if (record.checkIn) {
+                    const checkIn = new Date(record.checkIn);
+                    // Create Expected Login Time for that day
+                    const expectedLogin = new Date(checkIn);
+                    expectedLogin.setHours(startHour, startMinute, 0, 0);
+
+                    if (checkIn > expectedLogin) {
+                         const diffMs = checkIn.getTime() - expectedLogin.getTime();
+                         const diffHours = diffMs / (1000 * 60 * 60);
+                         totalLateHours += diffHours;
+                    }
+                }
+            }
+            lateMarkDeductionAmount = totalLateHours * deductionRate;
+        }
 
         const perDaySalary = gross / totalDays;
         const lossOfPay = perDaySalary * totalUnpaidDays;
         
-        const totalDeductions = pf + professionalTax + healthInsurance + totalCustomDeductions + lossOfPay;
+        const totalDeductions = pf + professionalTax + healthInsurance + totalCustomDeductions + lossOfPay + lateMarkDeductionAmount;
         const net = gross - totalDeductions;
 
         // Check if slip already exists
@@ -123,7 +150,9 @@ export async function POST(request: NextRequest) {
                     totalDays,
                     presentDays: presentDaysCount,
                     unpaidDays: totalUnpaidDays,
-                    lossOfPay
+                    lossOfPay,
+                    totalLateHours,
+                    lateMarkDeductionAmount
                 }
             }
         });

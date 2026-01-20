@@ -21,7 +21,7 @@ export const HeroSection: React.FC = () => {
   }, []);
 
   return (
-    <section className="relative md:h-[600px] overflow-visible mb-[160px] md:mb-8 flex flex-col">
+    <section className="relative md:h-[600px] overflow-visible mb-24 md:mb-8 flex flex-col">
       {/* Mobile Height Spacer */}
       <img 
         src={typeof HERO_IMAGES[0] === 'string' ? HERO_IMAGES[0] : (HERO_IMAGES[0] as any).src}

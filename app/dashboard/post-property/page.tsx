@@ -26,6 +26,7 @@ export default function PostPropertyPage() {
     type: '',
     propertySubtype: '',
     listingType: '',
+    isFeatured: false,
     title: '',
     price: '',
     area: '',
@@ -474,6 +475,20 @@ export default function PostPropertyPage() {
                         {fieldErrors.listingType && (
                           <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.listingType}</p>
                         )}
+                        
+                        {/* Featured Checkbox */}
+                        <div className="mt-4 flex items-center gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                          <input
+                            type="checkbox"
+                            id="isFeatured"
+                            checked={formData.isFeatured}
+                            onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <label htmlFor="isFeatured" className="text-sm font-bold text-slate-700 cursor-pointer select-none">
+                            Mark as Featured Property
+                          </label>
+                        </div>
                       </div>
                     </div>
 

@@ -16,7 +16,22 @@ const transporter = nodemailer.createTransport({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, mobile, password, role } = body
+    const { 
+      name, 
+      firstName,
+      lastName,
+      email, 
+      mobile, 
+      password, 
+      role,
+      dob,
+      gender,
+      address,
+      occupation,
+      experienceYears,
+      experienceMonths,
+      isFresher
+    } = body
 
     // Check if user already exists
     const existing = await prisma.user.findUnique({
@@ -24,6 +39,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existing) {
+      console.log(`Registration failed: Email ${email} already registered`);
       return NextResponse.json(
         { message: 'Email already registered' },
         { status: 400 }
@@ -41,17 +57,35 @@ export async function POST(request: NextRequest) {
       create: {
         email,
         name,
+        firstName,
+        lastName,
         mobile,
         password: hashedPassword,
         role: role || 'USER',
+        dob,
+        gender,
+        address,
+        occupation,
+        experienceYears: experienceYears ? parseInt(experienceYears.toString()) : 0,
+        experienceMonths: experienceMonths ? parseInt(experienceMonths.toString()) : 0,
+        isFresher: isFresher || false,
         otp,
         expiresAt,
       },
       update: {
         name,
+        firstName,
+        lastName,
         mobile,
         password: hashedPassword,
         role: role || 'USER',
+        dob,
+        gender,
+        address,
+        occupation,
+        experienceYears: experienceYears ? parseInt(experienceYears.toString()) : 0,
+        experienceMonths: experienceMonths ? parseInt(experienceMonths.toString()) : 0,
+        isFresher: isFresher || false,
         otp,
         expiresAt,
       },

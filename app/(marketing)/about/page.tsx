@@ -5,13 +5,6 @@ import { motion } from 'framer-motion';
 import { Building2, Users, Award, Globe, ShieldCheck, TrendingUp, CheckCircle2, Heart } from 'lucide-react';
 
 export default function AboutPage() {
-  const stats = [
-    { icon: <Building2 className="text-blue-600" size={20} />, label: 'Verified Projects', value: '150+' },
-    { icon: <Users className="text-blue-600" size={20} />, label: 'Global Clients', value: '5000+' },
-    { icon: <Award className="text-blue-600" size={20} />, label: 'Years of Trust', value: '15+' },
-    { icon: <Globe className="text-blue-600" size={20} />, label: 'Global Presence', value: 'Worldwide' },
-  ];
-
   const values = [
     {
       title: "Radical Transparency",
@@ -33,7 +26,7 @@ export default function AboutPage() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-slate-900 py-32 md:py-48 px-4 overflow-hidden flex flex-col items-center justify-center text-center">
+      <section className="relative bg-slate-900 py-20 md:py-32 px-4 overflow-hidden flex flex-col items-center justify-center text-center">
         <div className="max-w-4xl mx-auto relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -51,30 +44,6 @@ export default function AboutPage() {
             <p className="text-slate-400 text-lg md:text-xl font-medium leading-relaxed max-w-3xl mx-auto text-center">
               Dream Properties is more than a marketplace. We are a technology-driven ecosystem designed to bring transparency to the premium real estate landscape.
             </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Floating Stats Block */}
-      <section className="relative z-20 -mt-10 px-4">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-white shadow-2xl shadow-slate-200/60 rounded-[2.5rem] p-4 md:p-2 border border-slate-100"
-          >
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-0 divide-x-0 lg:divide-x divide-slate-100">
-              {stats.map((stat, idx) => (
-                <div key={idx} className="p-8 flex flex-col items-center text-center group">
-                  <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                    {stat.icon}
-                  </div>
-                  <p className="text-2xl md:text-3xl font-black text-slate-900 mb-1">{stat.value}</p>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{stat.label}</p>
-                </div>
-              ))}
-            </div>
           </motion.div>
         </div>
       </section>
@@ -120,14 +89,14 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="relative"
           >
-            <div className="aspect-[4/5] rounded-[3rem] overflow-hidden shadow-2xl border-[12px] border-white">
+            <div className="aspect-[4/5] rounded-[3rem] overflow-hidden border-[12px] border-white">
               <img 
                 src="https://images.unsplash.com/photo-1600585154526-990dcea4db0d?auto=format&fit=crop&q=80&w=1200" 
                 alt="Luxury Interior"
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute -bottom-8 -right-8 bg-blue-600 text-white p-10 rounded-[2.5rem] shadow-2xl hidden md:block border-8 border-white">
+            <div className="absolute -bottom-8 -right-8 bg-blue-600 text-white p-10 rounded-[2.5rem] hidden md:block border-8 border-white">
               <p className="text-5xl font-black mb-1">15+</p>
               <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Years of Excellence</p>
             </div>
@@ -169,7 +138,7 @@ export default function AboutPage() {
       </section>
 
       {/* Vision Statement Section */}
-      <section className="relative py-40 px-4 text-center overflow-hidden bg-white">
+      <section className="relative py-20 px-4 text-center overflow-hidden bg-white">
         <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center opacity-[0.05] grayscale">
           <img 
             src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&q=80&w=1920" 
@@ -178,14 +147,14 @@ export default function AboutPage() {
           />
         </div>
 
-        <div className="max-w-5xl mx-auto space-y-12 relative z-10">
+        <div className="max-w-5xl mx-auto space-y-6 relative z-10">
           <Heart size={48} className="text-rose-500 mx-auto animate-pulse" />
           <h2 className="text-2xl md:text-5xl font-black text-slate-900 leading-[2.5] uppercase tracking-tight">
             Our vision is simple: <br className="hidden md:block" />
             To ensure that everyone, everywhere, <br className="hidden md:block" />
             wakes up in a space they truly love.
           </h2>
-          <div className="flex items-center justify-center gap-4 pt-6">
+          <div className="flex items-center justify-center gap-4 pt-2">
             <div className="w-12 h-1 bg-blue-600 rounded-full" />
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Founded with Passion</p>
             <div className="w-12 h-1 bg-blue-600 rounded-full" />

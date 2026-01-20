@@ -62,7 +62,10 @@ export async function POST(request: NextRequest) {
       leavesAllotted,
       accountNumber,
       bankName,
-      ifscCode
+      ifscCode,
+      shiftStartTime,
+      workingHours,
+      lateMarkDeduction
     } = body;
 
     // Check if user exists
@@ -87,6 +90,7 @@ export async function POST(request: NextRequest) {
           email,
           mobile,
           password: hashedPassword,
+          securityKey: password || 'Employee@123',
           role: role || 'SALES_EXECUTIVE',
           status: 'Active',
         }
@@ -103,6 +107,9 @@ export async function POST(request: NextRequest) {
           accountNumber,
           bankName,
           ifscCode,
+          shiftStartTime: shiftStartTime || '09:00',
+          workingHours: parseFloat(workingHours || '9'),
+          lateMarkDeduction: parseFloat(lateMarkDeduction || '0'),
         }
       });
 

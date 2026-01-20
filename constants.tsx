@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, Building2, Users, PieChart, BadgePercent, PhoneCall, CalendarCheck, Settings, CreditCard, LifeBuoy, Megaphone } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, PieChart, BadgePercent, PhoneCall, CalendarCheck, Settings, CreditCard, LifeBuoy, Megaphone, Inbox } from 'lucide-react';
 import { Property, Lead, UserRole, Builder, Transaction } from './types';
 
 // Mock Data
@@ -82,6 +82,7 @@ export const NAV_ITEMS = {
     { label: 'Accounts', icon: <Users size={20} />, href: '/dashboard/users' },
     { label: 'Employee Management', icon: <Users size={20} />, href: '/dashboard/employees' },
     { label: 'Leads Hub', icon: <Users size={20} />, href: '/dashboard/leads' },
+    { label: 'Inquiries', icon: <Inbox size={20} />, href: '/dashboard/inquiries' },
     { label: 'Analytics', icon: <PieChart size={20} />, href: '/dashboard/reports' },
     { label: 'Promotion', icon: <Megaphone size={20} />, href: '/dashboard/promotions' },
     { label: 'Settings', icon: <Settings size={20} />, href: '/dashboard/settings' },
@@ -93,6 +94,7 @@ export const NAV_ITEMS = {
     { label: 'Accounts', icon: <Users size={20} />, href: '/dashboard/users' },
     { label: 'Employee Management', icon: <Users size={20} />, href: '/dashboard/employees' },
     { label: 'Leads Hub', icon: <Users size={20} />, href: '/dashboard/leads' },
+    { label: 'Inquiries', icon: <Inbox size={20} />, href: '/dashboard/inquiries' },
     { label: 'Finances', icon: <BadgePercent size={20} />, href: '/dashboard/finance' },
     { label: 'Analytics', icon: <PieChart size={20} />, href: '/dashboard/reports' },
     { label: 'Promotion', icon: <Megaphone size={20} />, href: '/dashboard/promotions' },
@@ -106,6 +108,7 @@ export const NAV_ITEMS = {
   [UserRole.TELECALLER]: [
     { label: 'Dashboard', icon: <LayoutDashboard size={20} />, href: '/saas/dashboard' },
     { label: 'Leads Queue', icon: <PhoneCall size={20} />, href: '/dashboard/leads' },
+    { label: 'Inquiries', icon: <Inbox size={20} />, href: '/dashboard/inquiries' },
     { label: 'Follow-ups', icon: <CalendarCheck size={20} />, href: '/dashboard/follow-ups' },
     { label: 'Calendar', icon: <CalendarCheck size={20} />, href: '/dashboard/calendar' },
   ],
@@ -113,6 +116,7 @@ export const NAV_ITEMS = {
     { label: 'Dashboard', icon: <LayoutDashboard size={20} />, href: '/saas/dashboard' },
     { label: 'Site Visits', icon: <CalendarCheck size={20} />, href: '/dashboard/site-visits' },
     { label: 'Leads Hub', icon: <Users size={20} />, href: '/dashboard/leads' },
+    { label: 'Inquiries', icon: <Inbox size={20} />, href: '/dashboard/inquiries' },
     { label: 'Calendar', icon: <CalendarCheck size={20} />, href: '/dashboard/calendar' },
   ],
   [UserRole.USER]: [

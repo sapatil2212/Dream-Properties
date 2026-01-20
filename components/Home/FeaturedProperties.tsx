@@ -74,6 +74,9 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
         {/* Overlay Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           <Badge variant="info">{property.property_subtype || property.type || 'Residential'}</Badge>
+          {property.isFeatured && (
+            <Badge className="bg-amber-500 text-white border-none shadow-sm">Featured</Badge>
+          )}
         </div>
 
         {/* Wishlist Button */}
@@ -167,8 +170,8 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
         onClose={() => setShowInquiry(false)}
         title="Inquire About This Property"
       >
-        <div className="space-y-3">
-          <p className="text-[11px] text-slate-500 font-medium">
+        <div className="space-y-2">
+          <p className="text-[11px] text-slate-500 font-medium -mt-4 mb-2">
             Share a few details and our team will connect with you shortly.
           </p>
           <PropertyInquiryForm
@@ -176,6 +179,7 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
             propertyTitle={property.title}
             source="Website Property Card"
             onSubmitted={handleInquirySubmitted}
+            twoColumn={true}
           />
         </div>
       </Modal>
@@ -226,18 +230,18 @@ export const FeaturedProperties: React.FC = () => {
   return (
     <section className="py-16 bg-white px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
+        <div className="flex flex-row justify-between items-center md:items-end mb-10 gap-4">
           <div>
             <span className="text-blue-600 font-black text-[10px] md:text-xs uppercase tracking-[0.3em] mb-2 block">Premium Selection</span>
-            <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-tight uppercase">Featured Projects</h2>
+            <h2 className="text-xl md:text-3xl font-black text-slate-900 tracking-tight leading-tight uppercase">Featured Projects</h2>
             <div className="w-10 h-1 bg-blue-600 mt-2 rounded-full" />
           </div>
           <Button 
             onClick={() => router.push('/properties')}
-            className="group flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs shadow-none transition-all duration-300"
+            className="group flex items-center gap-1 md:gap-2 px-3 py-2 md:px-6 md:py-3 rounded-xl font-bold text-[10px] md:text-xs shadow-none transition-all duration-300 shrink-0"
           >
-            Explore All Listings 
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            Explore All
+            <ArrowRight size={14} className="md:w-4 md:h-4 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
 

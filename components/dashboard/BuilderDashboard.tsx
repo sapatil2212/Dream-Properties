@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Building2, Users, Eye, TrendingUp, Plus, Trash2, Edit2, Flag 
+  Building2, Users, Eye, TrendingUp, Plus, Trash2, Edit2, Flag, Star 
 } from 'lucide-react';
 import { 
   Card, Button, DataTable, Badge, StatCard, Skeleton, Alert, ConfirmDialog 
@@ -120,11 +120,11 @@ export function BuilderDashboard() {
         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
           <h3 className="font-black uppercase tracking-tight text-slate-900">Your Inventory</h3>
         </div>
-        <DataTable headers={['Property', 'Type', 'Price', 'Status', 'Sold/Rented', 'Views', 'Actions']}>
+        <DataTable headers={['Property', 'Type', 'Price', 'Status', 'Featured', 'Sold/Rented', 'Views', 'Actions']}>
           {isLoading ? (
-            <tr><td colSpan={7} className="text-center py-10"><Skeleton className="h-4 w-full" /></td></tr>
+            <tr><td colSpan={8} className="text-center py-10"><Skeleton className="h-4 w-full" /></td></tr>
           ) : myProperties.length === 0 ? (
-            <tr><td colSpan={7} className="text-center py-10 text-slate-400">No properties posted yet</td></tr>
+            <tr><td colSpan={8} className="text-center py-10 text-slate-400">No properties posted yet</td></tr>
           ) : (
             myProperties.map(p => (
               <tr key={p.id} className="hover:bg-slate-50 transition-colors">
@@ -140,6 +140,16 @@ export function BuilderDashboard() {
                   <Badge variant={p.status === 'Approved' ? 'success' : p.status === 'Rejected' ? 'error' : 'warning'} className="text-[10px] px-2 py-0.5">
                     {p.status === 'Pending_Approval' ? 'Pending Approval' : p.status}
                   </Badge>
+                </td>
+                <td className="px-3 py-2">
+                  {p.isFeatured ? (
+                    <span className="flex items-center gap-1 text-amber-500 font-bold text-[10px]">
+                      <Star size={12} className="fill-amber-500" />
+                      Featured
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400">-</span>
+                  )}
                 </td>
                 <td className="px-3 py-2">
                   {p.propertyFlag ? (

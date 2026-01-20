@@ -4,7 +4,7 @@ import React, { useEffect, use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PropertyCard } from '@/components/Home/FeaturedProperties';
 import { PropertyCategory } from '@/types';
-import { ChevronLeft, LayoutGrid, Filter, Search } from 'lucide-react';
+import { ChevronLeft, LayoutGrid, Filter, Search, ArrowRight, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/UIComponents';
 
 const slugToCategory: Record<string, PropertyCategory> = {
@@ -186,17 +186,35 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ slug:
         )}
       </div>
 
-      <section className="bg-blue-600 py-16 px-4">
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl font-black text-white mb-6 uppercase tracking-tight">Looking for something specific?</h2>
-          <p className="text-blue-100 mb-8 text-lg font-medium italic">Our real estate consultants can help you find exactly what you're looking for at the best price.</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 w-full sm:w-auto font-black uppercase tracking-widest text-xs">
-              Talk to Expert
-            </Button>
-            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10 w-full sm:w-auto font-black uppercase tracking-widest text-xs">
-              Enquire Via WhatsApp
-            </Button>
+      <section className="max-w-7xl mx-auto px-4 py-12">
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden relative">
+          <div className="flex-1 max-w-2xl z-10">
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4 tracking-tight">
+              Looking for something specific?
+            </h2>
+            <p className="text-slate-600 text-lg font-medium mb-8 leading-relaxed">
+              Our real estate consultants can help you find exactly what you're looking for at the best price.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-start gap-6">
+               <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white h-14 px-8 rounded-xl font-bold text-base shadow-lg shadow-blue-600/20">
+                  Talk to Expert
+               </Button>
+               
+               <button className="flex items-center gap-2 text-slate-700 font-bold hover:text-emerald-600 transition-colors mt-3">
+                  <MessageCircle size={20} className="text-emerald-500" />
+                  Enquire Via WhatsApp
+                  <ArrowRight size={20} />
+               </button>
+            </div>
+          </div>
+          
+          <div className="relative w-full md:w-[400px] h-[300px] md:h-[400px] mt-8 md:mt-0 flex items-end justify-center">
+             <img 
+                src="/assets/cta.png" 
+                alt="Real Estate Expert" 
+                className="object-contain w-full h-full" 
+             />
           </div>
         </div>
       </section>

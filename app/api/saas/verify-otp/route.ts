@@ -47,11 +47,20 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.create({
       data: {
         name: pendingUser.name,
+        firstName: pendingUser.firstName,
+        lastName: pendingUser.lastName,
         email: pendingUser.email,
         mobile: pendingUser.mobile,
         password: pendingUser.password,
         role: pendingUser.role,
         securityKey,
+        dob: pendingUser.dob,
+        gender: pendingUser.gender,
+        address: pendingUser.address,
+        occupation: pendingUser.occupation,
+        experienceYears: pendingUser.experienceYears,
+        experienceMonths: pendingUser.experienceMonths,
+        isFresher: pendingUser.isFresher,
       },
     })
 

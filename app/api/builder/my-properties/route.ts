@@ -12,7 +12,10 @@ export async function GET() {
 
     const properties = await prisma.property.findMany({
       where: { builderId: parseInt(session.user.id) },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { isFeatured: 'desc' },
+        { createdAt: 'desc' },
+      ],
     })
 
     return NextResponse.json(properties)

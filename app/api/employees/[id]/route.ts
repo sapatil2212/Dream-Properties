@@ -72,7 +72,10 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
       professionalTax,
       healthInsurance,
       customEarnings,
-      customDeductions
+      customDeductions,
+      workingHours,
+      shiftStartTime,
+      lateMarkDeduction
     } = body;
 
     const updatedUser = await prisma.$transaction(async (tx) => {
@@ -101,6 +104,9 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
           accountNumber,
           bankName,
           ifscCode,
+          workingHours: parseFloat(workingHours || '9'),
+          shiftStartTime: shiftStartTime || '09:00',
+          lateMarkDeduction: parseFloat(lateMarkDeduction || '0'),
           customEarnings: customEarnings || [],
           customDeductions: customDeductions || []
       };
@@ -121,5 +127,23 @@ export async function PUT(request: NextRequest, props: { params: Promise<{ id: s
   } catch (error) {
     console.error('Error updating employee:', error);
     return NextResponse.json({ message: 'Error updating employee' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  try {
+    const id = parseInt(params.id);
+
+    // Soft delete: Set status to 'Deleted'
+    const deletedUser = await prisma.user.update({
+      where: { id },
+      data: { status: 'Deleted' }
+    });
+
+    return NextResponse.json(deletedUser);
+  } catch (error) {
+    console.error('Error deleting employee:', error);
+    return NextResponse.json({ message: 'Error deleting employee' }, { status: 500 });
   }
 }

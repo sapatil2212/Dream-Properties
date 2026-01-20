@@ -2,14 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { User, Plus, Download, Eye, Edit2, Share2 } from 'lucide-react';
+import { User, Plus, Download, Eye, Edit2, Share2, Search, FileText, FileSpreadsheet, File } from 'lucide-react';
 import { Card, Badge, Button, Input, DataTable, Skeleton, Select, Modal } from '@/components/UIComponents';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle } from 'docx';
 
 export default function LeadsPage() {
   const { data: session } = useSession();
   const [leads, setLeads] = useState<any[]>([]);
+  const [filteredLeads, setFilteredLeads] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [staff, setStaff] = useState<any[]>([]);
+  const [properties, setProperties] = useState<any[]>([]);
   const [assigningId, setAssigningId] = useState<number | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,6 +23,9 @@ export default function LeadsPage() {
   const [editLead, setEditLead] = useState<any | null>(null);
   const [editForm, setEditForm] = useState({ name: '', email: '', phone: '' });
   const [isSavingLead, setIsSavingLead] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('Newest');
   const [newLead, setNewLead] = useState({
     name: '',
     email: '',
@@ -26,6 +35,7 @@ export default function LeadsPage() {
     source: 'Manual',
     message: '',
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const fetchLeads = async () => {
     try {
@@ -33,6 +43,7 @@ export default function LeadsPage() {
       if (response.ok) {
         const data = await response.json();
         setLeads(data);
+        setFilteredLeads(data);
       }
     } catch (err) {
       console.error(err);
@@ -40,6 +51,31 @@ export default function LeadsPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    let result = [...leads];
+    
+    if (filterStatus !== 'All') {
+      result = result.filter(l => l.status === filterStatus);
+    }
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(l => 
+        l.name?.toLowerCase().includes(query) || 
+        l.phone?.toLowerCase().includes(query) ||
+        l.email?.toLowerCase().includes(query)
+      );
+    }
+
+    if (sortBy === 'Newest') {
+      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else {
+      result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    }
+    
+    setFilteredLeads(result);
+  }, [leads, filterStatus, searchQuery, sortBy]);
 
   const fetchStaff = async () => {
     try {
@@ -53,9 +89,25 @@ export default function LeadsPage() {
     }
   };
 
+  const fetchProperties = async () => {
+    try {
+      const response = await fetch('/api/properties', { cache: 'no-store' });
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Properties fetched:', data);
+        setProperties(data || []);
+      } else {
+        console.error('Failed to fetch properties:', response.status);
+      }
+    } catch (err) {
+      console.error('Error fetching properties:', err);
+    }
+  };
+
   useEffect(() => {
     fetchLeads();
     fetchStaff();
+    fetchProperties();
   }, []);
 
   const telecallers = staff.filter((s: any) => s.role === 'TELECALLER');
@@ -63,10 +115,19 @@ export default function LeadsPage() {
 
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newLead.name || !newLead.email || !newLead.phone || !newLead.propertyId) {
-      alert('Name, email, phone and property ID are required');
+    
+    const errors: Record<string, string> = {};
+    if (!newLead.name.trim()) errors.name = 'Name is required';
+    if (!newLead.email.trim()) errors.email = 'Email is required';
+    if (!newLead.phone.trim()) errors.phone = 'Phone is required';
+    if (!newLead.propertyId) errors.propertyId = 'Property is required';
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
+    setFormErrors({});
+
     setIsSubmitting(true);
     try {
       const response = await fetch('/api/leads', {
@@ -93,6 +154,7 @@ export default function LeadsPage() {
           source: 'Manual',
           message: '',
         });
+        setFormErrors({});
         setIsLoading(true);
         await fetchLeads();
       } else {
@@ -150,6 +212,88 @@ export default function LeadsPage() {
     ? ['Prospect Info', 'Inquiry Property', 'Telecaller', 'Sales Executive', 'Status', 'Last Contact', 'Actions']
     : ['Prospect Info', 'Inquiry Property', 'Status', 'Last Contact', 'Actions'];
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Leads Report', 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 28);
+    
+    autoTable(doc, {
+      startY: 35,
+      head: [['Name', 'Phone', 'Email', 'Property', 'Status', 'Source', 'Created At']],
+      body: filteredLeads.map(l => [
+        l.name, 
+        l.phone, 
+        l.email || '-',
+        l.propertyOfInterest || l.property?.title || '-',
+        l.status,
+        l.source,
+        new Date(l.createdAt).toLocaleDateString()
+      ]),
+    });
+    doc.save('leads-report.pdf');
+  };
+
+  const exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(filteredLeads.map(l => ({
+      Name: l.name,
+      Phone: l.phone,
+      Email: l.email,
+      Property: l.propertyOfInterest || l.property?.title || '-',
+      Status: l.status,
+      Source: l.source,
+      'Created At': new Date(l.createdAt).toLocaleDateString()
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Leads");
+    XLSX.writeFile(wb, "leads-report.xlsx");
+  };
+
+  const exportToWord = async () => {
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({ children: [new TextRun({ text: "Leads Report", bold: true, size: 32 })] }),
+          new Paragraph({ text: `Generated on ${new Date().toLocaleDateString()}` }),
+          new Paragraph({ text: "" }), // Spacer
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              new TableRow({
+                children: ["Name", "Phone", "Property", "Status", "Source"].map(text =>
+                  new TableCell({ 
+                    children: [new Paragraph({ children: [new TextRun({ text, bold: true })] })],
+                    width: { size: 20, type: WidthType.PERCENTAGE }
+                  })
+                ),
+              }),
+              ...filteredLeads.map(l =>
+                new TableRow({
+                  children: [
+                    l.name,
+                    l.phone,
+                    l.propertyOfInterest || l.property?.title || '-',
+                    l.status,
+                    l.source
+                  ].map(text => new TableCell({ children: [new Paragraph({ text: text || '-' })] }))
+                })
+              )
+            ]
+          })
+        ]
+      }]
+    });
+    
+    const blob = await Packer.toBlob(doc);
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'leads-report.docx';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-end">
@@ -171,26 +315,69 @@ export default function LeadsPage() {
       </div>
 
       <Card>
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex gap-4 items-center">
-            <div className="flex bg-slate-100 p-1 rounded-xl">
-              {['All', 'Hot', 'Interested', 'Closed'].map(t => (
-                <button key={t} className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-white/50 transition-colors">
-                  {t}
-                </button>
-              ))}
-            </div>
-            <Input placeholder="Filter by phone/name..." className="w-48" />
+        <div className="p-4 border-b border-slate-100 flex items-center justify-end gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+            <Input 
+              placeholder="Search leads..." 
+              className="pl-9 w-64" 
+              value={searchQuery}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+            />
           </div>
-          <Button variant="outline" size="sm" className="gap-2"><Download size={14} /> Report</Button>
+          <div className="w-32">
+            <Select
+              options={[
+                { label: 'Newest First', value: 'Newest' },
+                { label: 'Oldest First', value: 'Oldest' }
+              ]}
+              value={sortBy}
+              onChange={setSortBy}
+              placeholder="Sort Order"
+              size="sm"
+            />
+          </div>
+          <div className="w-40">
+            <Select
+              options={[
+                { label: 'All Status', value: 'All' },
+                { label: 'New', value: 'New' },
+                { label: 'Hot', value: 'Hot' },
+                { label: 'Interested', value: 'Interested' },
+                { label: 'Closed', value: 'Closed' }
+              ]}
+              value={filterStatus}
+              onChange={setFilterStatus}
+              placeholder="Filter Status"
+              size="sm"
+            />
+          </div>
+          <div className="w-32">
+            <Select
+              options={[
+                { label: 'PDF Report', value: 'pdf' },
+                { label: 'Excel Sheet', value: 'excel' },
+                { label: 'Word Doc', value: 'word' }
+              ]}
+              value=""
+              onChange={(val) => {
+                if (val === 'pdf') exportToPDF();
+                if (val === 'excel') exportToExcel();
+                if (val === 'word') exportToWord();
+              }}
+              placeholder="Export"
+              size="sm"
+              icon={<Download size={14} />}
+            />
+          </div>
         </div>
         <DataTable headers={headers}>
           {isLoading ? (
             <tr><td colSpan={headers.length} className="px-6 py-4 text-center text-slate-400 font-bold">Loading leads...</td></tr>
-          ) : leads.length === 0 ? (
+          ) : filteredLeads.length === 0 ? (
             <tr><td colSpan={headers.length} className="px-6 py-4 text-center text-slate-400 font-bold">No leads found</td></tr>
           ) : (
-            leads.map(l => (
+            filteredLeads.map(l => (
               <tr key={l.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4">
                   <p className="text-sm font-bold text-slate-900">{l.name}</p>
@@ -213,7 +400,7 @@ export default function LeadsPage() {
                         <Select
                           options={
                             telecallers.map((s) => ({
-                              label: `${s.name} (${s.role})`,
+                              label: s.name,
                               value: s.id.toString(),
                             }))
                           }
@@ -263,7 +450,7 @@ export default function LeadsPage() {
                         </p>
                         <Select
                           options={salesExecutives.map((s: any) => ({
-                            label: `${s.name} (${s.role})`,
+                            label: s.name,
                             value: s.id.toString(),
                           }))}
                           value={l.salesExecutive?.id?.toString() || ''}
@@ -374,14 +561,14 @@ Property: ${l.propertyOfInterest || l.property?.title || ''}`;
         onClose={() => !isSubmitting && setShowNewModal(false)}
         title="New Inquiry"
       >
-        <form onSubmit={handleCreateLead} className="p-6 space-y-4">
+        <form onSubmit={handleCreateLead} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Name"
               placeholder="Full name"
               value={newLead.name}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLead({ ...newLead, name: e.target.value })}
-              required
+              error={formErrors.name}
             />
             <Input
               label="Email"
@@ -389,22 +576,30 @@ Property: ${l.propertyOfInterest || l.property?.title || ''}`;
               placeholder="email@example.com"
               value={newLead.email}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLead({ ...newLead, email: e.target.value })}
-              required
+              error={formErrors.email}
             />
             <Input
               label="Phone"
               placeholder="+91 9XXXXXXXXX"
               value={newLead.phone}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLead({ ...newLead, phone: e.target.value })}
-              required
+              error={formErrors.phone}
             />
-            <Input
-              label="Property ID"
-              placeholder="Enter property ID"
-              value={newLead.propertyId}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLead({ ...newLead, propertyId: e.target.value })}
-              required
-            />
+            <div>
+              <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
+                Property
+              </label>
+              <Select
+                options={properties.map(p => ({ label: p.title, value: p.id.toString() }))}
+                value={newLead.propertyId}
+                onChange={(val) => {
+                  const p = properties.find(prop => prop.id.toString() === val);
+                  setNewLead({ ...newLead, propertyId: val, propertyTitle: p?.title || '' });
+                }}
+                placeholder="Select Property"
+                error={formErrors.propertyId}
+              />
+            </div>
             <Input
               label="Property Title"
               placeholder="Optional property title"
@@ -457,7 +652,7 @@ Property: ${l.propertyOfInterest || l.property?.title || ''}`;
         }}
         title="Edit Lead"
       >
-        <div className="p-6 space-y-4">
+        <div className="space-y-4">
           <div>
             <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">
               Lead Information
@@ -521,7 +716,7 @@ Property: ${l.propertyOfInterest || l.property?.title || ''}`;
         onClose={() => setDetailLead(null)}
         title="Lead Details"
       >
-        <div className="p-6 space-y-4">
+        <div className="space-y-4">
           <div>
             <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-1">Prospect</p>
             <p className="text-sm font-bold text-slate-900">

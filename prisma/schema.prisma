@@ -25,6 +25,7 @@ enum UserRole {
 enum UserStatus {
   Active
   Disabled
+  Deleted
 }
 
 enum PropertyStatus {
@@ -43,10 +44,19 @@ enum ListingType {
 model User {
   id               Int       @id @default(autoincrement())
   name             String    @db.VarChar(255)
+  firstName        String?   @map("first_name") @db.VarChar(255)
+  lastName         String?   @map("last_name") @db.VarChar(255)
   email            String    @unique @db.VarChar(255)
   mobile           String    @db.VarChar(20)
   password         String    @db.VarChar(255)
   role             String    @default("USER") @db.VarChar(50)
+  dob              String?   @db.VarChar(20)
+  gender           String?   @db.VarChar(20)
+  address          String?   @db.Text
+  occupation       String?   @db.VarChar(100)
+  experienceYears  Int?      @default(0) @map("experience_years")
+  experienceMonths Int?      @default(0) @map("experience_months")
+  isFresher        Boolean   @default(false) @map("is_fresher")
   propertyType     String?   @map("property_type") @db.VarChar(50)
   lookingTo        String?   @map("looking_to") @db.VarChar(50)
   projectName      String?   @map("firm_name") @db.VarChar(255)
@@ -58,6 +68,8 @@ model User {
   properties       Property[]
   favorites        Favorite[]
   assignedLeads    Lead[]    @relation("AssignedLeads")
+  assignedInquiries ContactInquiry[] @relation("AssignedInquiries")
+  salesExecInquiries ContactInquiry[] @relation("SalesExecutiveInquiries")
   siteVisits       SiteVisit[] @relation("StaffVisits")
   salesExecLeads   Lead[]    @relation("SalesExecutiveLeads")
   
@@ -72,9 +84,18 @@ model User {
 model PendingUser {
   email            String    @id @db.VarChar(255)
   name             String    @db.VarChar(255)
+  firstName        String?   @map("first_name") @db.VarChar(255)
+  lastName         String?   @map("last_name") @db.VarChar(255)
   mobile           String    @db.VarChar(20)
   password         String    @db.VarChar(255)
   role             String    @default("USER") @db.VarChar(50)
+  dob              String?   @db.VarChar(20)
+  gender           String?   @db.VarChar(20)
+  address          String?   @db.Text
+  occupation       String?   @db.VarChar(100)
+  experienceYears  Int?      @default(0) @map("experience_years")
+  experienceMonths Int?      @default(0) @map("experience_months")
+  isFresher        Boolean   @default(false) @map("is_fresher")
   propertyType     String?   @map("property_type") @db.VarChar(50)
   lookingTo        String?   @map("looking_to") @db.VarChar(50)
   projectName      String?   @map("firm_name") @db.VarChar(255)
@@ -98,6 +119,7 @@ model Property {
   address           String?         @db.Text
   type              String?         @db.VarChar(50)
   status            PropertyStatus  @default(Pending_Approval)
+  isFeatured        Boolean         @default(false) @map("is_featured")
   bedrooms          Int?
   bathrooms         Int?
   possessionDate    String?         @map("possession_date") @db.VarChar(50)
@@ -210,11 +232,19 @@ model Promotion {
 
 model ContactInquiry {
   id        Int      @id @default(autoincrement())
-  name      String   @db.VarChar(255)
+  firstName String   @default("") @map("first_name") @db.VarChar(100)
+  lastName  String   @default("") @map("last_name") @db.VarChar(100)
   email     String   @db.VarChar(255)
   phone     String   @db.VarChar(20)
   subject   String?  @db.VarChar(255)
   message   String   @db.Text
+  interestedIn String?  @map("interested_in") @db.VarChar(255)
+  city         String?  @db.VarChar(100)
+  state        String?  @db.VarChar(100)
+  assignedTo   Int?     @map("assigned_to")
+  assignedStaff User?   @relation("AssignedInquiries", fields: [assignedTo], references: [id])
+  salesExecutiveId Int? @map("sales_executive_id")
+  salesExecutive   User? @relation("SalesExecutiveInquiries", fields: [salesExecutiveId], references: [id])
   createdAt DateTime @default(now()) @map("created_at")
   
   @@map("contact_inquiries")
@@ -260,6 +290,11 @@ model EmployeeProfile {
   bankName        String?   @map("bank_name")
   ifscCode        String?   @map("ifsc_code")
   
+  // Working Hours & Deduction Rules
+  workingHours        Float     @default(9) @map("working_hours")
+  shiftStartTime      String    @default("09:00") @map("shift_start_time")
+  lateMarkDeduction   Float     @default(0) @map("late_mark_deduction")
+
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   

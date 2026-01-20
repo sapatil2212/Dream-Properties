@@ -25,6 +25,8 @@ export interface Property {
   address: string;
   type: string;
   status: string;
+  isFeatured?: boolean;
+  propertyFlag?: string;
   bedrooms?: number;
   bathrooms?: number;
   possession_date?: string;

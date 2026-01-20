@@ -8,9 +8,10 @@ interface PropertyInquiryFormProps {
   propertyTitle: string;
   source: string;
   onSubmitted?: () => void;
+  twoColumn?: boolean;
 }
 
-export function PropertyInquiryForm({ propertyId, propertyTitle, source, onSubmitted }: PropertyInquiryFormProps) {
+export function PropertyInquiryForm({ propertyId, propertyTitle, source, onSubmitted, twoColumn = false }: PropertyInquiryFormProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -143,40 +144,35 @@ export function PropertyInquiryForm({ propertyId, propertyTitle, source, onSubmi
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="text-center mb-4">
-        <p className="text-sm font-medium text-slate-600">Our experts will call you shortly.</p>
-      </div>
-
-      <div className="space-y-4">
-        <div className="space-y-3">
-          <Input
-            label="Name"
-            placeholder="Full Name"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Input
-            label="Email"
-            placeholder="your@email.com"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Input
-            label="Phone No"
-            placeholder="+91 988XX XXXXX"
-            required
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-        </div>
-
+      <div className={`grid grid-cols-1 gap-4 ${twoColumn ? 'md:grid-cols-2' : ''}`}>
+        {/* Left Column: Basic Information */}
         <div className="space-y-2">
           <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Basic Information</p>
-          <div className="space-y-3 rounded-xl border border-slate-200 p-3 bg-slate-50/40">
-            <div>
+          <div className="space-y-3 rounded-xl border border-slate-200 p-3 bg-slate-50/40 h-full">
+            <Input
+              label="Name"
+              placeholder="Full Name"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <Input
+              label="Email"
+              placeholder="your@email.com"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <Input
+              label="Phone No"
+              placeholder="+91 988XX XXXXX"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            
+            <div className="pt-2">
               <p className="text-[10px] font-bold text-slate-700 mb-1">
                 Your reason to buy is
               </p>
@@ -243,9 +239,10 @@ export function PropertyInquiryForm({ propertyId, propertyTitle, source, onSubmi
           </div>
         </div>
 
+        {/* Right Column: Optional Information */}
         <div className="space-y-2">
           <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Optional Information</p>
-          <div className="space-y-3 rounded-xl border border-slate-200 p-3 bg-slate-50/40">
+          <div className="space-y-3 rounded-xl border border-slate-200 p-3 bg-slate-50/40 h-full">
             <div>
               <p className="text-[10px] font-bold text-slate-700 mb-1">
                 By when you are planning to buy the property?

@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (type && type !== 'All') {
-      where.type = type
+      where.OR = [
+        { type: type },
+        { propertySubtype: { contains: type } }
+      ]
     }
 
     if (listingType && listingType !== 'All') {
@@ -33,9 +36,10 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [
+        { isFeatured: 'desc' },
+        { createdAt: 'desc' },
+      ],
     })
 
     const formattedProperties = properties.map(p => ({
@@ -87,6 +91,7 @@ export async function POST(request: NextRequest) {
         address: body.address,
         type: body.type,
         status: 'Pending_Approval',
+        isFeatured: body.isFeatured || false,
         bedrooms: body.bedrooms ? parseInt(body.bedrooms) : null,
         bathrooms: body.bathrooms ? parseInt(body.bathrooms) : null,
         possessionDate: body.possessionDate,

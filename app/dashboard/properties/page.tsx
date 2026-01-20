@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Download, Eye, Trash2, Edit2, X, Flag, CheckCircle, Search, Filter, FileText, FileSpreadsheet, Plus, Share2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Download, Eye, Trash2, Edit2, X, Flag, CheckCircle, Search, Filter, FileText, FileSpreadsheet, Plus, Share2, Star } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -20,20 +19,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, ConfirmDialog } from '@/components/UIComponents';
+import { ConfirmDialog, Modal, Select, Input, Badge, Skeleton, Button } from '@/components/UIComponents';
+import { SuccessModal } from '@/components/ui/success-modal';
+import { AlertModal } from '@/components/ui/alert-modal';
 
 export default function InventoryManagementPage() {
   const { data: session } = useSession();
@@ -47,16 +37,21 @@ export default function InventoryManagementPage() {
   const [flaggingPropertyId, setFlaggingPropertyId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('Newest');
   const [typeFilter, setTypeFilter] = useState('All');
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [shareMenuPropertyId, setShareMenuPropertyId] = useState<number | null>(null);
   const [filteredProperties, setFilteredProperties] = useState<any[]>([]);
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertConfig, setAlertConfig] = useState({
-    type: 'success' as 'success' | 'error' | 'warning' | 'info',
-    title: '',
-    message: '',
-  });
+  
+  // Success Modal State
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  // Alert Modal State
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState<'error' | 'warning'>('error');
+  
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -122,15 +117,8 @@ export default function InventoryManagementPage() {
         body: JSON.stringify({ propertyId, status }),
       });
       if (response.ok) {
-        setAlertConfig({
-          type: 'success',
-          title: status === 'Approved' ? 'Property Approved' : 'Property Rejected',
-          message:
-            status === 'Approved'
-              ? 'The property has been approved and the builder has been notified.'
-              : 'The property has been rejected and the builder has been notified.',
-        });
-        setShowAlert(true);
+        setSuccessMessage(status === 'Approved' ? 'The property has been approved and the builder has been notified.' : 'The property has been rejected and the builder has been notified.');
+        setShowSuccessModal(true);
         fetchProperties();
         if (selectedProperty?.id === propertyId) {
           setIsModalOpen(false);
@@ -138,50 +126,35 @@ export default function InventoryManagementPage() {
         }
       } else {
         const data = await response.json();
-        setAlertConfig({
-          type: 'error',
-          title: 'Action Failed',
-          message: data.message || 'Failed to update property status.',
-        });
-        setShowAlert(true);
+        setAlertMessage(data.message || 'Failed to update property status.');
+        setAlertType('error');
+        setShowAlertModal(true);
       }
     } catch (err) {
-      setAlertConfig({
-        type: 'error',
-        title: 'Network Error',
-        message: 'Failed to update property status. Please try again.',
-      });
-      setShowAlert(true);
+      setAlertMessage('Failed to update property status. Please try again.');
+      setAlertType('error');
+      setShowAlertModal(true);
     }
   };
 
   const handleFlagProperty = async (propertyId: number, flag: string | null, listingType: string) => {
     if (flag) {
       if (listingType === 'Sell' && flag !== 'Sold') {
-        setAlertConfig({
-          type: 'warning',
-          title: 'Invalid Flag',
-          message: 'Properties for sale can only be flagged as "Sold".',
-        });
-        setShowAlert(true);
+        setAlertMessage('Properties for sale can only be flagged as "Sold".');
+        setAlertType('warning');
+        setShowAlertModal(true);
         return;
       }
       if (listingType === 'Rent' && flag !== 'Rented') {
-        setAlertConfig({
-          type: 'warning',
-          title: 'Invalid Flag',
-          message: 'Properties for rent can only be flagged as "Rented".',
-        });
-        setShowAlert(true);
+        setAlertMessage('Properties for rent can only be flagged as "Rented".');
+        setAlertType('warning');
+        setShowAlertModal(true);
         return;
       }
       if (listingType === 'Lease' && flag !== 'Leased') {
-        setAlertConfig({
-          type: 'warning',
-          title: 'Invalid Flag',
-          message: 'Properties for lease can only be flagged as "Leased".',
-        });
-        setShowAlert(true);
+        setAlertMessage('Properties for lease can only be flagged as "Leased".');
+        setAlertType('warning');
+        setShowAlertModal(true);
         return;
       }
     }
@@ -194,29 +167,19 @@ export default function InventoryManagementPage() {
       });
       if (response.ok) {
         const data = await response.json();
-        setAlertConfig({
-          type: 'success',
-          title: 'Flag Updated',
-          message: data.message || 'Property flag updated successfully.',
-        });
-        setShowAlert(true);
+        setSuccessMessage(data.message || 'Property flag updated successfully.');
+        setShowSuccessModal(true);
         fetchProperties();
       } else {
         const error = await response.json();
-        setAlertConfig({
-          type: 'error',
-          title: 'Flagging Failed',
-          message: error.message || 'Failed to flag property.',
-        });
-        setShowAlert(true);
+        setAlertMessage(error.message || 'Failed to flag property.');
+        setAlertType('error');
+        setShowAlertModal(true);
       }
     } catch (err) {
-      setAlertConfig({
-        type: 'error',
-        title: 'Network Error',
-        message: 'Failed to flag property. Please try again.',
-      });
-      setShowAlert(true);
+      setAlertMessage('Failed to flag property. Please try again.');
+      setAlertType('error');
+      setShowAlertModal(true);
     }
   };
 
@@ -228,12 +191,8 @@ export default function InventoryManagementPage() {
       });
 
       if (response.ok) {
-        setAlertConfig({
-          type: 'success',
-          title: 'Property Deleted',
-          message: 'The property has been deleted successfully.',
-        });
-        setShowAlert(true);
+        setSuccessMessage('The property has been deleted successfully.');
+        setShowSuccessModal(true);
         fetchProperties();
         if (selectedProperty?.id === propertyId) {
           setIsModalOpen(false);
@@ -241,20 +200,14 @@ export default function InventoryManagementPage() {
         }
       } else {
         const data = await response.json();
-        setAlertConfig({
-          type: 'error',
-          title: 'Delete Failed',
-          message: data.message || 'Failed to delete property.',
-        });
-        setShowAlert(true);
+        setAlertMessage(data.message || 'Failed to delete property.');
+        setAlertType('error');
+        setShowAlertModal(true);
       }
     } catch (err) {
-      setAlertConfig({
-        type: 'error',
-        title: 'Network Error',
-        message: 'Failed to delete property. Please try again.',
-      });
-      setShowAlert(true);
+      setAlertMessage('Failed to delete property. Please try again.');
+      setAlertType('error');
+      setShowAlertModal(true);
     }
   };
 
@@ -282,20 +235,14 @@ export default function InventoryManagementPage() {
         setIsModalOpen(true);
         setIsEditing(false);
       } else {
-        setAlertConfig({
-          type: 'error',
-          title: 'Load Failed',
-          message: 'Failed to load property details.',
-        });
-        setShowAlert(true);
+        setAlertMessage('Failed to load property details.');
+        setAlertType('error');
+        setShowAlertModal(true);
       }
     } catch (err) {
-      setAlertConfig({
-        type: 'error',
-        title: 'Network Error',
-        message: 'Failed to load property details. Please try again.',
-      });
-      setShowAlert(true);
+      setAlertMessage('Failed to load property details. Please try again.');
+      setAlertType('error');
+      setShowAlertModal(true);
     }
   };
 
@@ -323,31 +270,21 @@ export default function InventoryManagementPage() {
       });
       
       if (response.ok) {
-        setAlertConfig({
-          type: 'success',
-          title: 'Property Updated',
-          message: 'Property details have been updated successfully.',
-        });
-        setShowAlert(true);
+        setSuccessMessage('Property details have been updated successfully.');
+        setShowSuccessModal(true);
         setSelectedProperty(editedProperty);
         setIsEditing(false);
         fetchProperties();
       } else {
         const data = await response.json();
-        setAlertConfig({
-          type: 'error',
-          title: 'Update Failed',
-          message: data.message || 'Failed to update property.',
-        });
-        setShowAlert(true);
+        setAlertMessage(data.message || 'Failed to update property.');
+        setAlertType('error');
+        setShowAlertModal(true);
       }
     } catch (err) {
-      setAlertConfig({
-        type: 'error',
-        title: 'Network Error',
-        message: 'Failed to update property. Please try again.',
-      });
-      setShowAlert(true);
+      setAlertMessage('Failed to update property. Please try again.');
+      setAlertType('error');
+      setShowAlertModal(true);
     } finally {
       setIsSaving(false);
     }
@@ -360,10 +297,11 @@ export default function InventoryManagementPage() {
     setIsEditing(false);
   };
 
-  const getStatusVariant = (status: string) => {
-    if (status === 'Approved') return 'default';
-    if (status === 'Rejected') return 'destructive';
-    return 'secondary';
+  const getStatusVariant = (status: string): 'success' | 'error' | 'warning' | 'neutral' => {
+    if (status === 'Approved') return 'success';
+    if (status === 'Rejected') return 'error';
+    if (status === 'Pending_Approval' || status === 'Pending') return 'warning';
+    return 'neutral';
   };
 
   const exportToPDF = async () => {
@@ -582,108 +520,96 @@ export default function InventoryManagementPage() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 sm:mb-6">
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          <div className="relative w-full sm:w-auto mb-2 sm:mb-0">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-            <Input 
-              placeholder="Search properties..." 
-              className="pl-8 py-1 h-9 text-xs sm:text-sm w-full sm:w-48 md:w-56 lg:w-64" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <select 
-            className="px-2 py-1.5 h-9 rounded-md border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="All">All Status</option>
-            <option value="Approved">Approved</option>
-            <option value="Pending_Approval">Pending</option>
-            <option value="Rejected">Rejected</option>
-          </select>
-
-          <select 
-            className="px-2 py-1.5 h-9 rounded-md border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-          >
-            <option value="All">All Types</option>
-            <option value="Residential">Residential</option>
-            <option value="Commercial">Commercial</option>
-            <option value="Plots">Plots</option>
-          </select>
+    <div className="space-y-6">
+      <div className="flex justify-between items-end">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Inventory Management</h2>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-widest mt-1">
+            {isAdmin ? 'Manage all property submissions' : 'View and manage your listings'}
+          </p>
         </div>
-
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex gap-2">
           {(isAdmin || isBuilder) && (
             <Link href="/dashboard/post-property">
-              <Button
-                size="sm"
-                className="gap-1.5 h-9 px-3 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                <Plus size={14} />
-                <span className="hidden sm:inline">Post New Property</span>
+              <Button className="gap-2 shadow-none bg-blue-600 hover:bg-blue-700 text-white">
+                <Plus size={18} /> Post New Property
               </Button>
             </Link>
           )}
-
-          <div className="relative">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-1.5 h-9 px-3 text-xs sm:text-sm"
-              onClick={() => setShowExportMenu(!showExportMenu)}
-            >
-              <Download size={14} />
-              <span className="hidden sm:inline">{showExportMenu ? 'Cancel' : 'Export'}</span>
-            </Button>
-
-            {showExportMenu && (
-              <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
-                <button
-                  onClick={exportToExcel}
-                  className="w-full text-left px-3 py-1.5 text-xs sm:text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-2"
-                >
-                  <FileSpreadsheet size={14} className="text-emerald-500" />
-                  Export to Excel
-                </button>
-                <button
-                  onClick={exportToPDF}
-                  className="w-full text-left px-3 py-1.5 text-xs sm:text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-2"
-                >
-                  <FileText size={14} className="text-rose-500" />
-                  Export to PDF
-                </button>
-                <button
-                  onClick={exportToWord}
-                  className="w-full text-left px-3 py-1.5 text-xs sm:text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-2"
-                >
-                  <FileText size={14} className="text-blue-500" />
-                  Export to Word
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>
-            {isAdmin ? 'Property Approval Queue' : 'Your Property Listings'}
-          </CardTitle>
-          <CardDescription>
-            {isAdmin
-              ? 'Manage all property submissions and their approval status'
-              : 'View and manage all your posted properties'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-2 sm:px-6">
-          <div className="overflow-x-auto -mx-2 sm:mx-0">
+        <div className="p-4 border-b border-slate-100 flex items-center justify-end gap-3">
+          <div className="w-64">
+            <Input 
+              placeholder="Search properties..." 
+              value={searchQuery}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+              icon={<Search size={14} />}
+            />
+          </div>
+          <div className="w-32">
+            <Select
+              options={[
+                { label: 'Newest First', value: 'Newest' },
+                { label: 'Oldest First', value: 'Oldest' }
+              ]}
+              value={sortBy}
+              onChange={setSortBy}
+              placeholder="Sort Order"
+              size="sm"
+            />
+          </div>
+          <div className="w-40">
+            <Select
+              options={[
+                { label: 'All Status', value: 'All' },
+                { label: 'Approved', value: 'Approved' },
+                { label: 'Pending', value: 'Pending_Approval' },
+                { label: 'Rejected', value: 'Rejected' }
+              ]}
+              value={statusFilter}
+              onChange={setStatusFilter}
+              placeholder="Filter Status"
+              size="sm"
+            />
+          </div>
+          <div className="w-40">
+            <Select
+              options={[
+                { label: 'All Types', value: 'All' },
+                { label: 'Residential', value: 'Residential' },
+                { label: 'Commercial', value: 'Commercial' },
+                { label: 'Plots', value: 'Plots' }
+              ]}
+              value={typeFilter}
+              onChange={setTypeFilter}
+              placeholder="Filter Type"
+              size="sm"
+            />
+          </div>
+          <div className="w-32">
+            <Select
+              options={[
+                { label: 'Export PDF', value: 'pdf' },
+                { label: 'Export Excel', value: 'excel' },
+                { label: 'Export Word', value: 'word' }
+              ]}
+              value=""
+              onChange={(val) => {
+                if (val === 'pdf') exportToPDF();
+                if (val === 'excel') exportToExcel();
+                if (val === 'word') exportToWord();
+              }}
+              placeholder="Export"
+              size="sm"
+              icon={<Download size={14} />}
+            />
+          </div>
+        </div>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -692,6 +618,7 @@ export default function InventoryManagementPage() {
                   <TableHead className="whitespace-nowrap hidden sm:table-cell">Type</TableHead>
                   <TableHead className="whitespace-nowrap">Price</TableHead>
                   <TableHead className="whitespace-nowrap hidden sm:table-cell">Status</TableHead>
+                  <TableHead className="whitespace-nowrap hidden sm:table-cell">Featured</TableHead>
                   <TableHead className="whitespace-nowrap hidden sm:table-cell">Flag</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
                 </TableRow>
@@ -699,13 +626,13 @@ export default function InventoryManagementPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-10">
+                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-10">
                     <Skeleton className="h-4 w-full" />
                   </TableCell>
                 </TableRow>
               ) : properties.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-10 text-slate-400">
+                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-10 text-slate-400">
                     {isAdmin ? 'No properties in queue' : 'No properties posted yet'}
                   </TableCell>
                 </TableRow>
@@ -722,7 +649,7 @@ export default function InventoryManagementPage() {
                             {p.status === 'Pending_Approval' ? 'Pending' : p.status}
                           </Badge>
                           {p.propertyFlag && (
-                            <Badge variant="secondary" className="bg-orange-500 text-white border-orange-600 font-bold text-[10px] h-5">
+                            <Badge variant="neutral" className="bg-orange-500 text-white border-orange-600 font-bold text-[10px] h-5">
                               <Flag size={10} className="mr-0.5 fill-white" />
                               {p.propertyFlag}
                             </Badge>
@@ -750,8 +677,18 @@ export default function InventoryManagementPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
+                      {p.isFeatured ? (
+                        <span className="flex items-center gap-1 text-amber-500 font-bold text-xs">
+                          <Star size={14} className="fill-amber-500" />
+                          Featured
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {p.propertyFlag ? (
-                        <Badge variant="secondary" className="bg-orange-500 text-white border-orange-600 font-bold text-xs">
+                        <Badge variant="neutral" className="bg-orange-500 text-white border-orange-600 font-bold text-xs">
                           <Flag size={12} className="mr-0.5 fill-white" />
                           {p.propertyFlag}
                         </Badge>
@@ -918,24 +855,25 @@ export default function InventoryManagementPage() {
       </Card>
 
       {/* Property Details Modal */}
-      <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="pb-3">
-            <DialogTitle className="text-xl flex items-center justify-between">
-              <span>{isEditing ? 'Edit Property' : 'Property Details'}</span>
-              {!isEditing && isAdmin && (
-                <Button variant="outline" size="sm" onClick={handleEditToggle}>
-                  <Edit2 size={16} className="mr-2" />
-                  Edit
-                </Button>
-              )}
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              {isEditing
-                ? 'Modify the property information below'
-                : 'View complete property information'}
-            </DialogDescription>
-          </DialogHeader>
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={handleCloseModal}
+        title={isEditing ? 'Edit Property' : 'Property Details'}
+        className="max-w-5xl max-h-[90vh] overflow-y-auto"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs text-slate-500">
+            {isEditing
+              ? 'Modify the property information below'
+              : 'View complete property information'}
+          </p>
+          {!isEditing && isAdmin && (
+            <Button variant="outline" size="sm" onClick={handleEditToggle}>
+              <Edit2 size={16} className="mr-2" />
+              Edit
+            </Button>
+          )}
+        </div>
 
           {selectedProperty && (
             <div className="space-y-4">
@@ -1165,7 +1103,7 @@ export default function InventoryManagementPage() {
                   </h3>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedProperty.amenities.map((amenity: string, index: number) => (
-                      <Badge key={index} variant="outline" className="text-xs">
+                      <Badge key={index} variant="neutral" className="text-xs">
                         {amenity}
                       </Badge>
                     ))}
@@ -1195,7 +1133,7 @@ export default function InventoryManagementPage() {
             </div>
           )}
 
-          <DialogFooter className="gap-2 pt-3 border-t mt-4">
+          <div className="flex justify-end gap-2 pt-3 border-t mt-4">
             {isEditing ? (
               <>
                 <Button variant="outline" onClick={handleEditToggle} disabled={isSaving} size="sm">
@@ -1231,17 +1169,18 @@ export default function InventoryManagementPage() {
                 </Button>
               </>
             )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Alert
-        isOpen={showAlert}
-        onClose={() => setShowAlert(false)}
-        type={alertConfig.type}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        autoClose={alertConfig.type === 'success'}
-        duration={3000}
+          </div>
+      </Modal>
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        message={successMessage}
+      />
+      <AlertModal
+        isOpen={showAlertModal}
+        onClose={() => setShowAlertModal(false)}
+        message={alertMessage}
+        type={alertType}
       />
       <ConfirmDialog
         isOpen={showDeleteConfirm}
