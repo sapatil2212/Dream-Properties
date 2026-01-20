@@ -196,16 +196,23 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ slug:
               Our real estate consultants can help you find exactly what you're looking for at the best price.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-start gap-6">
-               <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white h-14 px-8 rounded-xl font-bold text-base shadow-lg shadow-blue-600/20">
-                  Talk to Expert
+            <div className="flex flex-row gap-2 w-full sm:w-auto max-w-md">
+               <Button 
+                  onClick={() => router.push('/contact')}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-2.5 rounded-lg flex items-center justify-center gap-1.5 font-black text-[9px] md:text-[11px] uppercase tracking-widest transition-all group border-none shadow-none whitespace-nowrap"
+               >
+                  Talk to Expert <ArrowRight size={12} className="hidden sm:inline group-hover:translate-x-1 transition-transform" />
                </Button>
                
-               <button className="flex items-center gap-2 text-slate-700 font-bold hover:text-emerald-600 transition-colors mt-3">
-                  <MessageCircle size={20} className="text-emerald-500" />
-                  Enquire Via WhatsApp
-                  <ArrowRight size={20} />
-               </button>
+               <a 
+                  href="https://wa.me/919881159245"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-lg border-2 border-slate-300 text-slate-700 font-black text-[9px] md:text-[11px] uppercase tracking-widest hover:bg-white transition-all whitespace-nowrap"
+               >
+                  <MessageCircle size={12} className="text-emerald-500" />
+                  WhatsApp
+               </a>
             </div>
           </div>
           
