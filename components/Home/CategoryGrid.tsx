@@ -119,7 +119,7 @@ export const CategoryGrid: React.FC = () => {
   }, [categories.length]);
 
   return (
-    <section className="py-12 bg-white overflow-hidden relative border-b border-slate-50">
+    <section className="pt-4 pb-8 md:py-12 bg-white overflow-hidden relative border-b border-slate-50">
       <div className="max-w-7xl mx-auto px-4 md:px-8 mb-6 text-center">
         <span className="text-blue-600 font-black text-[10px] md:text-xs uppercase tracking-[0.3em] mb-2 block">Marketplace</span>
         <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-tight uppercase">Explore Categories</h2>

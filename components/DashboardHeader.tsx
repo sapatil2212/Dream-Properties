@@ -33,7 +33,8 @@ export function DashboardHeader({ title, user, onMenuClick, isSidebarCollapsed =
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
+    // Poll every 5 seconds for "realtime" updates
+    const interval = setInterval(fetchNotifications, 5000);
     return () => clearInterval(interval);
   }, []);
 

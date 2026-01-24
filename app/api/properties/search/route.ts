@@ -16,15 +16,15 @@ export async function GET(request: NextRequest) {
     if (q.trim()) {
       const searchTerm = q.trim();
       where.OR = [
-        { title: { contains: searchTerm, mode: 'insensitive' } },
-        { description: { contains: searchTerm, mode: 'insensitive' } },
-        { location: { contains: searchTerm, mode: 'insensitive' } },
-        { address: { contains: searchTerm, mode: 'insensitive' } },
-        { type: { contains: searchTerm, mode: 'insensitive' } },
-        { propertySubtype: { contains: searchTerm, mode: 'insensitive' } },
-        { configurations: { contains: searchTerm, mode: 'insensitive' } },
-        { reraId: { contains: searchTerm, mode: 'insensitive' } },
-        { builder: { name: { contains: searchTerm, mode: 'insensitive' } } },
+        { title: { contains: searchTerm } },
+        { description: { contains: searchTerm } },
+        { location: { contains: searchTerm } },
+        { address: { contains: searchTerm } },
+        { type: { contains: searchTerm } },
+        { propertySubtype: { contains: searchTerm } },
+        { configurations: { contains: searchTerm } },
+        { reraId: { contains: searchTerm } },
+        { builder: { name: { contains: searchTerm } } },
       ]
     }
 

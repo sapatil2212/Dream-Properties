@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { QuickBookingForm } from './QuickBookingForm';
 import Hero1 from "../../public/assets/hero-1.png"
 import Hero2 from "../../public/assets/hero-2.png"
+import MobileHero1 from "../../public/assets/Mobile-Hero-images/mobile-hero1.png"
+
 const HERO_IMAGES = [
   Hero1,Hero2
  
@@ -21,33 +23,41 @@ export const HeroSection: React.FC = () => {
   }, []);
 
   return (
-    <section className="relative md:h-[600px] overflow-visible mb-24 md:mb-8 flex flex-col">
-      {/* Mobile Height Spacer */}
-      <img 
-        src={typeof HERO_IMAGES[0] === 'string' ? HERO_IMAGES[0] : (HERO_IMAGES[0] as any).src}
-        className="w-full h-auto md:hidden invisible block"
-        alt="Spacer"
-        aria-hidden="true"
-      />
-
+    <section className="relative flex flex-col md:block mb-0 md:mb-8 md:h-[600px]">
+      
       {/* Hero Background Image */}
-      <div className="absolute inset-0 z-0 bg-slate-900">
-        <AnimatePresence mode="popLayout">
+      <div className="relative w-full h-[60vh] md:absolute md:inset-0 md:h-full z-0 bg-slate-900 overflow-hidden">
+        {/* Desktop Slideshow */}
+        <div className="hidden md:block w-full h-full">
+          <AnimatePresence mode="popLayout">
+            <motion.img
+              key={currentImageIndex}
+              src={typeof HERO_IMAGES[currentImageIndex] === 'string' ? HERO_IMAGES[currentImageIndex] : (HERO_IMAGES[currentImageIndex] as any).src}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1 }}
+              className="absolute inset-0 w-full h-full object-cover"
+              alt="Luxury Real Estate Background"
+            />
+          </AnimatePresence>
+        </div>
+
+        {/* Mobile Hero Image */}
+        <div className="block md:hidden w-full h-full">
           <motion.img
-            key={currentImageIndex}
-            src={typeof HERO_IMAGES[currentImageIndex] === 'string' ? HERO_IMAGES[currentImageIndex] : (HERO_IMAGES[currentImageIndex] as any).src}
+            src={typeof MobileHero1 === 'string' ? MobileHero1 : (MobileHero1 as any).src}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1 }}
             className="absolute inset-0 w-full h-full object-cover"
             alt="Luxury Real Estate Background"
           />
-        </AnimatePresence>
+        </div>
       </div>
 
       {/* Quick Booking Form */}
-      <div className="absolute bottom-0 w-full translate-y-[70%] md:translate-y-12 z-10">
+      {/* Mobile: relative, below image. Desktop: absolute, bottom overlapping */}
+      <div className="relative z-10 w-full mt-4 md:mt-0 md:absolute md:bottom-0 md:translate-y-12">
         <QuickBookingForm />
       </div>
     </section>

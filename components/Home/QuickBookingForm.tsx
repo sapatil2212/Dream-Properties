@@ -61,14 +61,14 @@ export const QuickBookingForm: React.FC = () => {
   };
 
   return (
-    <div className="relative z-20 px-4 mt-0 md:-mt-20 pb-10 md:pb-16">
+    <div className="relative z-20 px-4 mt-0 md:-mt-20 pb-0 md:pb-16">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="max-w-5xl mx-auto"
       >
-        <div className="bg-white rounded-2xl md:rounded-3xl shadow-xl shadow-slate-900/10 border border-slate-200/70 relative">
+        <div className="bg-white rounded-2xl md:rounded-3xl shadow-none md:shadow-xl md:shadow-slate-900/10 border border-slate-200/70 relative">
           {/* Tabs Header */}
           <div className="relative flex items-center justify-between border-b border-slate-100 overflow-hidden rounded-t-2xl md:rounded-t-3xl">
             <div className="flex items-center overflow-x-auto no-scrollbar">
