@@ -611,7 +611,7 @@ export default function LoginPage() {
         <div className="space-y-8 text-center">
           <div className="space-y-2">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Enter OTP</h2>
-            <p className="text-slate-500 text-sm font-medium">We've sent a 6-digit verification code to your mobile number.</p>
+            <p className="text-slate-500 text-sm font-medium">We've sent a 6-digit verification code to <span className="font-bold text-slate-900">{formData.email}</span>.</p>
           </div>
           
           <div className="flex flex-col items-center gap-4">

@@ -14,18 +14,28 @@ export async function GET(request: NextRequest) {
     }
 
     if (q.trim()) {
-      const searchTerm = q.trim();
-      where.OR = [
-        { title: { contains: searchTerm } },
-        { description: { contains: searchTerm } },
-        { location: { contains: searchTerm } },
-        { address: { contains: searchTerm } },
-        { type: { contains: searchTerm } },
-        { propertySubtype: { contains: searchTerm } },
-        { configurations: { contains: searchTerm } },
-        { reraId: { contains: searchTerm } },
-        { builder: { name: { contains: searchTerm } } },
-      ]
+      // Split query into words and filter out common stop words
+      const stopWords = ['in', 'at', 'near', 'on', 'the', 'a', 'an', 'for', 'of', 'with', 'and', 'or', 'property', 'properties', 'real', 'estate'];
+      const terms = q.trim().split(/\s+/).filter(term => !stopWords.includes(term.toLowerCase()) && term.length > 2);
+      
+      // If filtering leaves nothing (or short words only), use the original query
+      const searchTerms = terms.length > 0 ? terms : [q.trim()];
+
+      // Build OR conditions: Any field containing Any of the search terms
+      where.OR = [];
+      searchTerms.forEach(term => {
+        where.OR.push(
+          { title: { contains: term } },
+          { description: { contains: term } },
+          { location: { contains: term } },
+          { address: { contains: term } },
+          { type: { contains: term } },
+          { propertySubtype: { contains: term } },
+          { configurations: { contains: term } },
+          { reraId: { contains: term } },
+          { builder: { name: { contains: term } } }
+        );
+      });
     }
 
     if (listing_type) {
