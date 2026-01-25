@@ -14,10 +14,29 @@ export async function GET(
       return NextResponse.json({ isFavorite: false })
     }
 
+    let userId = parseInt(session.user.id);
+
+    // Handle Super Admin or non-numeric ID
+    if (isNaN(userId)) {
+      if (session.user.role === 'SUPER_ADMIN') {
+         const user = await prisma.user.findUnique({
+           where: { email: session.user.email }
+         });
+         if (user) {
+           userId = user.id;
+         } else {
+           // If user record doesn't exist, they can't have favorites
+           return NextResponse.json({ isFavorite: false });
+         }
+      } else {
+        return NextResponse.json({ isFavorite: false });
+      }
+    }
+
     const favorite = await prisma.favorite.findUnique({
       where: {
         userId_propertyId: {
-          userId: parseInt(session.user.id),
+          userId,
           propertyId: parseInt(id),
         },
       },

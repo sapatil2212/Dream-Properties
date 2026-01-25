@@ -16,6 +16,8 @@ import {
   FileIcon,
   Mail,
   MessageCircle,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { Card, Badge, Button, Input, DataTable, EmptyState, Skeleton } from '@/components/UIComponents';
 import {
@@ -26,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { AlertModal } from '@/components/ui/alert-modal';
 import { jsPDF } from 'jspdf';
 import * as XLSX from 'xlsx';
 
@@ -49,6 +52,13 @@ export default function UsersPage() {
   const [accountsExportFormat, setAccountsExportFormat] = useState<ReportFormat>('pdf');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+  
+  // Delete User State
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+
   const [editForm, setEditForm] = useState({
     name: '',
     email: '',
@@ -64,7 +74,7 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/superadmin/accounts-summary');
+      const response = await fetch('/api/superadmin/accounts-summary', { cache: 'no-store' });
       if (response.ok) {
         const data = await response.json();
         // Flatten categories for the table
@@ -73,7 +83,17 @@ export default function UsersPage() {
           ...(data.builders || []),
           ...(data.staff || []),
           ...(data.others || [])
-        ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        ].sort((a: any, b: any) => {
+          // Sort by Online status first (Active in last 5 mins)
+          const isAOnline = a.lastActiveAt && (new Date().getTime() - new Date(a.lastActiveAt).getTime() < 5 * 60 * 1000);
+          const isBOnline = b.lastActiveAt && (new Date().getTime() - new Date(b.lastActiveAt).getTime() < 5 * 60 * 1000);
+
+          if (isAOnline && !isBOnline) return -1;
+          if (!isAOnline && isBOnline) return 1;
+          
+          // Then sort by createdAt desc
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
         setUsers(allUsers);
       } else {
         setError('Failed to fetch accounts');
@@ -99,15 +119,45 @@ export default function UsersPage() {
       const response = await fetch('/api/superadmin/toggle-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, status: newStatus })
+        body: JSON.stringify({ userId, status: newStatus }),
       });
+
       if (response.ok) {
-        setSuccessMsg(`User ${newStatus === 'Active' ? 'enabled' : 'disabled'} successfully`);
+        setUsers(users.map((u) => (u.id === userId ? { ...u, status: newStatus } : u)));
+        setSuccessMsg(`User account ${newStatus === 'Active' ? 'enabled' : 'disabled'}`);
         setTimeout(() => setSuccessMsg(''), 3000);
-        fetchUsers();
+      } else {
+        setError('Failed to update status');
       }
     } catch (err) {
-      setError('Failed to update status');
+      setError('Network error');
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/superadmin/users/${userToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Remove user from list locally or refetch
+        setUsers(users.filter(u => u.id !== userToDelete.id));
+        setSuccessMsg('User deleted successfully');
+        setShowDeleteDialog(false);
+        setUserToDelete(null);
+        setTimeout(() => setSuccessMsg(''), 3000);
+      } else {
+        const data = await response.json();
+        setError(data.message || 'Failed to delete user');
+      }
+    } catch (err) {
+      setError('Network error during deletion');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -712,6 +762,16 @@ export default function UsersPage() {
                       >
                         <Power size={16} />
                       </button>
+                      <button
+                        onClick={() => {
+                          setUserToDelete(u);
+                          setShowDeleteDialog(true);
+                        }}
+                        className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                        title="Delete User"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                       {['ADMIN', 'TELECALLER', 'SALES_EXECUTIVE'].includes(u.role) && (
                         <button
                           onClick={() => handleSendCredentials(u.email)}
@@ -1071,6 +1131,14 @@ export default function UsersPage() {
           )}
         </DialogContent>
       </Dialog>
+      <AlertModal
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleDeleteUser}
+        title="Delete User Account"
+        message={`Are you sure you want to delete the account for ${userToDelete?.name}? This action will mark the user as deleted and they will no longer be able to access the system.`}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

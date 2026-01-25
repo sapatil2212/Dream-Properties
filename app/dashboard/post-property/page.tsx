@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, X, Plus, FileText, Image as ImageIcon, Upload, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, X, Plus, FileText, Image as ImageIcon, Upload, Check, Sparkles } from 'lucide-react';
 import { Button, Input, Card, Alert } from '@/components/UIComponents';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AIPropertyAutoFill } from '@/components/dashboard/AIPropertyAutoFill';
 
 export default function PostPropertyPage() {
   const router = useRouter();
@@ -12,6 +13,8 @@ export default function PostPropertyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadingPDF, setUploadingPDF] = useState(false);
+  const [aiInput, setAiInput] = useState('');
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
   // Alert states
   const [showAlert, setShowAlert] = useState(false);
@@ -71,10 +74,12 @@ export default function PostPropertyPage() {
     
     // Step 7: Location Details
     mapLink: '',
+    videoUrl: '',
     nearbyLocations: [] as { name: string; type: string; distance: string; time: string }[],
     
     // Step 8: Documents
     attachments: [] as { name: string; url: string; size: string }[],
+    floorPlans: [] as { title: string; url: string }[],
   });
 
   const [tempInputs, setTempInputs] = useState({
@@ -86,6 +91,7 @@ export default function PostPropertyPage() {
     nearbyType: 'School',
     nearbyDistance: '',
     nearbyTime: '',
+    floorPlanTitle: '',
   });
 
   // Field errors for inline validation
@@ -128,6 +134,42 @@ export default function PostPropertyPage() {
   const listingTypeOptions = ['Sell', 'Rent', 'Lease'];
 
   const nearbyTypes = ['School', 'Bus Stand', 'Shopping', 'Hospital', 'Coffee', 'Others'];
+
+  const handleAIAutoFill = (data: any) => {
+    setFormData(prev => ({
+      ...prev,
+      title: data.title || prev.title,
+      description: data.description || prev.description,
+      price: data.price ? String(data.price) : prev.price,
+      area: data.area ? String(data.area) : prev.area,
+      location: data.location || prev.location,
+      address: data.address || prev.address,
+      type: data.type || prev.type,
+      bedrooms: data.bedrooms ? String(data.bedrooms) : prev.bedrooms,
+      bathrooms: data.bathrooms ? String(data.bathrooms) : prev.bathrooms,
+      possessionDate: data.possessionDate || prev.possessionDate,
+      reraId: data.reraId || prev.reraId,
+      projectUnits: data.projectUnits ? String(data.projectUnits) : prev.projectUnits,
+      projectArea: data.projectArea ? String(data.projectArea) : prev.projectArea,
+      configurations: data.configurations || prev.configurations,
+      avgPrice: data.avgPrice ? String(data.avgPrice) : prev.avgPrice,
+      launchDate: data.launchDate || prev.launchDate,
+      sizes: data.sizes || prev.sizes,
+      projectSize: data.projectSize || prev.projectSize,
+      propertySubtype: data.propertySubtype || prev.propertySubtype,
+      listingType: data.listingType || prev.listingType,
+      furnishing: data.furnishing || prev.furnishing,
+      amenities: Array.isArray(data.amenities) ? [...new Set([...prev.amenities, ...data.amenities])] : prev.amenities,
+      highlights: Array.isArray(data.highlights) ? [...new Set([...prev.highlights, ...data.highlights])] : prev.highlights,
+      specifications: Array.isArray(data.specifications) ? [...prev.specifications, ...data.specifications] : prev.specifications,
+      mapLink: data.mapLink || prev.mapLink,
+      videoUrl: data.videoUrl || prev.videoUrl,
+      bachelorsAllowed: data.bachelorsAllowed || prev.bachelorsAllowed,
+      maintenance: data.maintenance ? String(data.maintenance) : prev.maintenance,
+      totalFloors: data.totalFloors ? String(data.totalFloors) : prev.totalFloors,
+      carParking: data.carParking || prev.carParking,
+    }));
+  };
 
   // Step validation
   const validateStep = (step: number): boolean => {
@@ -295,6 +337,57 @@ export default function PostPropertyPage() {
     }
   };
 
+  const handleAiGenerate = async () => {
+    if (!aiInput.trim()) {
+      setAlertConfig({
+        type: 'warning',
+        title: 'Input Required',
+        message: 'Please enter property description or features to generate amenities.'
+      });
+      setShowAlert(true);
+      return;
+    }
+
+    setIsGeneratingAi(true);
+    try {
+      const response = await fetch('/api/ai/generate-amenities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: aiInput })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setFormData(prev => ({
+          ...prev,
+          amenities: [...new Set([...prev.amenities, ...data.data.amenities])],
+          highlights: [...new Set([...prev.highlights, ...data.data.highlights])],
+          specifications: [...prev.specifications, ...data.data.specifications]
+        }));
+        
+        setAlertConfig({
+          type: 'success',
+          title: 'AI Generation Successful',
+          message: 'Amenities, highlights, and specifications have been extracted and added.'
+        });
+        setShowAlert(true);
+        setAiInput(''); // Clear input after success
+      } else {
+        throw new Error(data.error || 'Failed to generate amenities');
+      }
+    } catch (err) {
+      setAlertConfig({
+        type: 'error',
+        title: 'AI Generation Failed',
+        message: 'Could not generate amenities. Please try again or add manually.'
+      });
+      setShowAlert(true);
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
@@ -342,7 +435,7 @@ export default function PostPropertyPage() {
     { number: 5, title: 'Features' },
     { number: 6, title: 'Images' },
     { number: 7, title: 'Map' },
-    { number: 8, title: 'Documents' }
+    { number: 8, title: 'Docs & Plans' }
   ];
 
   return (
@@ -415,6 +508,8 @@ export default function PostPropertyPage() {
                     <h2 className="text-2xl font-black text-slate-900 mb-2">Property Type & Details</h2>
                     <p className="text-sm text-slate-500">Tell us about the property type and basic information</p>
                   </div>
+
+                  <AIPropertyAutoFill onDataExtracted={handleAIAutoFill} />
 
                   <div className="space-y-4">
                     {/* Property Type and Property For - Side by Side */}
@@ -866,6 +961,31 @@ export default function PostPropertyPage() {
                     <p className="text-sm text-slate-500">Add amenities, highlights, and specifications</p>
                   </div>
 
+                  {/* AI Generation Section */}
+                  <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles size={18} className="text-indigo-600" />
+                      <h3 className="font-bold text-indigo-900">AI Auto-Fill</h3>
+                    </div>
+                    <p className="text-xs text-indigo-700 mb-3">
+                      Paste your property description, brochure text, or feature list below. Our AI will automatically extract and categorize amenities, highlights, and specifications for you.
+                    </p>
+                    <textarea
+                      value={aiInput}
+                      onChange={(e) => setAiInput(e.target.value)}
+                      placeholder="Paste property details here..."
+                      className="w-full p-3 text-sm rounded-lg border border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500 min-h-[100px] mb-3"
+                    />
+                    <Button 
+                      onClick={handleAiGenerate} 
+                      isLoading={isGeneratingAi}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                    >
+                      <Sparkles size={16} className="mr-2" />
+                      Generate Features with AI
+                    </Button>
+                  </div>
+
                   {/* Amenities */}
                   <div>
                     <label className="text-sm font-bold text-slate-700 mb-3 block">Amenities</label>
@@ -1058,6 +1178,28 @@ export default function PostPropertyPage() {
                     </p>
                   </div>
 
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 mb-2 block">Property Video Link (YouTube/Vimeo)</label>
+                    <Input
+                      placeholder="e.g., https://www.youtube.com/watch?v=..."
+                      value={formData.videoUrl}
+                      onChange={e => {
+                        let value = e.target.value.trim();
+                         // Extract URL from iframe if pasted
+                         if (value.includes('<iframe')) {
+                          const match = value.match(/src=["'](.*?)["']/);
+                          if (match && match[1]) {
+                            value = match[1];
+                          }
+                        }
+                        setFormData({ ...formData, videoUrl: value });
+                      }}
+                    />
+                    <p className="text-xs text-slate-500 mt-2">
+                      <span className="font-bold">Note:</span> Supports YouTube, Vimeo, or direct video URLs.
+                    </p>
+                  </div>
+
                   <div className="pt-6 border-t border-slate-200">
                     <label className="text-sm font-bold text-slate-700 mb-3 block">Nearby Locations</label>
                     <div className="grid grid-cols-2 gap-3 mb-3">
@@ -1128,24 +1270,21 @@ export default function PostPropertyPage() {
                 </div>
               )}
 
-              {/* Step 8: Documents */}
+              {/* Step 8: Documents & Floor Plans */}
               {currentStep === 8 && (
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-black text-slate-900 mb-2">Documents & Attachments</h2>
-                    <p className="text-sm text-slate-500">Upload property related documents (PDF only, max 10MB)</p>
+                    <h2 className="text-2xl font-black text-slate-900 mb-2">Documents & Floor Plans</h2>
+                    <p className="text-sm text-slate-500">Upload brochure and floor plan images</p>
                   </div>
 
+                  {/* Brochure Upload */}
                   <div>
-                    <label className="flex flex-col items-center justify-center w-full h-56 border-2 border-dashed border-slate-300 rounded-2xl hover:border-blue-500 transition-all cursor-pointer bg-slate-50 hover:bg-blue-50/50">
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Upload size={28} className="text-blue-600" />
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm font-bold text-slate-700">Click to upload PDF documents</p>
-                          <p className="text-xs text-slate-500 mt-1">Maximum size: 10MB per file</p>
-                        </div>
+                    <label className="text-sm font-bold text-slate-700 mb-2 block">Property Brochure (PDF)</label>
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-2xl hover:border-blue-500 transition-all cursor-pointer bg-slate-50 hover:bg-blue-50/50">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Upload size={24} className="text-slate-400" />
+                        <p className="text-sm font-bold text-slate-600">Click to upload PDF</p>
                       </div>
                       <input
                         type="file"
@@ -1155,29 +1294,121 @@ export default function PostPropertyPage() {
                         disabled={uploadingPDF}
                       />
                     </label>
-
-                    {uploadingPDF && (
-                      <p className="text-center text-sm text-blue-600 mt-4">Uploading document...</p>
-                    )}
-
-                    <div className="space-y-3 mt-6">
-                      {formData.attachments.map((doc, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    {uploadingPDF && <p className="text-sm text-blue-600 mt-2">Uploading brochure...</p>}
+                    
+                    {formData.attachments.length > 0 && (
+                      <div className="mt-4 space-y-2">
+                        {formData.attachments.map((file, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                            <div className="flex items-center gap-3">
                               <FileText size={18} className="text-blue-600" />
+                              <div>
+                                <p className="text-sm font-bold text-slate-900">{file.name}</p>
+                                <p className="text-xs text-slate-500">{file.size}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-900">{doc.name}</p>
-                              <p className="text-xs text-slate-500">{doc.size}</p>
-                            </div>
+                            <button onClick={() => setFormData(prev => ({ ...prev, attachments: prev.attachments.filter((_, i) => i !== idx) }))}>
+                              <X size={16} className="text-slate-400 hover:text-rose-500" />
+                            </button>
                           </div>
-                          <button onClick={() => setFormData(prev => ({ ...prev, attachments: prev.attachments.filter((_, i) => i !== idx) }))}>
-                            <X size={16} className="text-slate-400 hover:text-rose-500" />
-                          </button>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Floor Plans Section */}
+                  <div className="pt-6 border-t border-slate-200">
+                    <label className="text-sm font-bold text-slate-700 mb-3 block">Floor Plans</label>
+                    <p className="text-xs text-slate-500 mb-4">Upload floor plan images with titles (e.g., "Ground Floor Plan", "3BHK Layout")</p>
+                    
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
+                       <div className="flex flex-col gap-3">
+                          <Input 
+                            placeholder="Floor Plan Title (e.g., Master Plan)" 
+                            value={tempInputs.floorPlanTitle}
+                            onChange={(e) => setTempInputs({...tempInputs, floorPlanTitle: e.target.value})}
+                          />
+                          <div className="flex items-center gap-3">
+                             <label className="flex-1 cursor-pointer">
+                                <div className="flex items-center justify-center w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl hover:border-blue-500 transition-colors">
+                                   <ImageIcon size={18} className="text-slate-400 mr-2" />
+                                   <span className="text-sm font-medium text-slate-600">Select Image</span>
+                                </div>
+                                <input 
+                                  type="file" 
+                                  accept="image/*" 
+                                  className="hidden" 
+                                  onChange={async (e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                      if (!tempInputs.floorPlanTitle.trim()) {
+                                         setAlertConfig({
+                                           type: 'warning',
+                                           title: 'Title Required',
+                                           message: 'Please enter a title for the floor plan first.'
+                                         });
+                                         setShowAlert(true);
+                                         e.target.value = ''; // Reset input
+                                         return;
+                                      }
+
+                                      // Upload Logic inline here for simplicity or separate handler
+                                      setUploadingImages(true);
+                                      try {
+                                        const file = e.target.files[0];
+                                        const formDataUpload = new FormData();
+                                        formDataUpload.append('file', file);
+                                        formDataUpload.append('upload_preset', 'dream-properties');
+
+                                        const response = await fetch(
+                                          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+                                          { method: 'POST', body: formDataUpload }
+                                        );
+                                        const data = await response.json();
+                                        
+                                        if (data.secure_url) {
+                                           setFormData(prev => ({
+                                             ...prev,
+                                             floorPlans: [...prev.floorPlans, { title: tempInputs.floorPlanTitle, url: data.secure_url }]
+                                           }));
+                                           setTempInputs(prev => ({ ...prev, floorPlanTitle: '' }));
+                                        }
+                                      } catch (err) {
+                                        console.error('Floor plan upload failed', err);
+                                      } finally {
+                                        setUploadingImages(false);
+                                        e.target.value = '';
+                                      }
+                                    }
+                                  }}
+                                  disabled={uploadingImages}
+                                />
+                             </label>
+                             {uploadingImages && <span className="text-xs text-blue-600 font-medium">Uploading...</span>}
+                          </div>
+                       </div>
                     </div>
+
+                    {/* Display Added Floor Plans */}
+                    {formData.floorPlans && formData.floorPlans.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {formData.floorPlans.map((plan, idx) => (
+                          <div key={idx} className="relative group rounded-lg overflow-hidden border border-slate-200">
+                            <div className="aspect-[4/3] bg-slate-100">
+                              <img src={plan.url} alt={plan.title} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="p-2 bg-white border-t border-slate-100">
+                              <p className="text-xs font-bold text-slate-900 truncate">{plan.title}</p>
+                            </div>
+                            <button 
+                              onClick={() => setFormData(prev => ({ ...prev, floorPlans: prev.floorPlans.filter((_, i) => i !== idx) }))}
+                              className="absolute top-1 right-1 p-1 bg-rose-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

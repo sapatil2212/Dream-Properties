@@ -48,7 +48,9 @@ export async function PUT(
   try {
     const { id } = await params;
     const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== 'BUILDER') {
+    
+    // Check if user is authenticated and has appropriate role
+    if (!session || !['BUILDER', 'SUPER_ADMIN', 'ADMIN'].includes(session.user.role)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
@@ -64,7 +66,8 @@ export async function PUT(
       return NextResponse.json({ message: 'Property not found' }, { status: 404 })
     }
 
-    if (existing.builderId !== parseInt(session.user.id)) {
+    // Only restrict Builders to their own properties. Admins can edit any property.
+    if (session.user.role === 'BUILDER' && existing.builderId !== parseInt(session.user.id)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
     }
 
@@ -73,9 +76,9 @@ export async function PUT(
         ? body.price
         : 'NA'
 
-    const updated = await prisma.property.update({
-      where: { id: propertyId },
-      data: {
+    const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
+
+    const updateData: any = {
         title: body.title,
         description: body.description,
         price: normalizedPrice,
@@ -102,6 +105,7 @@ export async function PUT(
         areaUnit: body.areaUnit,
         propertySubtype: body.propertySubtype,
         mapLink: body.mapLink,
+        videoUrl: body.videoUrl,
         nearbyLocations: body.nearbyLocations,
         attachments: body.attachments,
         listingType: body.listingType,
@@ -113,8 +117,18 @@ export async function PUT(
         maintenance: body.maintenance,
         totalFloors: body.totalFloors,
         carParking: body.carParking,
-        status: 'Pending_Approval', // Reset status on update
-      },
+    };
+
+    // Only reset status if not Admin/Super Admin
+    if (!isAdmin) {
+        updateData.status = 'Pending_Approval';
+    } else if (body.status) {
+        updateData.status = body.status;
+    }
+
+    const updated = await prisma.property.update({
+      where: { id: propertyId },
+      data: updateData,
     })
 
     return NextResponse.json({ message: 'Property updated and pending approval', property: updated })

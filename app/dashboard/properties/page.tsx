@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Download, Eye, Trash2, Edit2, X, Flag, CheckCircle, Search, Filter, FileText, FileSpreadsheet, Plus, Share2, Star } from 'lucide-react';
+import { Download, Eye, Trash2, Edit2, X, Flag, CheckCircle, Search, Filter, FileText, FileSpreadsheet, Plus, Share2, Star, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -11,19 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ConfirmDialog, Modal, Select, Input, Badge, Skeleton, Button } from '@/components/UIComponents';
+import { ConfirmDialog, Modal, Select, Input, Badge, Skeleton, Button, DataTable, DatePicker } from '@/components/UIComponents';
+import ImageViewer from '@/components/ImageViewer';
 import { SuccessModal } from '@/components/ui/success-modal';
 import { AlertModal } from '@/components/ui/alert-modal';
+
+// Image Viewer Component - Moved to @/components/ImageViewer
 
 export default function InventoryManagementPage() {
   const { data: session } = useSession();
@@ -55,6 +49,10 @@ export default function InventoryManagementPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Image Viewer State
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Determine user role
   const isAdmin = session?.user?.role === 'SUPER_ADMIN' || session?.user?.role === 'ADMIN';
@@ -234,6 +232,27 @@ export default function InventoryManagementPage() {
         setEditedProperty(data);
         setIsModalOpen(true);
         setIsEditing(false);
+      } else {
+        setAlertMessage('Failed to load property details.');
+        setAlertType('error');
+        setShowAlertModal(true);
+      }
+    } catch (err) {
+      setAlertMessage('Failed to load property details. Please try again.');
+      setAlertType('error');
+      setShowAlertModal(true);
+    }
+  };
+
+  const handleEditProperty = async (propertyId: number) => {
+    try {
+      const response = await fetch(`/api/properties/${propertyId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedProperty(data);
+        setEditedProperty(data);
+        setIsModalOpen(true);
+        setIsEditing(true);
       } else {
         setAlertMessage('Failed to load property details.');
         setAlertType('error');
@@ -608,75 +627,71 @@ export default function InventoryManagementPage() {
             />
           </div>
         </div>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="whitespace-nowrap">Property Details</TableHead>
-                  {isAdmin && <TableHead className="whitespace-nowrap hidden md:table-cell">Builder</TableHead>}
-                  <TableHead className="whitespace-nowrap hidden sm:table-cell">Type</TableHead>
-                  <TableHead className="whitespace-nowrap">Price</TableHead>
-                  <TableHead className="whitespace-nowrap hidden sm:table-cell">Status</TableHead>
-                  <TableHead className="whitespace-nowrap hidden sm:table-cell">Featured</TableHead>
-                  <TableHead className="whitespace-nowrap hidden sm:table-cell">Flag</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-10">
+        <CardContent className="p-0 md:overflow-visible">
+          <DataTable
+            className="md:overflow-visible"
+            headers={[
+              'Property Details',
+              ...(isAdmin ? ['Builder'] : []),
+              'Type',
+              'Price',
+              'Status',
+              'Featured',
+              'Flag',
+              'Actions'
+            ]}
+          >
+            {isLoading ? (
+                <tr>
+                  <td colSpan={isAdmin ? 8 : 7} className="text-center py-10">
                     <Skeleton className="h-4 w-full" />
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               ) : properties.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-10 text-slate-400">
+                <tr>
+                  <td colSpan={isAdmin ? 8 : 7} className="text-center py-10 text-slate-400">
                     {isAdmin ? 'No properties in queue' : 'No properties posted yet'}
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               ) : (
                 filteredProperties.map((p) => (
-                  <TableRow key={p.id} className="hover:bg-slate-50/50">
-                    <TableCell>
+                  <tr key={p.id} className="hover:bg-slate-50/50 border-b border-slate-100 last:border-0 transition-colors">
+                    <td className="px-6 py-4">
                       <div>
-                        <p className="font-medium text-slate-900 text-sm">{p.title}</p>
+                        <p className="font-medium text-slate-900 text-xs">{p.title}</p>
                         <p className="text-xs text-slate-500">{p.location}</p>
                         <div className="flex flex-wrap gap-1 mt-1 sm:hidden">
                           <span className="text-xs font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{p.type}</span>
-                          <Badge variant={getStatusVariant(p.status)} className="text-[10px] h-5">
+                          <Badge variant={getStatusVariant(p.status)} className="text-xs h-5">
                             {p.status === 'Pending_Approval' ? 'Pending' : p.status}
                           </Badge>
                           {p.propertyFlag && (
-                            <Badge variant="neutral" className="bg-orange-500 text-white border-orange-600 font-bold text-[10px] h-5">
-                              <Flag size={10} className="mr-0.5 fill-white" />
+                            <Badge variant="neutral" className="bg-indigo-50 text-indigo-600 border-indigo-100 font-bold text-xs h-5">
                               {p.propertyFlag}
                             </Badge>
                           )}
                         </div>
                       </div>
-                    </TableCell>
+                    </td>
                     {isAdmin && (
-                      <TableCell>
+                      <td className="px-6 py-4 hidden md:table-cell">
                         <div>
-                          <p className="text-sm font-medium text-slate-700">
+                          <p className="text-xs font-medium text-slate-700">
                             {p.builder_name || 'N/A'}
                           </p>
-                          <p className="text-xs text-slate-500">{p.builder_email || ''}</p>
                         </div>
-                      </TableCell>
+                      </td>
                     )}
-                    <TableCell className="hidden sm:table-cell">
-                      <span className="text-xs sm:text-sm font-medium text-blue-600">{p.type}</span>
-                    </TableCell>
-                    <TableCell className="font-medium">{p.price}</TableCell>
-                    <TableCell className="hidden sm:table-cell">
+                    <td className="px-6 py-4 hidden sm:table-cell">
+                      <span className="text-xs font-medium text-blue-600">{p.type}</span>
+                    </td>
+                    <td className="px-6 py-4 font-medium text-xs">{p.price}</td>
+                    <td className="px-6 py-4 hidden sm:table-cell">
                       <Badge variant={getStatusVariant(p.status)} className="text-xs">
                         {p.status === 'Pending_Approval' ? 'Pending' : p.status}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
+                    </td>
+                    <td className="px-6 py-4 hidden sm:table-cell">
                       {p.isFeatured ? (
                         <span className="flex items-center gap-1 text-amber-500 font-bold text-xs">
                           <Star size={14} className="fill-amber-500" />
@@ -685,19 +700,18 @@ export default function InventoryManagementPage() {
                       ) : (
                         <span className="text-xs text-slate-400">-</span>
                       )}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
+                    </td>
+                    <td className="px-6 py-4 hidden sm:table-cell">
                       {p.propertyFlag ? (
-                        <Badge variant="neutral" className="bg-orange-500 text-white border-orange-600 font-bold text-xs">
-                          <Flag size={12} className="mr-0.5 fill-white" />
+                        <Badge variant="neutral" className="bg-indigo-50 text-indigo-600 border-indigo-100 font-bold text-xs">
                           {p.propertyFlag}
                         </Badge>
                       ) : (
                         <span className="text-xs text-slate-400">-</span>
                       )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1 sm:gap-2">
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-1">
                         {/* Admin-only approval buttons */}
                         {isAdmin && (p.status === 'Pending_Approval' || p.status === 'Pending Approval') && (
                           <>
@@ -725,13 +739,12 @@ export default function InventoryManagementPage() {
                           <div className="relative inline-block">
                             <Button
                               variant="outline"
-                              size="sm"
-                              className={`${p.propertyFlag ? "bg-orange-50 border-orange-200 text-orange-700" : ""} text-xs h-8 px-2`}
+                              size="icon"
+                              className={`${p.propertyFlag ? "bg-orange-50 border-orange-200 text-orange-700" : ""} h-8 w-8`}
                               onClick={() => setFlaggingPropertyId(flaggingPropertyId === p.id ? null : p.id)}
-                              title="Flag Property"
+                              title={p.propertyFlag || 'Flag Property'}
                             >
-                              <Flag size={14} className="sm:mr-1" />
-                              <span className="hidden sm:inline">{p.propertyFlag || 'Flag'}</span>
+                              <Flag size={14} />
                             </Button>
                             {flaggingPropertyId === p.id && (
                               <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-slate-200 z-50 py-1">
@@ -784,6 +797,17 @@ export default function InventoryManagementPage() {
                         >
                           <Eye size={14} />
                         </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 w-8"
+                            onClick={() => handleEditProperty(p.id)}
+                            title="Edit Property"
+                          >
+                            <Edit2 size={14} />
+                          </Button>
+                        )}
                         <div className="relative inline-block">
                           <Button
                             variant="ghost"
@@ -844,13 +868,11 @@ export default function InventoryManagementPage() {
                           <Trash2 size={14} />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ))
               )}
-            </TableBody>
-          </Table>
-          </div>
+          </DataTable>
         </CardContent>
       </Card>
 
@@ -876,255 +898,295 @@ export default function InventoryManagementPage() {
         </div>
 
           {selectedProperty && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Basic Information */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-bold text-slate-900 pb-1.5 border-b">
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
                   Basic Information
                 </h3>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <Label className="text-xs">Title</Label>
-                    {isEditing ? (
-                      <Input
-                        value={editedProperty?.title || ''}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                        label="Title"
+                        value={isEditing ? (editedProperty?.title || '') : (selectedProperty.title || '')}
                         onChange={(e) => handleInputChange('title', e.target.value)}
-                        className="mt-1 h-9 text-sm"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-slate-600">{selectedProperty.title}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-xs">Type</Label>
-                    {isEditing ? (
-                      <Input
-                        value={editedProperty?.type || ''}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
+                        label="Type"
+                        value={isEditing ? (editedProperty?.type || '') : (selectedProperty.type || '')}
                         onChange={(e) => handleInputChange('type', e.target.value)}
-                        className="mt-1 h-9 text-sm"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-slate-600">{selectedProperty.type}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-xs">Listing Type</Label>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {renderValue(selectedProperty.listingType)}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Price</Label>
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
                     {isEditing ? (
-                      <Input
-                        value={editedProperty?.price || ''}
+                        <Select
+                            label="Listing Type"
+                            options={[{ label: 'Sale', value: 'Sell' }, { label: 'Rent', value: 'Rent' }, { label: 'Lease', value: 'Lease' }]}
+                            value={editedProperty?.listingType || 'Sell'}
+                            onChange={(val) => handleInputChange('listingType', val)}
+                        />
+                    ) : (
+                        <Input
+                            label="Listing Type"
+                            value={selectedProperty.listingType || 'N/A'}
+                            readOnly={true}
+                            disabled={true}
+                            className="bg-slate-50 text-slate-700"
+                        />
+                    )}
+                    <Input
+                        label="Price"
+                        value={isEditing ? (editedProperty?.price || '') : (selectedProperty.price || '')}
                         onChange={(e) => handleInputChange('price', e.target.value)}
-                        className="mt-1 h-9 text-sm"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm font-semibold text-blue-600">{selectedProperty.price}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-xs">Area</Label>
-                    {isEditing ? (
-                      <Input
-                        value={editedProperty?.area || ''}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 font-bold text-blue-600" : ""}
+                    />
+                    <Input
+                        label="Area"
+                        value={isEditing ? (editedProperty?.area || '') : (selectedProperty.area || '')}
                         onChange={(e) => handleInputChange('area', e.target.value)}
-                        className="mt-1 h-9 text-sm"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-slate-600">{selectedProperty.area}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-xs">Status</Label>
-                    <div className="mt-1">
-                      <Badge variant={getStatusVariant(selectedProperty.status)} className="text-xs">
-                        {selectedProperty.status === 'Pending_Approval' ? 'Pending Approval' : selectedProperty.status}
-                      </Badge>
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <div>
+                        <label className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-500">Status</label>
+                        {isEditing && isAdmin ? (
+                             <Select
+                                options={[
+                                    { label: 'Pending Approval', value: 'Pending_Approval' },
+                                    { label: 'Approved', value: 'Approved' },
+                                    { label: 'Rejected', value: 'Rejected' },
+                                    { label: 'Sold', value: 'Sold' }
+                                ]}
+                                value={editedProperty?.status || 'Pending_Approval'}
+                                onChange={(val) => handleInputChange('status', val)}
+                             />
+                        ) : (
+                            <div className="mt-1 h-[42px] flex items-center px-3.5 rounded-xl border border-slate-200 bg-slate-50">
+                                 <Badge variant={getStatusVariant(selectedProperty.status)} className="text-xs">
+                                    {selectedProperty.status === 'Pending_Approval' ? 'Pending Approval' : selectedProperty.status}
+                                 </Badge>
+                            </div>
+                        )}
                     </div>
-                  </div>
+                    {isEditing && isAdmin && (
+                         <Select
+                            label="Featured"
+                            options={[{ label: 'Yes', value: 'true' }, { label: 'No', value: 'false' }]}
+                            value={editedProperty?.isFeatured ? 'true' : 'false'}
+                            onChange={(val) => handleInputChange('isFeatured', val === 'true')}
+                         />
+                    )}
                 </div>
               </div>
 
               {/* Location Details */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-bold text-slate-900 pb-1.5 border-b">
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
                   Location
                 </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">Location</Label>
-                    {isEditing ? (
-                      <Input
-                        value={editedProperty?.location || ''}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                        label="Location"
+                        value={isEditing ? (editedProperty?.location || '') : (selectedProperty.location || '')}
                         onChange={(e) => handleInputChange('location', e.target.value)}
-                        className="mt-1 h-9 text-sm"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-slate-600">{selectedProperty.location}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-xs">Address</Label>
-                    {isEditing ? (
-                      <Textarea
-                        value={editedProperty?.address || ''}
-                        onChange={(e) => handleInputChange('address', e.target.value)}
-                        className="mt-1 text-sm min-h-[60px]"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-slate-600">{selectedProperty.address}</p>
-                    )}
-                  </div>
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <div className="md:col-span-2">
+                        <label className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-500">Address</label>
+                        <textarea
+                            className={`w-full px-3.5 py-2 mt-1 rounded-xl border bg-white transition-all focus:border-blue-500 outline-none disabled:bg-slate-50 text-[13px] font-medium border-slate-200 min-h-[60px]`}
+                            value={isEditing ? (editedProperty?.address || '') : (selectedProperty.address || '')}
+                            onChange={(e) => handleInputChange('address', e.target.value)}
+                            disabled={!isEditing}
+                        />
+                    </div>
                 </div>
               </div>
 
               {/* Description */}
               <div className="space-y-2">
-                <h3 className="text-sm font-bold text-slate-900 pb-1.5 border-b">
+                <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
                   Description
                 </h3>
-                {isEditing ? (
-                  <Textarea
-                    value={editedProperty?.description || ''}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    className="mt-1 text-sm min-h-[80px]"
-                  />
-                ) : (
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    {selectedProperty.description || 'No description available'}
-                  </p>
-                )}
+                 <div>
+                    <textarea
+                        className={`w-full px-3.5 py-2 mt-1 rounded-xl border bg-white transition-all focus:border-blue-500 outline-none disabled:bg-slate-50 text-[13px] font-medium border-slate-200 min-h-[100px]`}
+                        value={isEditing ? (editedProperty?.description || '') : (selectedProperty.description || '')}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        disabled={!isEditing}
+                        placeholder={!isEditing ? "No description available" : ""}
+                    />
+                </div>
               </div>
 
               {/* Property Details */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-bold text-slate-900 pb-1.5 border-b">
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
                   Property Details
                 </h3>
-                <div className="grid grid-cols-4 gap-3">
-                  <div>
-                    <Label className="text-xs">Bedrooms</Label>
-                    {isEditing ? (
-                      <Input
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Input
+                        label="Bedrooms"
                         type="number"
-                        value={editedProperty?.bedrooms || ''}
+                        value={isEditing ? (editedProperty?.bedrooms || '') : (selectedProperty.bedrooms || '')}
                         onChange={(e) => handleInputChange('bedrooms', e.target.value)}
-                        className="mt-1 h-9 text-sm"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-slate-600">
-                        {renderValue(selectedProperty.bedrooms)}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-xs">Bathrooms</Label>
-                    {isEditing ? (
-                      <Input
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
+                        label="Bathrooms"
                         type="number"
-                        value={editedProperty?.bathrooms || ''}
+                        value={isEditing ? (editedProperty?.bathrooms || '') : (selectedProperty.bathrooms || '')}
                         onChange={(e) => handleInputChange('bathrooms', e.target.value)}
-                        className="mt-1 h-9 text-sm"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-slate-600">
-                        {renderValue(selectedProperty.bathrooms)}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label className="text-xs">Possession Date</Label>
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
                     {isEditing ? (
-                      <Input
-                        value={editedProperty?.possessionDate || ''}
-                        onChange={(e) => handleInputChange('possessionDate', e.target.value)}
-                        className="mt-1 h-9 text-sm"
-                      />
+                        <DatePicker
+                            label="Possession Date"
+                            value={editedProperty?.possessionDate || ''}
+                            onChange={(val) => handleInputChange('possessionDate', val)}
+                        />
                     ) : (
-                      <p className="mt-1 text-sm text-slate-600">
-                        {renderValue(selectedProperty.possessionDate)}
-                      </p>
+                         <Input
+                            label="Possession Date"
+                            value={selectedProperty.possessionDate || ''}
+                            readOnly={true}
+                            disabled={true}
+                            className="bg-slate-50 text-slate-700"
+                        />
                     )}
-                  </div>
-                  <div>
-                    <Label className="text-xs">RERA ID</Label>
-                    {isEditing ? (
-                      <Input
-                        value={editedProperty?.reraId || ''}
+                    <Input
+                        label="RERA ID"
+                        value={isEditing ? (editedProperty?.reraId || '') : (selectedProperty.reraId || '')}
                         onChange={(e) => handleInputChange('reraId', e.target.value)}
-                        className="mt-1 h-9 text-sm"
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-slate-600">
-                        {renderValue(selectedProperty.reraId)}
-                      </p>
-                    )}
-                  </div>
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                </div>
+              </div>
+
+              {/* Media & Links */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
+                  Media & Links
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                        label="Map Link"
+                        value={isEditing ? (editedProperty?.mapLink || '') : (selectedProperty.mapLink || '')}
+                        onChange={(e) => handleInputChange('mapLink', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                        placeholder="Google Maps Embed URL"
+                    />
+                    <Input
+                        label="Video Link"
+                        value={isEditing ? (editedProperty?.videoUrl || '') : (selectedProperty.videoUrl || '')}
+                        onChange={(e) => handleInputChange('videoUrl', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                        placeholder="YouTube/Vimeo URL"
+                    />
                 </div>
               </div>
 
               {/* Builder Information */}
               {selectedProperty.builder && isAdmin && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-bold text-slate-900 pb-1.5 border-b">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
                     Builder Information
                   </h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <Label className="text-xs">Name</Label>
-                      <p className="mt-1 text-sm text-slate-600">
-                        {selectedProperty.builder.name || 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-xs">Email</Label>
-                      <p className="mt-1 text-sm text-slate-600">
-                        {selectedProperty.builder.email || 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-xs">Mobile</Label>
-                      <p className="mt-1 text-sm text-slate-600">
-                        {selectedProperty.builder.mobile || 'N/A'}
-                      </p>
-                    </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     <Input
+                        label="Name"
+                        value={selectedProperty.builder.name || 'N/A'}
+                        readOnly={true}
+                        disabled={true}
+                        className="bg-slate-50 text-slate-700"
+                    />
+                    <Input
+                        label="Email"
+                        value={selectedProperty.builder.email || 'N/A'}
+                        readOnly={true}
+                        disabled={true}
+                        className="bg-slate-50 text-slate-700"
+                    />
+                    <Input
+                        label="Mobile"
+                        value={selectedProperty.builder.mobile || 'N/A'}
+                        readOnly={true}
+                        disabled={true}
+                        className="bg-slate-50 text-slate-700"
+                    />
                   </div>
                 </div>
               )}
 
               {/* Amenities */}
-              {selectedProperty.amenities && Array.isArray(selectedProperty.amenities) && selectedProperty.amenities.length > 0 && (
+              {(isEditing || (selectedProperty.amenities && Array.isArray(selectedProperty.amenities) && selectedProperty.amenities.length > 0)) && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-bold text-slate-900 pb-1.5 border-b">
+                  <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
                     Amenities
                   </h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedProperty.amenities.map((amenity: string, index: number) => (
-                      <Badge key={index} variant="neutral" className="text-xs">
-                        {amenity}
-                      </Badge>
-                    ))}
-                  </div>
+                  {isEditing ? (
+                       <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-500">Amenities (Comma separated)</label>
+                          <textarea
+                               className="w-full px-3.5 py-2 mt-1 rounded-xl border bg-white transition-all focus:border-blue-500 outline-none disabled:bg-slate-50 text-[13px] font-medium border-slate-200 min-h-[60px]"
+                               value={Array.isArray(editedProperty?.amenities) ? editedProperty.amenities.join(', ') : (typeof editedProperty?.amenities === 'string' ? editedProperty.amenities : '')}
+                               onChange={(e) => handleInputChange('amenities', e.target.value.split(',').map((s: string) => s.trim()))}
+                          />
+                       </div>
+                  ) : (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {selectedProperty.amenities.map((amenity: string, index: number) => (
+                          <Badge key={index} variant="neutral" className="text-xs">
+                            {amenity}
+                          </Badge>
+                        ))}
+                      </div>
+                  )}
                 </div>
               )}
 
               {/* Images */}
               {selectedProperty.images && Array.isArray(selectedProperty.images) && selectedProperty.images.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-bold text-slate-900 pb-1.5 border-b">
+                  <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
                     Property Images ({selectedProperty.images.length})
                   </h3>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-4 gap-2 pt-1">
                     {selectedProperty.images.slice(0, 8).map((image: string, index: number) => (
-                      <div key={index} className="aspect-video bg-slate-100 rounded-lg overflow-hidden">
+                      <div 
+                        key={index} 
+                        className="aspect-video bg-slate-100 rounded-lg overflow-hidden cursor-pointer group relative"
+                        onClick={() => {
+                            setCurrentImageIndex(index);
+                            setIsImageViewerOpen(true);
+                        }}
+                      >
                         <img
                           src={image}
                           alt={`Property ${index + 1}`}
-                          className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <ZoomIn className="text-white drop-shadow-md" size={24} />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1196,6 +1258,12 @@ export default function InventoryManagementPage() {
         cancelText="Cancel"
         type="danger"
         isLoading={isDeleting}
+      />
+      <ImageViewer
+        images={selectedProperty?.images || []}
+        initialIndex={currentImageIndex}
+        isOpen={isImageViewerOpen}
+        onClose={() => setIsImageViewerOpen(false)}
       />
     </div>
   );

@@ -7,6 +7,7 @@ import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { UserRole } from '@/types';
 import { Menu } from 'lucide-react';
+import { AIWidget } from '@/components/AIWidget';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -81,6 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           isSidebarCollapsed={collapsed}
         />
         <main className="p-4 sm:p-6 lg:p-8 max-w-full lg:max-w-7xl mx-auto">{children}</main>
+        <AIWidget />
       </div>
     </div>
   );

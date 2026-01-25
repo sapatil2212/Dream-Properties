@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, MapPin, Bed, Bath, Maximize, Heart, Info, Send } from 'lucide-react';
+import { ArrowRight, MapPin, Bed, Bath, Maximize, Heart, Info, Send, Building2, Calendar } from 'lucide-react';
 import { Card, Badge, Button, Modal } from '@/components/UIComponents';
 import { Property } from '@/types';
 import { useRouter } from 'next/navigation';
@@ -60,6 +60,15 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
     setShowInquiry(false);
   };
 
+  const isResidential = (type: string | undefined, subtype: string | undefined) => {
+    const t = (type || '').toLowerCase();
+    const st = (subtype || '').toLowerCase();
+    const residentialTypes = ['residential', 'apartment', 'villa', 'penthouse', 'flat', 'house'];
+    return residentialTypes.some(rt => t.includes(rt) || st.includes(rt));
+  };
+
+  const isResidentialProperty = isResidential(property.type, property.property_subtype);
+
   return (
     <Card className="group flex flex-col h-full bg-white hover:shadow-xl transition-all duration-500 border border-slate-100 rounded-2xl overflow-hidden">
       {/* Image Container */}
@@ -75,7 +84,7 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           <Badge variant="info">{property.property_subtype || property.type || 'Residential'}</Badge>
           {property.isFeatured && (
-            <Badge className="bg-amber-500 text-white border-none shadow-sm">Featured</Badge>
+            <Badge className="bg-orange-100 text-orange-600 border-none shadow-sm">Featured</Badge>
           )}
         </div>
 
@@ -114,15 +123,25 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
         <div className="grid grid-cols-3 gap-2 mb-4 pt-3 border-t border-slate-50">
           <div className="flex items-center gap-2">
             <div className="p-1 bg-blue-50 rounded-lg text-blue-600">
-              <Bed size={12} />
+              {isResidentialProperty ? <Bed size={12} /> : <Building2 size={12} />}
             </div>
-            <span className="text-[11px] font-bold text-slate-700">{property.bedrooms || 0} BHK</span>
+            <span className="text-[11px] font-bold text-slate-700">
+              {isResidentialProperty 
+                ? `${property.bedrooms || 0} BHK` 
+                : ((property as any).projectUnits || (property as any).project_units 
+                    ? `${(property as any).projectUnits || (property as any).project_units} Units` 
+                    : ((property as any).projectSize || (property as any).project_size || 'N/A'))}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="p-1 bg-blue-50 rounded-lg text-blue-600">
-              <Bath size={12} />
+              {isResidentialProperty ? <Bath size={12} /> : <Calendar size={12} />}
             </div>
-            <span className="text-[11px] font-bold text-slate-700">{property.bathrooms || 0} Bath</span>
+            <span className="text-[11px] font-bold text-slate-700">
+              {isResidentialProperty 
+                ? `${property.bathrooms || 0} Bath` 
+                : ((property as any).possessionDate || (property as any).possession_date || 'Ready')}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="p-1 bg-blue-50 rounded-lg text-blue-600">
@@ -139,7 +158,7 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
                 {property.listing_type === 'Rent' ? 'Monthly Rent' : 'Starting From'}
               </span>
-              <p className="text-blue-600 font-black text-base">{property.price.split(' ')[0]}</p>
+              <p className="text-blue-600 font-black text-base">{property.price}</p>
             </div>
             
             <div className="grid grid-cols-2 gap-2">
@@ -198,7 +217,7 @@ export const FeaturedProperties: React.FC = () => {
         const res = await fetch('/api/properties'); 
         if (res.ok) {
           const data = await res.json();
-          setProperties(data.slice(0, 3));
+          setProperties(data);
         }
       } catch (err) { console.error(err); }
       finally { setIsLoading(false); }

@@ -62,7 +62,12 @@ function PropertiesContent() {
 
   const filteredProperties = filter === 'All' 
     ? properties 
-    : properties.filter(p => p.type === filter);
+    : properties.filter(p => {
+        if (filter === 'Villa') {
+          return p.type === 'Villa' || p.propertySubtype?.includes('Villa') || p.propertySubtype?.includes('Rowhouse');
+        }
+        return p.type === filter || p.propertySubtype?.includes(filter);
+      });
 
   const categories: (PropertyCategory | 'All')[] = [
     'All', 'Flats', 'Villa', 'Shop', 'Office', 'Plot', 'Agricultural', 'Industrial', 'Warehouse'

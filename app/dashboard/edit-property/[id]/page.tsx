@@ -57,6 +57,7 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
     specifications: [] as { label: string; value: string }[],
     images: [] as string[],
     mapLink: '',
+    videoUrl: '',
     nearbyLocations: [] as { name: string; type: string; distance: string; time: string }[],
     attachments: [] as { name: string; url: string; size: string }[],
   });
@@ -106,6 +107,7 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
           specifications: Array.isArray(data.specifications) ? data.specifications : [],
           images: Array.isArray(data.images) ? data.images : [],
           mapLink: data.mapLink || '',
+          videoUrl: data.videoUrl || '',
           nearbyLocations: Array.isArray(data.nearbyLocations) ? data.nearbyLocations : [],
           attachments: Array.isArray(data.attachments) ? data.attachments : [],
         });
@@ -314,6 +316,43 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
                 </div>
               </div>
             )}
+
+            {/* Media & Links */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-black text-slate-900 pb-2 border-b">Media & Links</h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-2 block">Google Maps Embed Link</label>
+                  <Input
+                    value={formData.mapLink}
+                    onChange={e => {
+                      let value = e.target.value.trim();
+                      if (value.includes('<iframe')) {
+                        const match = value.match(/src=["'](.*?)["']/);
+                        if (match && match[1]) value = match[1];
+                      }
+                      setFormData({ ...formData, mapLink: value });
+                    }}
+                    placeholder="https://www.google.com/maps/embed?pb=..."
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-2 block">Property Video Link</label>
+                  <Input
+                    value={formData.videoUrl}
+                    onChange={e => {
+                      let value = e.target.value.trim();
+                      if (value.includes('<iframe')) {
+                        const match = value.match(/src=["'](.*?)["']/);
+                        if (match && match[1]) value = match[1];
+                      }
+                      setFormData({ ...formData, videoUrl: value });
+                    }}
+                    placeholder="YouTube/Vimeo link"
+                  />
+                </div>
+              </div>
+            </div>
 
             {/* Rental Fields */}
             {formData.listingType === 'Rent' && (

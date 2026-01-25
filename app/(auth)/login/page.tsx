@@ -15,8 +15,10 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   
   useEffect(() => {
-    if (session) {
-      if (session.user.role === UserRole.USER) {
+    if (session?.user) {
+      // Redirect Buyers/Users to Home, others to Dashboard
+      // Check for both USER and BUYER roles to be safe
+      if (session.user.role === UserRole.USER || session.user.role === 'BUYER') {
         router.push('/');
       } else {
         router.push('/dashboard');

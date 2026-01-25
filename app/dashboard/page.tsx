@@ -6,6 +6,7 @@ import { UserRole } from '@/types';
 import { SuperAdminDashboard } from '@/components/dashboard/SuperAdminDashboard';
 import { BuilderDashboard } from '@/components/dashboard/BuilderDashboard';
 import { TelecallerDashboard, SalesExecutiveDashboard } from '@/components/dashboard/StaffDashboards';
+import { FavoritesList } from '@/components/dashboard/FavoritesList';
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -28,6 +29,10 @@ export default function DashboardPage() {
 
   if (role === (UserRole as any).SALES_EXECUTIVE) {
     return <SalesExecutiveDashboard />;
+  }
+
+  if (role === UserRole.USER || role === 'BUYER') {
+    return <FavoritesList />;
   }
 
   return (

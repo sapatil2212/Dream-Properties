@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -36,6 +38,8 @@ export async function GET() {
       staff: allUsers.filter(u => ['ADMIN', 'TELECALLER', 'SALES_EXECUTIVE', 'SAAS_OWNER'].includes(u.role as string)),
       others: allUsers.filter(u => !['BUYER', 'USER', 'BUILDER', 'ADMIN', 'TELECALLER', 'SALES_EXECUTIVE', 'SAAS_OWNER'].includes(u.role as string))
     }
+
+    // console.log('Summary with lastActiveAt:', JSON.stringify(summary.staff.map(u => ({ email: u.email, lastActiveAt: u.lastActiveAt })), null, 2));
 
     return NextResponse.json(summary)
   } catch (error) {

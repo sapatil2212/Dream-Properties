@@ -139,6 +139,8 @@ model Property {
   areaUnit          String?         @map("area_unit") @db.VarChar(50)
   propertySubtype   String?         @map("property_subtype") @db.VarChar(100)
   mapLink           String?         @map("map_link") @db.Text
+  videoUrl          String?         @map("video_url") @db.Text
+  floorPlans        Json?           @map("floor_plans")
   nearbyLocations   Json?           @map("nearby_locations")
   attachments       Json?
   listingType       ListingType     @default(Sell) @map("listing_type")

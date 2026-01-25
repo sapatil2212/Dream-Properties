@@ -12,10 +12,18 @@ export async function POST() {
     }
 
     // Update lastActiveAt for the logged-in user
-    await prisma.user.update({
-      where: { email: session.user.email },
-      data: { lastActiveAt: new Date() }
-    });
+    try {
+      await prisma.user.update({
+        where: { email: session.user.email },
+        data: { lastActiveAt: new Date() }
+      });
+    } catch (error: any) {
+      // If user not found (P2025), silently ignore or return 404
+      if (error.code === 'P2025') {
+        return NextResponse.json({ message: 'User not found' }, { status: 404 });
+      }
+      throw error;
+    }
 
     return NextResponse.json({ status: 'ok' });
   } catch (error) {

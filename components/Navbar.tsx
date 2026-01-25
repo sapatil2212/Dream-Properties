@@ -180,8 +180,7 @@ export const Navbar: React.FC = () => {
                             <p className="text-[12px] font-black text-slate-900 truncate">{user.name}</p>
                           </div>
                           
-                          {user.role !== 'USER' && user.role !== 'BUYER' && (
-                            <Link 
+                          <Link 
                               href="/dashboard" 
                               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all group"
                               onClick={() => setIsProfileOpen(false)}
@@ -189,7 +188,6 @@ export const Navbar: React.FC = () => {
                               <LayoutDashboard size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
                               <span className="text-[11px] font-black uppercase tracking-wider">Dashboard</span>
                             </Link>
-                          )}
                           
                           <Link 
                             href="/dashboard/profile/settings" 
@@ -347,9 +345,8 @@ export const Navbar: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className={`grid gap-2 ${user.role !== 'USER' && user.role !== 'BUYER' ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                        {user.role !== 'USER' && user.role !== 'BUYER' && (
-                          <Link 
+                      <div className="grid gap-2 grid-cols-3">
+                        <Link 
                             href="/dashboard" 
                             onClick={closeMenu}
                             className="flex flex-col items-center justify-center gap-2 p-3 bg-white border border-slate-100 rounded-xl hover:bg-blue-50 hover:border-blue-100 transition-all group"
@@ -357,7 +354,6 @@ export const Navbar: React.FC = () => {
                             <LayoutDashboard size={18} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
                             <span className="text-[9px] font-black text-slate-500 group-hover:text-blue-600 uppercase tracking-widest text-center">Dashboard</span>
                           </Link>
-                        )}
                         
                         <Link 
                           href="/dashboard/profile/settings" 

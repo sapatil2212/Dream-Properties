@@ -4,7 +4,7 @@ import React, { useEffect, use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PropertyCard } from '@/components/Home/FeaturedProperties';
 import { PropertyCategory } from '@/types';
-import { ChevronLeft, LayoutGrid, Filter, Search, ArrowRight, MessageCircle } from 'lucide-react';
+import { ChevronLeft, LayoutGrid, Filter, Search, ArrowRight, MessageCircle, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/UIComponents';
 
 const slugToCategory: Record<string, PropertyCategory> = {
@@ -67,6 +67,8 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ slug:
   const category = slug ? slugToCategory[slug] : null;
   const [properties, setProperties] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('newest');
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -89,6 +91,33 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ slug:
       setIsLoading(false);
     }
   };
+
+  const parsePrice = (priceStr: string) => {
+    if (!priceStr || priceStr === 'NA') return 0;
+    const cleanStr = priceStr.toLowerCase().replace(/,/g, '').trim();
+    let multiplier = 1;
+    
+    if (cleanStr.includes('cr')) multiplier = 10000000;
+    else if (cleanStr.includes('lakh') || cleanStr.includes('lac')) multiplier = 100000;
+    else if (cleanStr.includes('k')) multiplier = 1000;
+    
+    const numPart = parseFloat(cleanStr.replace(/[^\d.]/g, ''));
+    return isNaN(numPart) ? 0 : numPart * multiplier;
+  };
+
+  const sortedProperties = [...properties].sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low':
+        return parsePrice(a.price) - parsePrice(b.price);
+      case 'price-high':
+        return parsePrice(b.price) - parsePrice(a.price);
+      case 'oldest':
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case 'newest':
+      default:
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+  });
 
   if (!category || !categoryDetails[category]) {
     return (
@@ -146,9 +175,39 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ slug:
           </div>
           
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2 rounded-xl text-xs font-bold border-slate-200">
-              <Filter size={14} /> Filters
-            </Button>
+            <div className="relative">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 rounded-xl text-xs font-bold border-slate-200"
+                onClick={() => setShowSortMenu(!showSortMenu)}
+              >
+                <ArrowUpDown size={14} /> Sort
+              </Button>
+              {showSortMenu && (
+                <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50">
+                  {[
+                    { label: 'Newest First', value: 'newest' },
+                    { label: 'Price: Low to High', value: 'price-low' },
+                    { label: 'Price: High to Low', value: 'price-high' },
+                    { label: 'Oldest First', value: 'oldest' },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setSortBy(option.value);
+                        setShowSortMenu(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-slate-50 ${
+                        sortBy === option.value ? 'text-blue-600 bg-blue-50' : 'text-slate-600'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="relative hidden sm:block">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
@@ -168,9 +227,9 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ slug:
               <div key={i} className="h-96 bg-slate-100 rounded-2xl animate-pulse" />
             ))}
           </div>
-        ) : properties.length > 0 ? (
+        ) : sortedProperties.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-            {properties.map((p) => (
+            {sortedProperties.map((p) => (
               <PropertyCard key={p.id} property={p} />
             ))}
           </div>

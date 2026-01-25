@@ -27,14 +27,21 @@ import {
   Hospital,
   Coffee,
   Map,
+  ZoomIn,
+  Video,
+  Download,
+  Image as ImageIcon,
+  FileText,
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/UIComponents';
+import ImageViewer from '@/components/ImageViewer';
 import { PropertyInquiryForm } from '@/components/PropertyInquiryForm';
 
 export default function PropertyDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [property, setProperty] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -146,6 +153,35 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
     setCurrentImageIndex((prev) => (prev - 1 + property.images.length) % property.images.length);
   };
 
+  const images = property.images && property.images.length > 0
+    ? property.images
+    : ['/api/placeholder/800/600'];
+
+  const getEmbedUrl = (url: string) => {
+    if (!url) return '';
+    // If it's already an embed URL, return it
+    if (url.includes('/embed/') || url.includes('player.vimeo.com')) return url;
+    
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      let videoId = '';
+      if (url.includes('youtu.be')) {
+        videoId = url.split('/').pop() || '';
+      } else {
+        videoId = url.split('v=')[1] || '';
+      }
+      const ampersandPosition = videoId.indexOf('&');
+      if (ampersandPosition !== -1) {
+        videoId = videoId.substring(0, ampersandPosition);
+      }
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    if (url.includes('vimeo.com')) {
+      const videoId = url.split('/').pop();
+      return `https://player.vimeo.com/video/${videoId}`;
+    }
+    return url;
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
       {/* Redesigned Header Area with Back Button */}
@@ -209,7 +245,10 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
               animate={{ opacity: 1, y: 0 }}
               className="space-y-3"
             >
-              <div className="relative aspect-[16/10] rounded-xl overflow-hidden border border-slate-200">
+              <div 
+                className="relative aspect-[16/10] rounded-xl overflow-hidden border border-slate-200 cursor-pointer group"
+                onClick={() => setIsViewerOpen(true)}
+              >
                 <AnimatePresence mode="wait">
                   <motion.img
                     key={currentImageIndex}
@@ -219,22 +258,35 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                     transition={{ duration: 0.3 }}
                     src={property.images[currentImageIndex]}
                     alt={property.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </AnimatePresence>
+
+                {/* Hover Overlay with Zoom Icon */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
+                   <div className="bg-black/50 text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 backdrop-blur-sm">
+                      <ZoomIn size={24} />
+                   </div>
+                </div>
                 
                 {/* Nav Buttons */}
                 <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none">
-                  <button onClick={prevImage} className="w-9 h-9 rounded-full bg-white/90 shadow-sm flex items-center justify-center text-slate-900 pointer-events-auto hover:bg-blue-600 hover:text-white transition-all">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); prevImage(); }} 
+                    className="w-9 h-9 rounded-full bg-white/90 shadow-sm flex items-center justify-center text-slate-900 pointer-events-auto hover:bg-blue-600 hover:text-white transition-all hover:scale-110 z-10"
+                  >
                     <ChevronLeft size={18} />
                   </button>
-                  <button onClick={nextImage} className="w-9 h-9 rounded-full bg-white/90 shadow-sm flex items-center justify-center text-slate-900 pointer-events-auto hover:bg-blue-600 hover:text-white transition-all">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); nextImage(); }} 
+                    className="w-9 h-9 rounded-full bg-white/90 shadow-sm flex items-center justify-center text-slate-900 pointer-events-auto hover:bg-blue-600 hover:text-white transition-all hover:scale-110 z-10"
+                  >
                     <ChevronRight size={18} />
                   </button>
                 </div>
 
-                <div className="absolute top-4 left-4 flex gap-2">
-                  <Badge variant="info" className="px-3 py-1 rounded-md">{property.propertySubtype || property.type || 'Residential'}</Badge>
+                <div className="absolute top-4 left-4 flex gap-2 z-10">
+                  <Badge variant="info" className="px-3 py-1 rounded-md shadow-sm">{property.propertySubtype || property.type || 'Residential'}</Badge>
                   {property.isFeatured && (
                     <Badge className="bg-amber-500 text-white border-none shadow-sm px-3 py-1 rounded-md">Featured</Badge>
                   )}
@@ -248,7 +300,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                     key={idx}
                     onClick={() => setCurrentImageIndex(idx)}
                     className={`shrink-0 w-20 aspect-video rounded-lg overflow-hidden border transition-all ${
-                      currentImageIndex === idx ? 'border-blue-600 ring-2 ring-blue-50' : 'border-slate-200'
+                      currentImageIndex === idx ? 'border-blue-600 ring-2 ring-blue-50' : 'border-slate-200 opacity-70 hover:opacity-100'
                     }`}
                   >
                     <img src={img} className="w-full h-full object-cover" />
@@ -256,6 +308,13 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                 ))}
               </div>
             </motion.div>
+
+            <ImageViewer
+              images={property.images}
+              initialIndex={currentImageIndex}
+              isOpen={isViewerOpen}
+              onClose={() => setIsViewerOpen(false)}
+            />
 
             {/* Property Intro Card */}
             <Card className="p-5 rounded-xl border-slate-100">
@@ -502,7 +561,6 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {property.amenities.map((item: string, idx: number) => (
                         <div key={idx} className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-lg border border-slate-100">
-                          <Building2 size={18} className="text-blue-600 mb-2" />
                           <span className="text-[9px] font-black uppercase tracking-wider text-slate-700 text-center">{item}</span>
                         </div>
                       ))}
@@ -522,6 +580,45 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                 </motion.div>
               </AnimatePresence>
             </div>
+
+            {/* Downloads / Brochure Section */}
+            {property.attachments && property.attachments.length > 0 && (
+              <Card className="p-5 rounded-xl border-slate-200">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
+                    <FileText size={18} className="text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Downloads</h3>
+                    <p className="text-[10px] font-medium text-slate-500">Brochures & Documents</p>
+                  </div>
+                </div>
+                <div className="grid gap-3">
+                  {property.attachments.map((doc: any, idx: number) => (
+                    <a 
+                      key={idx} 
+                      href={doc.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-slate-200 group-hover:border-indigo-300 transition-all">
+                          <FileText size={18} className="text-slate-400 group-hover:text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-900 group-hover:text-indigo-700">{doc.name}</p>
+                          <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider">{doc.size || 'PDF'}</p>
+                        </div>
+                      </div>
+                      <div className="pr-2">
+                        <Download size={16} className="text-slate-300 group-hover:text-indigo-600" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </Card>
+            )}
 
             {/* Property Location Section - Only show if data exists */}
             {(property.nearbyLocations?.length > 0 || (property.mapLink && property.mapLink.startsWith('http'))) && (
@@ -593,6 +690,30 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                       </div>
                     </>
                   )}
+                </div>
+              </Card>
+            )}
+
+            {/* Property Video Section */}
+            {property.videoUrl && (
+              <Card className="p-5 rounded-xl border-slate-200">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center">
+                    <Video size={18} className="text-rose-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">Property Video</h3>
+                    <p className="text-[10px] font-medium text-slate-500">Virtual Tour & Walkthrough</p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-black">
+                  <iframe 
+                    src={getEmbedUrl(property.videoUrl)}
+                    className="w-full h-full border-0"
+                    allowFullScreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  />
                 </div>
               </Card>
             )}

@@ -16,10 +16,18 @@ export async function GET(request: NextRequest) {
     }
 
     if (type && type !== 'All') {
-      where.OR = [
-        { type: type },
-        { propertySubtype: { contains: type } }
-      ]
+      if (type === 'Villa') {
+        where.OR = [
+          { type: 'Villa' },
+          { propertySubtype: { contains: 'Villa' } },
+          { propertySubtype: { contains: 'Rowhouse' } }
+        ]
+      } else {
+        where.OR = [
+          { type: type },
+          { propertySubtype: { contains: type } }
+        ]
+      }
     }
 
     if (listingType && listingType !== 'All') {
@@ -80,9 +88,35 @@ export async function POST(request: NextRequest) {
         ? body.price
         : 'NA'
     
+    let builderId = parseInt(session.user.id)
+
+    // Handle Super Admin case where ID might be "superadmin" or NaN
+    if (isNaN(builderId)) {
+      if (session.user.role === 'SUPER_ADMIN') {
+        // Try to find the Super Admin user in the database by email
+        const user = await prisma.user.findUnique({
+          where: { email: session.user.email }
+        })
+        
+        if (user) {
+          builderId = user.id
+        } else {
+          return NextResponse.json(
+            { message: 'Super Admin user record not found in database. Please create a user account for the Super Admin email to create properties.' },
+            { status: 400 }
+          )
+        }
+      } else {
+        return NextResponse.json(
+          { message: 'Invalid User ID' },
+          { status: 400 }
+        )
+      }
+    }
+
     const property = await prisma.property.create({
       data: {
-        builderId: parseInt(session.user.id),
+        builderId,
         title: body.title,
         description: body.description,
         price: normalizedPrice,
@@ -110,6 +144,7 @@ export async function POST(request: NextRequest) {
         areaUnit: body.areaUnit,
         propertySubtype: body.propertySubtype,
         mapLink: body.mapLink,
+        videoUrl: body.videoUrl,
         nearbyLocations: body.nearbyLocations || [],
         attachments: body.attachments || [],
         listingType: body.listingType || 'Sell',

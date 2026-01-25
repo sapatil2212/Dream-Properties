@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, Building2, Users, PieChart, BadgePercent, PhoneCall, CalendarCheck, Settings, CreditCard, LifeBuoy, Megaphone, Inbox, Heart } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, PieChart, BadgePercent, PhoneCall, CalendarCheck, Settings, CreditCard, LifeBuoy, Megaphone, Inbox, Heart, Home } from 'lucide-react';
 import { Property, Lead, UserRole, Builder, Transaction } from './types';
 
 // Mock Data
@@ -122,9 +122,11 @@ export const NAV_ITEMS = {
   [UserRole.USER]: [
     { label: 'Interested', icon: <Heart size={20} />, href: '/dashboard/profile/favorites' },
     { label: 'Account Settings', icon: <Settings size={20} />, href: '/dashboard/profile/settings' },
+    { label: 'Back to Home', icon: <Home size={20} />, href: '/' },
   ],
   [UserRole.BUYER]: [
     { label: 'Interested', icon: <Heart size={20} />, href: '/dashboard/profile/favorites' },
     { label: 'Account Settings', icon: <Settings size={20} />, href: '/dashboard/profile/settings' },
+    { label: 'Back to Home', icon: <Home size={20} />, href: '/' },
   ],
 };
