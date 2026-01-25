@@ -63,6 +63,7 @@ model User {
   propertyAddress  String?   @map("office_address") @db.Text
   securityKey      String?   @map("security_key") @db.VarChar(50)
   status           UserStatus @default(Active)
+  lastActiveAt     DateTime?  @map("last_active_at")
   createdAt        DateTime  @default(now()) @map("created_at")
   
   properties       Property[]

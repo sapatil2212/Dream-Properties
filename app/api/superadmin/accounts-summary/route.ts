@@ -25,6 +25,7 @@ export async function GET() {
         projectName: true,
         propertyAddress: true,
         createdAt: true,
+        lastActiveAt: true,
       }
     })
 
