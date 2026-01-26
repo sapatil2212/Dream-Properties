@@ -249,8 +249,8 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ slug:
       </div>
 
       <section className="max-w-7xl mx-auto px-4 py-12">
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden relative">
-          <div className="flex-1 max-w-2xl z-10">
+        <div className="bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200 rounded-[2.5rem] pt-8 px-8 md:pt-12 md:px-12 pb-0 flex flex-col md:flex-row items-center md:items-end justify-between gap-8 overflow-hidden relative">
+          <div className="flex-1 max-w-2xl z-10 md:self-center md:mb-12">
             <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4 tracking-tight">
               Looking for something specific?
             </h2>
@@ -278,7 +278,7 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ slug:
             </div>
           </div>
           
-          <div className="relative w-full md:w-[400px] h-[300px] md:h-[400px] mt-8 md:mt-0 flex items-end justify-center">
+          <div className="relative w-full md:w-[400px] h-[250px] md:h-[350px] mt-8 md:mt-0 flex items-end justify-center">
              <img 
                 src="/assets/cta.png" 
                 alt="Real Estate Expert" 

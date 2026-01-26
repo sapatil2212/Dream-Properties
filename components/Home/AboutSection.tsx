@@ -90,7 +90,7 @@ export const AboutSection: React.FC = () => {
           >
             <div className="rounded-[40px_40px_0px_40px] overflow-hidden shadow-xl border border-slate-100">
               <img 
-                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200" 
+                src="/assets/home-page/about-2.png" 
                 alt="Modern Architecture" 
                 className="w-full h-[340px] md:h-[400px] object-cover"
               />
@@ -105,12 +105,12 @@ export const AboutSection: React.FC = () => {
             >
               <div className="flex gap-1 h-[120px] md:h-[140px]">
                 <img 
-                  src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=400" 
+                  src="/assets/home-page/about.png"  
                   alt="Interior" 
                   className="w-1/2 h-full object-cover rounded-l-[16px]"
                 />
                 <img 
-                  src="https://images.unsplash.com/photo-1600566753190-17f0bb2a6c3e?auto=format&fit=crop&q=80&w=400" 
+                  src="/assets/home-page/about-3.png" 
                   alt="Interior 2" 
                   className="w-1/2 h-full object-cover rounded-r-[16px]"
                 />

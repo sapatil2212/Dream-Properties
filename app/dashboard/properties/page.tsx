@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Download, Eye, Trash2, Edit2, X, Flag, CheckCircle, Search, Filter, FileText, FileSpreadsheet, Plus, Share2, Star, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, Eye, Trash2, Edit2, X, Flag, CheckCircle, Search, Filter, FileText, FileSpreadsheet, Plus, Share2, Star, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Upload, Image as ImageIcon } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -53,6 +53,7 @@ export default function InventoryManagementPage() {
   // Image Viewer State
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   // Determine user role
   const isAdmin = session?.user?.role === 'SUPER_ADMIN' || session?.user?.role === 'ADMIN';
@@ -536,6 +537,51 @@ export default function InventoryManagementPage() {
     const subject = `Property Details: ${property.title || 'Property'}`;
     const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
     window.location.href = mailto;
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImages(true);
+    try {
+      const uploadPromises = Array.from(files).map((file: File) => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = async () => {
+            try {
+              const base64 = reader.result as string;
+              const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: base64 })
+              });
+              const data = await response.json();
+              if (data.success) {
+                resolve(data.url);
+              } else {
+                reject(data.error || data.message || 'Upload failed');
+              }
+            } catch (err) {
+              reject(err);
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      const urls = await Promise.all(uploadPromises);
+      setEditedProperty((prev: any) => ({
+        ...prev,
+        images: [...(prev.images || []), ...urls]
+      }));
+    } catch (err: any) {
+      setAlertMessage(err?.toString() || 'Failed to upload images. Please try again.');
+      setAlertType('error');
+      setShowAlertModal(true);
+    } finally {
+      setUploadingImages(false);
+    }
   };
 
   return (
@@ -1164,19 +1210,28 @@ export default function InventoryManagementPage() {
               )}
 
               {/* Images */}
-              {selectedProperty.images && Array.isArray(selectedProperty.images) && selectedProperty.images.length > 0 && (
+              {(isEditing || (selectedProperty.images && Array.isArray(selectedProperty.images) && selectedProperty.images.length > 0)) && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
-                    Property Images ({selectedProperty.images.length})
+                  <h3 className="text-sm font-bold text-slate-900 pb-2 border-b flex justify-between items-center">
+                    <span>Property Images ({isEditing ? (editedProperty?.images?.length || 0) : (selectedProperty.images?.length || 0)})</span>
                   </h3>
+                  
+                  {uploadingImages && (
+                    <div className="text-xs text-blue-600 font-medium animate-pulse">
+                      Uploading images...
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-4 gap-2 pt-1">
-                    {selectedProperty.images.slice(0, 8).map((image: string, index: number) => (
+                    {(isEditing ? (editedProperty?.images || []) : (selectedProperty.images || [])).map((image: string, index: number) => (
                       <div 
                         key={index} 
                         className="aspect-video bg-slate-100 rounded-lg overflow-hidden cursor-pointer group relative"
                         onClick={() => {
-                            setCurrentImageIndex(index);
-                            setIsImageViewerOpen(true);
+                            if (!isEditing) {
+                              setCurrentImageIndex(index);
+                              setIsImageViewerOpen(true);
+                            }
                         }}
                       >
                         <img
@@ -1184,11 +1239,46 @@ export default function InventoryManagementPage() {
                           alt={`Property ${index + 1}`}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <ZoomIn className="text-white drop-shadow-md" size={24} />
-                        </div>
+                        
+                        {isEditing && isAdmin ? (
+                           <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditedProperty((prev: any) => ({
+                                          ...prev,
+                                          images: prev.images.filter((_: any, i: number) => i !== index)
+                                      }));
+                                  }}
+                                  className="p-1.5 bg-rose-500 text-white rounded-full hover:bg-rose-600 shadow-sm"
+                              >
+                                  <Trash2 size={12} />
+                              </button>
+                           </div>
+                        ) : (
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <ZoomIn className="text-white drop-shadow-md" size={24} />
+                          </div>
+                        )}
                       </div>
                     ))}
+                    
+                    {/* Add Image Card for Edit Mode */}
+                    {isEditing && isAdmin && (
+                      <label className="aspect-video bg-slate-50 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all group p-2 text-center">
+                          <ImageIcon className="text-slate-300 group-hover:text-blue-500 mb-1" size={24} />
+                          <span className="text-[10px] font-bold text-slate-400 group-hover:text-blue-600 block">Add Image</span>
+                          <span className="text-[8px] font-medium text-slate-400 group-hover:text-blue-500 block mt-0.5">Max 10MB</span>
+                          <input 
+                              type="file" 
+                              multiple 
+                              accept="image/*" 
+                              className="hidden" 
+                              onChange={handleImageUpload}
+                              disabled={uploadingImages}
+                          />
+                      </label>
+                    )}
                   </div>
                 </div>
               )}

@@ -91,7 +91,7 @@ export default function AboutPage() {
           >
             <div className="aspect-[4/5] rounded-[3rem] overflow-hidden border-[12px] border-white">
               <img 
-                src="https://images.unsplash.com/photo-1600585154526-990dcea4db0d?auto=format&fit=crop&q=80&w=1200" 
+                src="/assets/home-page/about.png" 
                 alt="Luxury Interior"
                 className="w-full h-full object-cover"
               />

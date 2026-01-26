@@ -248,7 +248,7 @@ export default function PostPropertyPage() {
               if (data.success) {
                 resolve(data.url);
               } else {
-                reject('Upload failed');
+                reject(data.error || data.message || 'Upload failed');
               }
             } catch (err) {
               reject(err);
@@ -260,11 +260,11 @@ export default function PostPropertyPage() {
 
       const urls = await Promise.all(uploadPromises);
       setFormData(prev => ({ ...prev, images: [...prev.images, ...urls] }));
-    } catch (err) {
+    } catch (err: any) {
       setAlertConfig({
         type: 'error',
         title: 'Upload Failed',
-        message: 'Failed to upload images. Please try again.'
+        message: err?.toString() || 'Failed to upload images. Please try again.'
       });
       setShowAlert(true);
     } finally {

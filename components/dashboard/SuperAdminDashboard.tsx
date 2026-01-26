@@ -100,31 +100,7 @@ export function SuperAdminDashboard() {
         </div>
 
         <div className="lg:col-span-4 space-y-4">
-          <Card className="p-6">
-            <h3 className="font-black uppercase tracking-tight text-slate-900 mb-6">Revenue Distribution</h3>
-            <div className="space-y-4">
-              {[
-                { label: 'Platform Subs', amount: '₹4.2M', percentage: 34, color: 'bg-blue-500' },
-                { label: 'Commission Fees', amount: '₹6.8M', percentage: 55, color: 'bg-emerald-500' },
-                { label: 'Premium Listings', amount: '₹1.4M', percentage: 11, color: 'bg-amber-500' },
-              ].map((item, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="flex justify-between text-[11px] font-black uppercase tracking-tight">
-                    <span className="text-slate-500">{item.label}</span>
-                    <span className="text-slate-900">{item.amount}</span>
-                  </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${item.percentage}%` }}
-                      className={`h-full ${item.color}`} 
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Button variant="outline" className="w-full mt-8 rounded-xl border-slate-100 text-slate-400">View Detailed Report</Button>
-          </Card>
+
           
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">

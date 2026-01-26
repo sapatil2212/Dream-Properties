@@ -17,63 +17,63 @@ const NEARBY_LOCATIONS: NearbyLocation[] = [
     name: 'Trimbakeshwar Jyotirlinga Temple', 
     description: 'One of the 12 sacred Jyotirlingas of Lord Shiva, located near the Brahmagiri Hills.', 
     tags: ['Spiritual', 'Historic', 'Peaceful'],
-    image: '/assets/categories/industrial.png'
+    image: '/assets/nearby/trimbak.png'
   },
   { 
     id: '2', 
     name: 'Sula Vineyards', 
     description: 'India’s most famous vineyard — wine tasting, tours, sunset views & restaurants.', 
     tags: ['Luxury', 'Nature', 'Couples', 'Photography'],
-    image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=600&auto=format&fit=crop&q=80' 
+    image: '/assets/nearby/sula.webp'
   },
   { 
     id: '3', 
     name: 'Panchavati & Ramkund', 
     description: 'The heart of Nashik’s spiritual heritage with temples and holy ghats.', 
     tags: ['Religious', 'Cultural', 'Riverfront'],
-    image: 'https://images.unsplash.com/photo-1564850125433-28f057866e4d?w=600&auto=format&fit=crop&q=80' 
+    image: '/assets/nearby/panchvati.jpg'
   },
   { 
     id: '4', 
     name: 'Pandav Leni (Trirashmi Caves)', 
     description: '2000-year-old Buddhist caves carved into the hills with a city view.', 
     tags: ['History', 'Trekking', 'Scenic'],
-    image: 'https://images.unsplash.com/photo-1592345279419-959d784e8aad?w=600&auto=format&fit=crop&q=80' 
+    image: '/assets/nearby/pandavleni.jpg' 
   },
   { 
     id: '5', 
     name: 'Saptashringi Devi Temple', 
     description: 'Hilltop Shakti Peeth with ropeway access and panoramic mountain views.', 
     tags: ['Pilgrimage', 'Nature', 'Ropeway'],
-    image: 'https://images.unsplash.com/photo-1591530268509-5f21295e8b0a?w=600&auto=format&fit=crop&q=80' 
+    image: '/assets/nearby/samptshrungi.png' 
   },
   { 
     id: '6', 
     name: 'Someshwar Waterfall', 
     description: 'A beautiful seasonal waterfall perfect during monsoon.', 
     tags: ['Nature', 'Picnic', 'Monsoon Spot'],
-    image: 'https://images.unsplash.com/photo-1516972238977-89271fb2bab8?w=600&auto=format&fit=crop&q=80' 
+    image: '/assets/nearby/someshwar.jpg' 
   },
   { 
     id: '7', 
     name: 'Harihar Fort', 
     description: 'Famous fort with a thrilling vertical rock staircase trek.', 
     tags: ['Adventure', 'Trekking', 'Instagram Spot'],
-    image: 'https://images.unsplash.com/photo-1598944565691-10c000672044?w=600&auto=format&fit=crop&q=80' 
+    image: '/assets/nearby/harihar.jpg' 
   },
   { 
     id: '8', 
     name: 'Muktidham Temple', 
     description: 'White marble temple complex with replicas of 12 Jyotirlingas.', 
     tags: ['Architecture', 'Calm', 'Family Friendly'],
-    image: 'https://images.unsplash.com/photo-1621829676572-c2b627293f06?w=600&auto=format&fit=crop&q=80' 
+    image: '/assets/nearby/muktidham.jpg' 
   },
   { 
     id: '9', 
     name: 'Nandur Madhyameshwar Bird Sanctuary', 
     description: 'Maharashtra’s “Bharatpur” — paradise for bird lovers and nature photographers.', 
     tags: ['Wildlife', 'Nature', 'Photography'],
-    image: 'https://images.unsplash.com/photo-1452570053594-1b985d6ea218?w=600&auto=format&fit=crop&q=80' 
+    image: '/assets/nearby/bird.webp' 
   },
 ];
 
