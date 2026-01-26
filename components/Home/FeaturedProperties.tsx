@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, MapPin, Bed, Bath, Maximize, Heart, Info, Send, Building2, Calendar } from 'lucide-react';
+import { ArrowRight, MapPin, Bed, Bath, Maximize, Heart, Info, Send, Building2, Calendar, Star } from 'lucide-react';
 import { Card, Badge, Button, Modal } from '@/components/UIComponents';
 import { Property } from '@/types';
 import { useRouter } from 'next/navigation';
@@ -84,7 +84,10 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           <Badge variant="info">{property.property_subtype || property.type || 'Residential'}</Badge>
           {property.isFeatured && (
-            <Badge className="bg-orange-100 text-orange-600 border-none shadow-sm">Featured</Badge>
+            <Badge className="!bg-orange-100 !text-orange-600 !border-none shadow-sm flex items-center gap-1">
+              <Star size={10} className="fill-orange-600" />
+              Featured
+            </Badge>
           )}
         </div>
 

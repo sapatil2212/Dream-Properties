@@ -7,64 +7,62 @@ import { PropertyCategory } from '@/types';
 import { ChevronLeft, LayoutGrid, Filter, Search, ArrowRight, MessageCircle, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/UIComponents';
 
-const slugToCategory: Record<string, PropertyCategory> = {
-  'flats': 'Flats',
-  'villas': 'Villa',
-  'shops': 'Shop',
-  'offices': 'Office',
-  'plots': 'Plot',
-  'agricultural-lands': 'Agricultural',
-  'industrial-lands': 'Industrial',
-  'warehouses': 'Warehouse'
-};
+interface CategoryConfig {
+  title: string;
+  desc: string;
+  banner: string;
+  apiParams: { subtypes?: string[]; type?: string };
+}
 
-const categoryDetails: Record<PropertyCategory, { title: string; desc: string; banner: string }> = {
-  'Flats': { 
-    title: 'Modern Apartments', 
-    desc: 'Luxurious flats in prime urban locations with world-class amenities.',
-    banner: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1920'
+const categoryConfigs: Record<string, CategoryConfig> = {
+  'residential-apartments': {
+    title: 'Residential Apartments',
+    desc: 'Modern flats and apartments designed for comfort and community living.',
+    banner: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1920',
+    apiParams: { subtypes: ['Flats/Apartments'] }
   },
-  'Villa': { 
-    title: 'Exclusive Villas', 
-    desc: 'Find your peace in our collection of row houses and standalone luxury villas.',
-    banner: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1920'
+  'villas-rowhouses': {
+    title: 'Villas & Rowhouses',
+    desc: 'Exclusive independent homes, villas, and rowhouses offering privacy and luxury.',
+    banner: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1920',
+    apiParams: { subtypes: ['Villas', 'Rowhouses', 'Individual Houses'] }
   },
-  'Shop': { 
-    title: 'Retail Spaces', 
-    desc: 'High-visibility shops and commercial outlets for your business growth.',
-    banner: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&q=80&w=1920'
+  'commercial-spaces': {
+    title: 'Commercial Spaces',
+    desc: 'Prime locations for businesses, offices, retail, and hospitality.',
+    banner: '/assets/categories/commercial.png',
+    apiParams: { subtypes: [
+      'Office Spaces',
+      'IT Parks & Tech Hubs',
+      'Shops & Showrooms',
+      'Shopping Complexes & Malls',
+      'Co-working Spaces',
+      'Business Centers',
+      'Hotels & Resorts',
+      'Restaurants & Cafés',
+      'Hospitals & Clinics',
+      'Educational Institutes',
+      'Banks & Financial Offices'
+    ] }
   },
-  'Office': { 
-    title: 'Corporate Offices', 
-    desc: 'State-of-the-art office spaces in tech parks and corporate hubs.',
-    banner: 'https://images.unsplash.com/photo-1497366216548-375260702097c?auto=format&fit=crop&q=80&w=1920'
+  'plots': {
+    title: 'Plots',
+    desc: 'Investment-ready residential, commercial, and agricultural plots.',
+    banner: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&auto=format&fit=crop&q=80',
+    apiParams: { subtypes: ['Residential Plots (NA - Non Agricultural)', 'Commercial Plots', 'Agricultural Plots'] }
   },
-  'Plot': { 
-    title: 'Residential Plots', 
-    desc: 'Investment-ready land parcels and residential plots with infrastructure.',
-    banner: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=1920'
-  },
-  'Agricultural': { 
-    title: 'Agricultural Lands', 
-    desc: 'Fertile farm lands and agricultural estates for sustainable investment.',
-    banner: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=1920'
-  },
-  'Industrial': { 
-    title: 'Industrial Units', 
-    desc: 'MIDC sheds and industrial lands equipped for heavy manufacturing.',
-    banner: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=1920'
-  },
-  'Warehouse': { 
-    title: 'Warehousing & Logistics', 
-    desc: 'Large scale storage and logistics centers in strategic distribution hubs.',
-    banner: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=1920'
+  'industrial-spaces': {
+    title: 'Industrial Spaces',
+    desc: 'Strategic infrastructure for manufacturing, warehousing, and logistics.',
+    banner: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=600&auto=format&fit=crop&q=80',
+    apiParams: { subtypes: ['Warehouses & Godowns', 'Industrial Sheds', 'Logistics Parks'] }
   }
 };
 
 export default function CategoryDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const router = useRouter();
-  const category = slug ? slugToCategory[slug] : null;
+  const config = slug ? categoryConfigs[slug] : null;
   const [properties, setProperties] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState('newest');
@@ -72,15 +70,20 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ slug:
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    if (category) {
+    if (config) {
       fetchCategoryProperties();
     }
-  }, [category]);
+  }, [config]);
 
   const fetchCategoryProperties = async () => {
+    if (!config) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/properties?type=${category}`);
+      const params = new URLSearchParams();
+      if (config.apiParams.type) params.set('type', config.apiParams.type);
+      if (config.apiParams.subtypes) params.set('subtypes', config.apiParams.subtypes.join(','));
+      
+      const response = await fetch(`/api/properties?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setProperties(data);
@@ -119,7 +122,7 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ slug:
     }
   });
 
-  if (!category || !categoryDetails[category]) {
+  if (!config) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold mb-4">Category Not Found</h1>
@@ -128,7 +131,7 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ slug:
     );
   }
 
-  const details = categoryDetails[category];
+  const details = config;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -212,7 +215,7 @@ export default function CategoryDetailPage({ params }: { params: Promise<{ slug:
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
                 type="text" 
-                placeholder={`Search in ${category}...`} 
+                placeholder={`Search in ${details.title}...`} 
                 className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/10 w-48 md:w-64"
               />
             </div>

@@ -17,7 +17,7 @@ const NEARBY_LOCATIONS: NearbyLocation[] = [
     name: 'Trimbakeshwar Jyotirlinga Temple', 
     description: 'One of the 12 sacred Jyotirlingas of Lord Shiva, located near the Brahmagiri Hills.', 
     tags: ['Spiritual', 'Historic', 'Peaceful'],
-    image: 'https://images.unsplash.com/photo-1626125345510-4703045e4e7d?w=600&auto=format&fit=crop&q=80' 
+    image: '/assets/categories/industrial.png'
   },
   { 
     id: '2', 

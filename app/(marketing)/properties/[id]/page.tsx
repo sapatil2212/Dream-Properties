@@ -32,6 +32,7 @@ import {
   Download,
   Image as ImageIcon,
   FileText,
+  Star,
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/UIComponents';
 import ImageViewer from '@/components/ImageViewer';
@@ -288,7 +289,10 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                 <div className="absolute top-4 left-4 flex gap-2 z-10">
                   <Badge variant="info" className="px-3 py-1 rounded-md shadow-sm">{property.propertySubtype || property.type || 'Residential'}</Badge>
                   {property.isFeatured && (
-                    <Badge className="bg-amber-500 text-white border-none shadow-sm px-3 py-1 rounded-md">Featured</Badge>
+                    <Badge className="!bg-orange-100 !text-orange-600 !border-none shadow-sm px-3 py-1 rounded-md flex items-center gap-1">
+                      <Star size={12} className="fill-orange-600" />
+                      Featured
+                    </Badge>
                   )}
                 </div>
               </div>

@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
+    const subtypes = searchParams.get('subtypes')
     const listingType = searchParams.get('listing_type')
 
     const where: any = {
@@ -15,7 +16,10 @@ export async function GET(request: NextRequest) {
       propertyFlag: null, // Hide flagged properties (sold/rented/leased)
     }
 
-    if (type && type !== 'All') {
+    if (subtypes) {
+      const subtypeList = subtypes.split(',')
+      where.propertySubtype = { in: subtypeList }
+    } else if (type && type !== 'All') {
       if (type === 'Villa') {
         where.OR = [
           { type: 'Villa' },
