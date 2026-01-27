@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Input, Select } from '@/components/UIComponents';
-import { Users, Building, MapPin, CreditCard, ShieldCheck, Briefcase, ChevronLeft, X, CheckCircle } from 'lucide-react';
+import { Users, MapPin, CreditCard, ShieldCheck, Briefcase, ChevronLeft, X, CheckCircle } from 'lucide-react';
 
 const PARTNER_TYPES = [
   "Individual Broker",
@@ -212,10 +212,7 @@ export default function PartnerRegisterPage() {
          <div className="relative z-10 p-16 w-full max-w-2xl text-white">
             <div className="mb-12">
                <div className="flex items-center gap-3 mb-8">
-                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-                    <Building className="text-white" size={20} />
-                 </div>
-                 <span className="text-2xl font-black tracking-tight">Dream Properties</span>
+                 <img src="/assets/dp-logo.png" alt="Dream Properties" className="h-12 w-auto bg-white rounded-lg p-1" />
                </div>
                <h1 className="text-5xl font-black tracking-tight mb-6 leading-tight">
                  Join Our Elite <br/>
@@ -476,6 +473,14 @@ export default function PartnerRegisterPage() {
               <Button type="submit" isLoading={loading} className="w-full h-12 text-xs">
                 SUBMIT APPLICATION
               </Button>
+              <div className="mt-6 text-center">
+                <p className="text-xs text-slate-500 font-medium">
+                    Already registered?{' '}
+                    <Link href="/login" className="text-blue-600 font-bold hover:underline">
+                        Log in
+                    </Link>
+                </p>
+              </div>
             </form>
         </div>
       </div>
