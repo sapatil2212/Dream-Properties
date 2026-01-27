@@ -6,7 +6,8 @@ export const UserRole = {
   SAAS_OWNER: 'SAAS_OWNER',
   TELECALLER: 'TELECALLER',
   SALES_EXECUTIVE: 'SALES_EXECUTIVE',
-  BUYER: 'BUYER'
+  BUYER: 'BUYER',
+  CHANNEL_PARTNER: 'CHANNEL_PARTNER'
 } as const;
 
 export type UserRole = typeof UserRole[keyof typeof UserRole];

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn, useSession } from 'next-auth/react';
 import { UserRole } from '@/types';
-import { Card, Button, Input, Modal } from '@/components/UIComponents';
+import { Card, Button, Input, Modal, Select } from '@/components/UIComponents';
 import { Mail, Lock, User, ArrowRight, Key, ArrowLeft, Home, Phone, Building2, ShoppingBag, Monitor, Warehouse, Maximize, MoreHorizontal, Check, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -49,7 +49,7 @@ export default function LoginPage() {
   
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
-
+  
   // Forgot Password Flow State
   const [forgotStep, setForgotStep] = useState<'EMAIL' | 'OTP' | 'NEW_PW'>('EMAIL');
   const [forgotEmail, setForgotEmail] = useState('');
@@ -69,13 +69,19 @@ export default function LoginPage() {
   });
 
   const propertyTypes = [
-    { name: 'Residential', icon: <Home size={20} /> },
-    { name: 'Office', icon: <Building2 size={20} /> },
-    { name: 'Retail Shop', icon: <ShoppingBag size={20} /> },
-    { name: 'Showroom', icon: <Monitor size={20} /> },
-    { name: 'Warehouse', icon: <Warehouse size={20} /> },
-    { name: 'Plot', icon: <Maximize size={20} /> },
-    { name: 'Others', icon: <MoreHorizontal size={20} /> },
+    { name: 'Residential', icon: <Home size={16} /> },
+    { name: 'Office', icon: <Building2 size={16} /> },
+    { name: 'Retail Shop', icon: <ShoppingBag size={16} /> },
+    { name: 'Showroom', icon: <Monitor size={16} /> },
+    { name: 'Warehouse', icon: <Warehouse size={16} /> },
+    { name: 'Plot', icon: <Maximize size={16} /> },
+    { name: 'Others', icon: <MoreHorizontal size={16} /> },
+  ];
+
+  const ROLES = [
+    { label: 'Buyer / User', value: UserRole.USER },
+    { label: 'Builder', value: UserRole.BUILDER },
+    { label: 'Individual Owner', value: 'OWNER' },
   ];
 
   useEffect(() => {
@@ -355,42 +361,76 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 md:p-8">
-      <motion.div 
-        layout
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={`bg-white w-full max-w-5xl flex flex-col ${isLogin ? 'md:flex-row' : 'md:flex-row-reverse'} rounded-[2.5rem] overflow-hidden border border-slate-200 min-h-[650px]`}
-      >
-        <motion.div layout className="w-full md:w-1/2 relative hidden md:block">
-          <img 
-            src={isLogin 
-              ? "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1200" 
-              : "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200"
-            } 
-            alt="Luxury Real Estate" className="absolute inset-0 w-full h-full object-cover"
-          />
-        </motion.div>
+    <div className="min-h-screen flex bg-white overflow-hidden font-sans">
+      {/* Left Side - Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900 items-center justify-center overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={isLogin ? 'login-img' : 'signup-img'}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0"
+          >
+             <div 
+                className="absolute inset-0 bg-cover bg-center opacity-60 transition-transform duration-1000 hover:scale-105" 
+                style={{ backgroundImage: `url('${isLogin 
+                  ? "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1200" 
+                  : "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1200"
+                }')` }}
+             ></div>
+          </motion.div>
+        </AnimatePresence>
+         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/10"></div>
+         
+         <div className="relative z-10 p-16 w-full max-w-2xl text-white">
+            <div className="mb-12">
+               <div className="flex items-center gap-3 mb-8">
+                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+                    <Building2 className="text-white" size={20} />
+                 </div>
+                 <span className="text-2xl font-black tracking-tight">Dream Properties</span>
+               </div>
+               <h1 className="text-5xl font-black tracking-tight mb-6 leading-tight">
+                 {isLogin ? 'Welcome Back' : 'Join Our Network'}
+               </h1>
+               <p className="text-lg text-slate-300 leading-relaxed">
+                 {isLogin 
+                   ? 'Access your dashboard, manage properties, and track your real estate journey.'
+                   : 'Connect with top developers, access exclusive inventory, and grow your real estate business.'}
+               </p>
+            </div>
+         </div>
+      </div>
 
-        <motion.div layout className="w-full md:w-1/2 p-8 md:p-12 lg:p-16 flex flex-col justify-center items-center bg-white relative z-10">
+      {/* Right Side - Form */}
+      <div className="w-full lg:w-1/2 flex flex-col h-screen overflow-y-auto bg-white">
+        <div className="flex-1 w-full max-w-2xl mx-auto p-6 sm:p-12 lg:p-16">
+          <Link 
+            href="/" 
+            className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 transition-colors group mb-8"
+          >
+            <Home size={14} className="group-hover:-translate-y-0.5 transition-transform" />
+            Back to Home
+          </Link>
+
           <AnimatePresence mode="wait">
             <motion.div
               key={isLogin ? 'login' : 'signup'}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.2 }}
-              className="w-full max-w-sm mt-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full"
             >
-              <Link 
-                href="/" 
-                className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 transition-colors group mb-4"
-              >
-                <Home size={14} className="group-hover:-translate-y-0.5 transition-transform" />
-                Back to Home
-              </Link>
-              <div className="mb-6 text-center md:text-left">
-                <h1 className="text-xl md:text-2xl font-black text-slate-900 mb-1 uppercase tracking-tight">{isLogin ? 'Sign In' : 'Create Account'}</h1>
-                <p className="text-slate-400 text-[11px] font-medium mb-2">Register as a builder or buyer to get started</p>
+              <div className="mb-8">
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
+                    {isLogin ? 'Sign In' : 'Create Account'}
+                </h1>
+                <p className="text-sm font-medium text-slate-500">
+                    {isLogin ? 'Enter your details to access your account' : 'Register as a builder, buyer, or owner'}
+                </p>
               </div>
 
               <div className="space-y-3">
@@ -469,27 +509,19 @@ export default function LoginPage() {
                 
                 {!isLogin && (
                   <div className="space-y-1.5 pt-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">I AM</label>
-                    <select
+                    <Select
+                      label="I AM"
+                      options={ROLES}
                       value={role}
-                      onChange={(e) => {
-                        const newRole = e.target.value as UserRole | 'OWNER';
+                      onChange={(val) => {
+                        const newRole = val as UserRole | 'OWNER';
                         setRole(newRole);
                         setSignupRoleError('');
                         setLookingTo(newRole === UserRole.USER ? 'Buy' : 'Rent');
                       }}
-                      className={`w-full p-2.5 bg-slate-50 border rounded-xl text-[13px] font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none ${
-                        signupRoleError ? 'border-red-500' : 'border-slate-200'
-                      }`}
-                    >
-                      <option value="" disabled>Select your role</option>
-                      <option value={UserRole.USER}>Buyer / User</option>
-                      <option value={UserRole.BUILDER}>Builder</option>
-                      <option value="OWNER">Individual Owner</option>
-                    </select>
-                    {signupRoleError && (
-                      <p className="text-[10px] text-red-500 mt-1">{signupRoleError}</p>
-                    )}
+                      placeholder="Select your role"
+                      error={signupRoleError}
+                    />
                   </div>
                 )}
                 
@@ -606,8 +638,8 @@ export default function LoginPage() {
               </div>
             </motion.div>
           </AnimatePresence>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       <Modal isOpen={showOTPModal} onClose={() => setShowOTPModal(false)} title="Verify Your Account">
         <div className="space-y-8 text-center">

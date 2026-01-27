@@ -44,6 +44,11 @@ export default function DashboardSettingsPage() {
   const [passwordError, setPasswordError] = useState('');
   const [isCurrentPasswordVerified, setIsCurrentPasswordVerified] = useState(false);
 
+  // Legal Settings State
+  const [agreementTerms, setAgreementTerms] = useState('');
+  const [signatureUrl, setSignatureUrl] = useState('');
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
   useEffect(() => {
     if (user) {
       setFormData({
@@ -53,8 +58,79 @@ export default function DashboardSettingsPage() {
         firmName: user.firmName || '',
         officeAddress: user.officeAddress || '',
       });
+
+      // Fetch Legal Settings for Admins
+      if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN' || user.role === 'SAAS_OWNER') {
+        const fetchSettings = async () => {
+            try {
+                // Fetch terms
+                const termsRes = await fetch('/api/settings?key=channel_partner_agreement_terms');
+                if (termsRes.ok) {
+                    const data = await termsRes.json();
+                    if (data.value) setAgreementTerms(data.value);
+                }
+                
+                // Fetch signature
+                const sigRes = await fetch('/api/settings?key=authorized_signatory_signature');
+                if (sigRes.ok) {
+                    const data = await sigRes.json();
+                    if (data.value) setSignatureUrl(data.value);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        };
+        fetchSettings();
+      }
     }
   }, [user]);
+
+  const handleSaveSettings = async () => {
+      setIsSavingSettings(true);
+      try {
+          // Save Terms
+          await fetch('/api/settings', {
+              method: 'POST',
+              body: JSON.stringify({ key: 'channel_partner_agreement_terms', value: agreementTerms })
+          });
+          
+          // Save Signature
+          await fetch('/api/settings', {
+              method: 'POST',
+              body: JSON.stringify({ key: 'authorized_signatory_signature', value: signatureUrl })
+          });
+          
+          setSuccessMessage('Legal settings updated successfully');
+          setShowSuccessModal(true);
+      } catch (e) {
+          alert('Failed to save settings');
+      } finally {
+          setIsSavingSettings(false);
+      }
+  };
+
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+          const res = await fetch('/api/upload-image', {
+              method: 'POST',
+              body: formData
+          });
+          if (res.ok) {
+              const data = await res.json();
+              setSignatureUrl(data.url);
+          } else {
+              alert('Failed to upload signature');
+          }
+      } catch (e) {
+          alert('Error uploading signature');
+      }
+  };
 
   const handleUpdateProfile = async () => {
     setIsLoading(true);

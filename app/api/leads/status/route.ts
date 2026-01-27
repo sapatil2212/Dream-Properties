@@ -43,6 +43,39 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Commission Calculation Logic
+    if (status === 'Closed' && lead.channelPartnerId) {
+        const dealValue = body.dealValue ? parseFloat(body.dealValue) : 0;
+        if (dealValue > 0) {
+            const cp = await prisma.channelPartner.findUnique({
+                where: { id: lead.channelPartnerId }
+            });
+            
+            if (cp) {
+                const rate = cp.commissionRate || 2.0; // Default 2% if not set
+                const commissionAmount = (dealValue * rate) / 100;
+                
+                // Check if commission already exists
+                const existingComm = await prisma.commission.findFirst({
+                    where: { leadId: lead.id }
+                });
+
+                if (!existingComm) {
+                    await prisma.commission.create({
+                        data: {
+                            channelPartnerId: cp.id,
+                            leadId: lead.id,
+                            dealValue: dealValue,
+                            commissionRate: rate,
+                            commissionAmount: commissionAmount,
+                            status: 'Pending'
+                        }
+                    });
+                }
+            }
+        }
+    }
+
     try {
       const superAdminEmail = process.env.SUPER_ADMIN_EMAIL
       const recipients: string[] = []

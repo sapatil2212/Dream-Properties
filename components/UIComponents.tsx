@@ -211,6 +211,7 @@ export const Select: React.FC<{
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((option) => (
                   <button
+                    type="button"
                     key={option.value}
                     className={`w-full text-left px-4 py-2 text-xs font-bold rounded-lg hover:bg-slate-50 transition-colors ${value === option.value ? 'text-blue-600 bg-blue-50' : 'text-slate-700'}`}
                     onClick={() => {

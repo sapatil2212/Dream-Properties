@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     
     if (
       !session || 
-      !['BUILDER', 'SUPER_ADMIN', 'ADMIN'].includes(session.user.role as string)
+      !['BUILDER', 'SUPER_ADMIN', 'ADMIN', 'CHANNEL_PARTNER'].includes(session.user.role as string)
     ) {
       return NextResponse.json(
         { message: 'Unauthorized' },
@@ -94,10 +94,20 @@ export async function POST(request: NextRequest) {
     
     let builderId = parseInt(session.user.id)
 
-    // Handle Super Admin case where ID might be "superadmin" or NaN
+    if (session.user.role === 'CHANNEL_PARTNER') {
+      const cp = await prisma.channelPartner.findUnique({
+        where: { userId: builderId }
+      })
+      if (!cp || cp.approvalStatus !== 'Approved') {
+        return NextResponse.json(
+          { message: 'Channel Partner account is not approved to post properties' },
+          { status: 403 }
+        )
+      }
+    }
+
     if (isNaN(builderId)) {
       if (session.user.role === 'SUPER_ADMIN') {
-        // Try to find the Super Admin user in the database by email
         const user = await prisma.user.findUnique({
           where: { email: session.user.email }
         })

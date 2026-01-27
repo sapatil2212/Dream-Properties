@@ -30,6 +30,8 @@ export async function GET() {
         mobile: true,
         role: true,
         status: true,
+        createdAt: true,
+        channelPartner: true, 
       },
     })
 

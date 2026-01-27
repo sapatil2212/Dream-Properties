@@ -67,6 +67,17 @@ export async function GET(request: NextRequest) {
               role: true
             }
           },
+          channelPartner: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  email: true,
+                  mobile: true
+                }
+              }
+            }
+          },
           siteVisits: {
             select: {
               id: true,
@@ -145,6 +156,15 @@ export async function GET(request: NextRequest) {
       }
     } else if (role === 'TELECALLER') {
       where.assignedTo = parseInt(session.user.id)
+    } else if (role === 'CHANNEL_PARTNER') {
+        const cp = await prisma.channelPartner.findUnique({
+            where: { userId: parseInt(session.user.id) }
+        });
+        if (cp) {
+            where.channelPartnerId = cp.id;
+        } else {
+            return NextResponse.json([]); // No partner profile
+        }
     }
 
     if (role === 'BUILDER') {
@@ -169,6 +189,17 @@ export async function GET(request: NextRequest) {
             email: true,
             role: true
           }
+        },
+        channelPartner: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  email: true,
+                  mobile: true
+                }
+              }
+            }
         },
         siteVisits: {
           select: {
@@ -256,11 +287,28 @@ export async function GET(request: NextRequest) {
 // POST: Create a new lead (public - e.g. from inquiry form)
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
     const body = await request.json()
     const { name, email, phone, propertyId, propertyTitle, source, message } = body
 
     if (!name || !email || !phone || !propertyId) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 })
+    }
+
+    let channelPartnerId: number | null = null;
+    let leadSource = source || 'Website';
+
+    if (session?.user?.role === 'CHANNEL_PARTNER') {
+        const cp = await prisma.channelPartner.findUnique({
+            where: { userId: parseInt(session.user.id) }
+        });
+
+        if (!cp || cp.approvalStatus !== 'Approved') {
+            return NextResponse.json({ message: 'Channel Partner account not active' }, { status: 403 });
+        }
+
+        channelPartnerId = cp.id;
+        leadSource = 'Channel Partner';
     }
 
     const lead = await prisma.lead.create({
@@ -270,9 +318,10 @@ export async function POST(request: NextRequest) {
         phone,
         propertyId: parseInt(propertyId),
         propertyOfInterest: propertyTitle || 'Property #' + propertyId,
-        source: source || 'Website',
+        source: leadSource,
         lastNote: message || null,
-        status: 'New'
+        status: 'New',
+        channelPartnerId: channelPartnerId
       }
     })
 
@@ -313,11 +362,30 @@ export async function POST(request: NextRequest) {
         if (u.email) internalRecipients.push(u.email)
       }
 
+      let cpDetailsHtml = '';
+      if (leadSource === 'Channel Partner' && channelPartnerId) {
+          const cp = await prisma.channelPartner.findUnique({
+              where: { id: channelPartnerId },
+              include: { user: true }
+          });
+          if (cp && cp.user) {
+               cpDetailsHtml = `
+                <div style="background:#eff6ff; padding:14px; border-radius:10px; border:1px solid #bfdbfe; margin-bottom:12px;">
+                   <h3 style="margin:0 0 8px 0; font-size:14px; color:#1e40af;">Channel Partner Details</h3>
+                   <p style="margin:2px 0;"><strong>Name:</strong> ${cp.user.name}</p>
+                   <p style="margin:2px 0;"><strong>Email:</strong> ${cp.user.email}</p>
+                   <p style="margin:2px 0;"><strong>Phone:</strong> ${cp.user.mobile || 'N/A'}</p>
+                </div>
+               `;
+          }
+      }
+
       if (internalRecipients.length > 0) {
         const internalBody = `
           <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; color: #0f172a;">
             <h2 style="color:#111827; margin-bottom: 10px;">New Website Property Inquiry</h2>
             <p style="margin:4px 0 12px 0;">A new lead has been captured from <strong>${source || 'Website'}</strong>.</p>
+            ${cpDetailsHtml}
             <div style="background:#f9fafb; padding:14px; border-radius:10px; border:1px solid #e5e7eb; margin-bottom:12px;">
               <p style="margin:2px 0;"><strong>Name:</strong> ${name}</p>
               <p style="margin:2px 0;"><strong>Email:</strong> ${email}</p>

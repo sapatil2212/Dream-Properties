@@ -18,6 +18,7 @@ export const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isPropertiesDropdownOpen, setIsPropertiesDropdownOpen] = useState(false);
+  const [isPartnerDropdownOpen, setIsPartnerDropdownOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -143,6 +144,49 @@ export const Navbar: React.FC = () => {
               >
                 About Us
               </Link>
+
+              <div 
+                className="relative"
+                onMouseEnter={() => setIsPartnerDropdownOpen(true)}
+                onMouseLeave={() => setIsPartnerDropdownOpen(false)}
+              >
+                <button 
+                  className={`flex items-center gap-1 text-[11px] font-black uppercase tracking-[0.15em] transition-colors ${
+                    pathname?.startsWith('/partner') ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
+                  }`}
+                >
+                  Become Partner
+                  <ChevronDown size={12} className={`transition-transform duration-200 ${isPartnerDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                <AnimatePresence>
+                  {isPartnerDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute left-0 mt-0 pt-4 w-48 z-[70]"
+                    >
+                      <div className="bg-white border border-slate-100 rounded-2xl shadow-xl shadow-slate-200/50 p-2 overflow-hidden">
+                        {[
+                          { label: 'Register', href: '/partner-register' },
+                          { label: 'Login', href: '/login' },
+                        ].map((item) => (
+                          <Link 
+                            key={item.href} 
+                            href={item.href}
+                            className={`flex items-center px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                              pathname === item.href ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:text-blue-600 hover:bg-blue-50'
+                            }`}
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               <Link 
                 href="/contact" 
@@ -314,6 +358,17 @@ export const Navbar: React.FC = () => {
                   >
                     <span className="shrink-0 opacity-70"><Info size={16} /></span>
                     <span className="text-[11px] uppercase tracking-wider">About Us</span>
+                  </Link>
+
+                  <Link
+                    href="/partner-register"
+                    onClick={closeMenu}
+                    className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all ${
+                      pathname === '/partner-register' ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50 font-bold'
+                    }`}
+                  >
+                    <span className="shrink-0 opacity-70"><User size={16} /></span>
+                    <span className="text-[11px] uppercase tracking-wider">Partner</span>
                   </Link>
 
                   <Link

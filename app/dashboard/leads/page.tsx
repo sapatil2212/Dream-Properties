@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { User, Plus, Download, Eye, Edit2, Share2, Search, FileText, FileSpreadsheet, File } from 'lucide-react';
 import { Card, Badge, Button, Input, DataTable, Skeleton, Select, Modal } from '@/components/UIComponents';
+import { AlertModal } from '@/components/ui/alert-modal';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -36,6 +37,9 @@ export default function LeadsPage() {
     message: '',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
 
   const fetchLeads = async () => {
     try {
@@ -158,11 +162,23 @@ export default function LeadsPage() {
         setIsLoading(true);
         await fetchLeads();
       } else {
-        alert('Failed to create lead');
+        let errorMessage = 'Failed to create lead';
+        try {
+          const errorData = await response.json();
+          if (errorData && typeof errorData.message === 'string' && errorData.message.trim()) {
+            errorMessage = errorData.message;
+          }
+        } catch (parseError) {
+        }
+        setAlertTitle('Lead Creation Failed');
+        setAlertMessage(errorMessage);
+        setAlertOpen(true);
       }
     } catch (err) {
       console.error(err);
-      alert('Error creating lead');
+      setAlertTitle('Lead Creation Failed');
+      setAlertMessage('Error creating lead');
+      setAlertOpen(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -314,6 +330,14 @@ export default function LeadsPage() {
         </div>
       </div>
 
+      <AlertModal
+        isOpen={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        title={alertTitle}
+        message={alertMessage}
+        type="error"
+      />
+
       <Card>
         <div className="p-4 border-b border-slate-100 flex items-center justify-end gap-3">
           <div className="relative">
@@ -387,6 +411,19 @@ export default function LeadsPage() {
                   <p className="text-xs font-black text-slate-700">{l.propertyOfInterest || l.property?.title}</p>
                   <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">{l.source}</p>
                 </td>
+                {isAdminView && (
+                  <td className="px-6 py-4">
+                    {l.channelPartner ? (
+                      <div>
+                        <p className="text-xs font-bold text-blue-700">{l.channelPartner.user?.name}</p>
+                        <p className="text-[10px] text-slate-500">{l.channelPartner.user?.mobile || l.channelPartner.user?.email}</p>
+                        <Badge variant="info" className="mt-1 text-[9px] py-0 px-1">Channel Partner</Badge>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400 font-medium">-</span>
+                    )}
+                  </td>
+                )}
                 {isAdminView && (
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">

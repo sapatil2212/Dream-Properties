@@ -7,6 +7,7 @@ import { SuperAdminDashboard } from '@/components/dashboard/SuperAdminDashboard'
 import { BuilderDashboard } from '@/components/dashboard/BuilderDashboard';
 import { TelecallerDashboard, SalesExecutiveDashboard } from '@/components/dashboard/StaffDashboards';
 import { FavoritesList } from '@/components/dashboard/FavoritesList';
+import { ChannelPartnerDashboard } from '@/components/dashboard/ChannelPartnerDashboard';
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -21,6 +22,10 @@ export default function DashboardPage() {
 
   if (role === UserRole.BUILDER) {
     return <BuilderDashboard />;
+  }
+  
+  if (role === 'CHANNEL_PARTNER') {
+    return <ChannelPartnerDashboard />;
   }
 
   if (role === (UserRole as any).TELECALLER) {

@@ -20,6 +20,7 @@ enum UserRole {
   TELECALLER
   SALES_EXECUTIVE
   BUYER
+  CHANNEL_PARTNER
 }
 
 enum UserStatus {
@@ -78,6 +79,8 @@ model User {
   attendance       Attendance[]
   leaveRequests    LeaveRequest[]
   salarySlips      SalarySlip[]
+  
+  channelPartner   ChannelPartner?
 
   @@map("users")
 }
@@ -104,6 +107,8 @@ model PendingUser {
   securityKey      String?   @map("security_key") @db.VarChar(50)
   status           UserStatus @default(Active)
   otp              String    @db.VarChar(6)
+  mobileOtp        String?   @map("mobile_otp") @db.VarChar(6)
+  metadata         Json?
   expiresAt        DateTime  @map("expires_at")
   
   @@map("pending_users")
@@ -194,6 +199,7 @@ model Lead {
   lastNote           String?  @map("last_note") @db.Text
   assignedTo         Int?     @map("assigned_to")
   salesExecutiveId   Int?     @map("sales_executive_id")
+  channelPartnerId   Int?     @map("channel_partner_id")
   createdAt          DateTime @default(now()) @map("created_at")
   followUpAt         DateTime? @map("follow_up_at")
   lastContactAt      DateTime? @map("last_contact_at")
@@ -201,7 +207,9 @@ model Lead {
   property           Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   assignedStaff      User?    @relation("AssignedLeads", fields: [assignedTo], references: [id])
   salesExecutive     User?    @relation("SalesExecutiveLeads", fields: [salesExecutiveId], references: [id])
+  channelPartner     ChannelPartner? @relation(fields: [channelPartnerId], references: [id])
   siteVisits         SiteVisit[]
+  commissions        Commission[]
   
   @@map("leads")
 }
@@ -344,6 +352,7 @@ model SalarySlip {
   year          Int
   basicSalary   Float    @map("basic_salary")
   hra           Float
+  hraDeduction  Float    @default(0) @map("hra_deduction")
   allowances    Float
   deductions    Float    @default(0)
   netSalary     Float    @map("net_salary")
@@ -351,4 +360,81 @@ model SalarySlip {
   generatedDate DateTime @default(now()) @map("generated_date")
   
   @@map("salary_slips")
+}
+
+model ChannelPartner {
+  id                Int       @id @default(autoincrement())
+  userId            Int       @unique @map("user_id")
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  city              String?   @db.VarChar(100)
+  state             String?   @db.VarChar(100)
+  partnerType       String    @default("Individual Broker") @map("partner_type")
+  gstNumber         String?   @map("gst_number") @db.VarChar(50)
+  metadata          Json?     // Stores type-specific fields (broker details, firm details, etc.)
+  
+  reraNumber        String?   @map("rera_number") @db.VarChar(50)
+  bankName          String?   @map("bank_name") @db.VarChar(100)
+  accountNumber     String?   @map("account_number") @db.VarChar(50)
+  ifscCode          String?   @map("ifsc_code") @db.VarChar(20)
+  agreementAccepted Boolean   @default(false) @map("agreement_accepted")
+  approvalStatus    String    @default("Pending") @map("approval_status") // Pending, Approved, Rejected
+  
+  // Commission override (optional)
+  commissionRate    Float?    @map("commission_rate") // Percentage
+  
+  leads             Lead[]
+  commissions       Commission[]
+  payouts           Payout[]
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@map("channel_partners")
+}
+
+model Commission {
+  id                Int       @id @default(autoincrement())
+  channelPartnerId  Int       @map("channel_partner_id")
+  leadId            Int       @map("lead_id")
+  
+  dealValue         Float     @map("deal_value")
+  commissionRate    Float     @map("commission_rate") // Percentage
+  commissionAmount  Float     @map("commission_amount")
+  
+  status            String    @default("Pending") // Pending, Paid, Cancelled
+  paymentDate       DateTime? @map("payment_date")
+  
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  channelPartner    ChannelPartner @relation(fields: [channelPartnerId], references: [id])
+  lead              Lead           @relation(fields: [leadId], references: [id])
+  
+  @@map("commissions")
+}
+
+model Payout {
+  id                Int       @id @default(autoincrement())
+  channelPartnerId  Int       @map("channel_partner_id")
+  
+  amount            Float
+  status            String    @default("Pending") // Pending, Processed
+  transactionId     String?   @map("transaction_id")
+  processedAt       DateTime? @map("processed_at")
+  
+  createdAt         DateTime  @default(now()) @map("created_at")
+  
+  channelPartner    ChannelPartner @relation(fields: [channelPartnerId], references: [id])
+  
+  @@map("payouts")
+}
+
+model SystemSettings {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique @db.VarChar(100)
+  value     String   @db.LongText
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
 }
