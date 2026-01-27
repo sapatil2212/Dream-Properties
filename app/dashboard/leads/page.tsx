@@ -225,7 +225,7 @@ export default function LeadsPage() {
   const isAdminView = role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'SAAS_OWNER';
 
   const headers = isAdminView
-    ? ['Prospect Info', 'Inquiry Property', 'Telecaller', 'Sales Executive', 'Status', 'Last Contact', 'Actions']
+    ? ['Prospect Info', 'Inquiry Property', 'Lead Source', 'Telecaller', 'Sales Executive', 'Status', 'Last Contact', 'Actions']
     : ['Prospect Info', 'Inquiry Property', 'Status', 'Last Contact', 'Actions'];
 
   const exportToPDF = () => {

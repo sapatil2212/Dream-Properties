@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Building2, Search, Filter, Plus, Eye, Edit3, Power, CheckCircle 
+  Building2, Search, Filter, Plus, Eye, Edit3, Power, CheckCircle, Trash2
 } from 'lucide-react';
 import { 
   Card, Badge, Button, Input, Modal, DataTable, Skeleton 
 } from '@/components/UIComponents';
+import { AlertModal } from '@/components/ui/alert-modal';
 
 export default function BuildersPage() {
   const [showAddBuilder, setShowAddBuilder] = useState(false);
@@ -16,6 +17,7 @@ export default function BuildersPage() {
   const [selectedBuilder, setSelectedBuilder] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -55,6 +57,30 @@ export default function BuildersPage() {
       }
     } catch (err) {
       setError('Failed to update status');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedBuilder) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/superadmin/users/${selectedBuilder.id}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        setSuccessMsg('Builder deleted successfully');
+        setDeleteModalOpen(false);
+        fetchBuilders();
+        setTimeout(() => setSuccessMsg(''), 3000);
+      } else {
+        setError('Failed to delete builder');
+      }
+    } catch (err) {
+      setError('Error deleting builder');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -160,6 +186,13 @@ export default function BuildersPage() {
                     >
                       <Power size={16} />
                     </button>
+                    <button
+                      onClick={() => { setSelectedBuilder(b); setDeleteModalOpen(true); }}
+                      className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                      title="Delete Builder"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -260,6 +293,15 @@ export default function BuildersPage() {
             </div>
          </div>
       </Modal>
+
+      <AlertModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        isLoading={isLoading}
+        title="Delete Builder"
+        message="Are you sure you want to delete this builder? This action cannot be undone."
+      />
     </div>
   );
 }

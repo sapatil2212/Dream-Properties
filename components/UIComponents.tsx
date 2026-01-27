@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronDown, Inbox, Loader2, Eye, EyeOff, ArrowUpRight, CheckCircle, XCircle, AlertCircle, AlertTriangle, Search, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 
-export const StatCard: React.FC<{ label: string, value: string, trend: string, trendUp?: boolean, icon: React.ReactNode, color: string }> = ({ label, value, trend, trendUp = true, icon, color }) => (
-  <Card className="p-6 group hover:border-blue-200 transition-all duration-300">
+export const StatCard: React.FC<{ label: string, value: string, trend: string, trendUp?: boolean, icon: React.ReactNode, color: string, className?: string }> = ({ label, value, trend, trendUp = true, icon, color, className = '' }) => (
+  <Card className={`p-6 group hover:border-blue-200 transition-all duration-300 ${className}`}>
     <div className="flex justify-between items-start mb-6">
       <div className={`p-3 rounded-2xl ${color} group-hover:scale-110 transition-transform`}>
         {icon}

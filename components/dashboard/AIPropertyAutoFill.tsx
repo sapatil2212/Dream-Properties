@@ -10,6 +10,8 @@ import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, Tex
 
 interface AIPropertyAutoFillProps {
   onDataExtracted: (data: any) => void;
+  forcedOpen?: boolean;
+  onClose?: () => void;
 }
 
 const SUPPORTED_FIELDS = [
@@ -45,7 +47,7 @@ const SUPPORTED_FIELDS = [
   'Car Parking'
 ];
 
-export function AIPropertyAutoFill({ onDataExtracted }: AIPropertyAutoFillProps) {
+export function AIPropertyAutoFill({ onDataExtracted, forcedOpen, onClose }: AIPropertyAutoFillProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [text, setText] = useState('');
@@ -191,7 +193,7 @@ export function AIPropertyAutoFill({ onDataExtracted }: AIPropertyAutoFillProps)
     }
   };
 
-  if (!isOpen) {
+  if (!isOpen && !forcedOpen) {
     return (
       <button
         onClick={() => setIsOpen(true)}
@@ -219,7 +221,7 @@ export function AIPropertyAutoFill({ onDataExtracted }: AIPropertyAutoFillProps)
               </p>
             </div>
             <button 
-              onClick={() => setIsOpen(false)}
+              onClick={() => forcedOpen ? onClose?.() : setIsOpen(false)}
               className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-lg transition-colors"
             >
               <X size={20} />

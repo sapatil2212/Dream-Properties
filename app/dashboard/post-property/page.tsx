@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, X, Plus, FileText, Image as ImageIcon, Upload, Check, Sparkles } from 'lucide-react';
-import { Button, Input, Card, Alert } from '@/components/UIComponents';
+import { Button, Input, Card, Alert, Select } from '@/components/UIComponents';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AIPropertyAutoFill } from '@/components/dashboard/AIPropertyAutoFill';
 
@@ -18,6 +18,7 @@ export default function PostPropertyPage() {
 
   // Alert states
   const [showAlert, setShowAlert] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
   const [alertConfig, setAlertConfig] = useState({
     type: 'success' as 'success' | 'error' | 'warning' | 'info',
     title: '',
@@ -459,11 +460,11 @@ export default function PostPropertyPage() {
             </div>
 
             {/* Progress Steps */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <div className="flex items-start justify-between w-full px-4">
               {steps.map((step, idx) => (
                 <React.Fragment key={step.number}>
                   <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
-                    <div className={`w-8 h-8 rounded-2xl flex items-center justify-center text-[10px] font-bold transition-all ${
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
                       currentStep > step.number 
                         ? 'bg-emerald-500 text-white shadow-md' 
                         : currentStep === step.number 
@@ -479,7 +480,7 @@ export default function PostPropertyPage() {
                     </span>
                   </div>
                   {idx < steps.length - 1 && (
-                    <div className={`h-0.5 w-8 flex-shrink-0 mb-5 ${
+                    <div className={`h-0.5 flex-1 mt-4 mx-2 transition-colors duration-300 ${
                       currentStep > step.number ? 'bg-emerald-500' : 'bg-slate-200'
                     }`} />
                   )}
@@ -504,12 +505,31 @@ export default function PostPropertyPage() {
               {/* Step 1: Property Type & Basic Details */}
               {currentStep === 1 && (
                 <div className="space-y-6">
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-900 mb-2">Property Type & Details</h2>
-                    <p className="text-sm text-slate-500">Tell us about the property type and basic information</p>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className="text-2xl font-black text-slate-900 mb-2">Property Type & Details</h2>
+                      <p className="text-sm text-slate-500">Tell us about the property type and basic information</p>
+                    </div>
+                    {!showAIModal && (
+                      <button
+                        onClick={() => setShowAIModal(true)}
+                        className="py-2.5 px-5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-xl font-bold transition-all flex items-center gap-2 group text-sm whitespace-nowrap"
+                      >
+                        <Sparkles size={16} className="group-hover:rotate-12 transition-transform" />
+                        Use AI Assistant to Auto-Fill Form
+                      </button>
+                    )}
                   </div>
 
-                  <AIPropertyAutoFill onDataExtracted={handleAIAutoFill} />
+                  {showAIModal && (
+                    <div className="mt-6">
+                      <AIPropertyAutoFill 
+                        onDataExtracted={handleAIAutoFill} 
+                        forcedOpen={true}
+                        onClose={() => setShowAIModal(false)}
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     {/* Property Type and Property For - Side by Side */}
@@ -590,27 +610,17 @@ export default function PostPropertyPage() {
                     {/* Property Sub-Type - Full Width Below */}
                     {formData.type && (
                       <div>
-                        <label className="text-xs font-bold text-slate-700 mb-2 block">Property Sub-Type *</label>
-                        <select
-                          className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 ${
-                            fieldErrors.propertySubtype
-                              ? 'border-red-300 focus:ring-red-500'
-                              : 'border-slate-200 focus:ring-blue-500'
-                          }`}
+                        <Select
+                          label="Property Sub-Type *"
+                          placeholder="Select sub-type"
                           value={formData.propertySubtype}
-                          onChange={e => {
-                            setFormData({ ...formData, propertySubtype: e.target.value });
+                          options={subtypeOptions[formData.type as keyof typeof subtypeOptions]?.map(subtype => ({ label: subtype, value: subtype })) || []}
+                          onChange={(value) => {
+                            setFormData({ ...formData, propertySubtype: value });
                             setFieldErrors(prev => ({ ...prev, propertySubtype: '' }));
                           }}
-                        >
-                          <option value="">Select sub-type</option>
-                          {subtypeOptions[formData.type as keyof typeof subtypeOptions]?.map(subtype => (
-                            <option key={subtype} value={subtype}>{subtype}</option>
-                          ))}
-                        </select>
-                        {fieldErrors.propertySubtype && (
-                          <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.propertySubtype}</p>
-                        )}
+                          error={fieldErrors.propertySubtype}
+                        />
                       </div>
                     )}
 
@@ -659,17 +669,12 @@ export default function PostPropertyPage() {
                           )}
                         </div>
                         <div className="w-28">
-                          <label className="text-xs font-bold text-slate-700 mb-2 block">Unit</label>
-                          <select
-                            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium"
+                          <Select
+                            label="Unit"
                             value={formData.areaUnit}
-                            onChange={e => setFormData({ ...formData, areaUnit: e.target.value })}
-                          >
-                            <option value="sq.ft.">sq.ft.</option>
-                            <option value="sq.yd.">sq.yd.</option>
-                            <option value="Acres">Acres</option>
-                            <option value="Hectares">Hectares</option>
-                          </select>
+                            options={['sq.ft.', 'sq.yd.', 'Acres', 'Hectares'].map(u => ({ label: u, value: u }))}
+                            onChange={(value) => setFormData({ ...formData, areaUnit: value })}
+                          />
                         </div>
                       </div>
                     </div>
@@ -808,44 +813,33 @@ export default function PostPropertyPage() {
                           
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <label className="text-xs font-bold text-slate-700 mb-2 block">Furnishing</label>
-                              <select
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              <Select
+                                label="Furnishing"
+                                placeholder="Select furnishing"
                                 value={formData.furnishing}
-                                onChange={e => setFormData({ ...formData, furnishing: e.target.value })}
-                              >
-                                <option value="">Select furnishing</option>
-                                <option value="Fully Furnished">Fully Furnished</option>
-                                <option value="Semi Furnished">Semi Furnished</option>
-                                <option value="Unfurnished">Unfurnished</option>
-                              </select>
+                                options={['Fully Furnished', 'Semi Furnished', 'Unfurnished'].map(o => ({ label: o, value: o }))}
+                                onChange={(value) => setFormData({ ...formData, furnishing: value })}
+                              />
                             </div>
                             
                             <div>
-                              <label className="text-xs font-bold text-slate-700 mb-2 block">Listed By</label>
-                              <select
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              <Select
+                                label="Listed By"
+                                placeholder="Select type"
                                 value={formData.listedBy}
-                                onChange={e => setFormData({ ...formData, listedBy: e.target.value })}
-                              >
-                                <option value="">Select type</option>
-                                <option value="Owner">Owner</option>
-                                <option value="Builder">Builder</option>
-                                <option value="Dealer">Dealer</option>
-                              </select>
+                                options={['Owner', 'Builder', 'Dealer'].map(o => ({ label: o, value: o }))}
+                                onChange={(value) => setFormData({ ...formData, listedBy: value })}
+                              />
                             </div>
                             
                             <div>
-                              <label className="text-xs font-bold text-slate-700 mb-2 block">Bachelors Allowed</label>
-                              <select
-                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              <Select
+                                label="Bachelors Allowed"
+                                placeholder="Select option"
                                 value={formData.bachelorsAllowed}
-                                onChange={e => setFormData({ ...formData, bachelorsAllowed: e.target.value })}
-                              >
-                                <option value="">Select option</option>
-                                <option value="Yes">Yes</option>
-                                <option value="No">No</option>
-                              </select>
+                                options={['Yes', 'No'].map(o => ({ label: o, value: o }))}
+                                onChange={(value) => setFormData({ ...formData, bachelorsAllowed: value })}
+                              />
                             </div>
                             
                             <Input

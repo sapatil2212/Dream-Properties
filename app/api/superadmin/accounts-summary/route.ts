@@ -13,6 +13,9 @@ export async function GET() {
     }
 
     const allUsers = await prisma.user.findMany({
+      where: {
+        status: { not: 'Deleted' }
+      },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -35,8 +38,9 @@ export async function GET() {
       total: allUsers.length,
       buyers: allUsers.filter(u => (u.role as string) === 'BUYER' || (u.role as string) === 'USER'),
       builders: allUsers.filter(u => (u.role as string) === 'BUILDER'),
+      channelPartners: allUsers.filter(u => (u.role as string) === 'CHANNEL_PARTNER'),
       staff: allUsers.filter(u => ['ADMIN', 'TELECALLER', 'SALES_EXECUTIVE', 'SAAS_OWNER'].includes(u.role as string)),
-      others: allUsers.filter(u => !['BUYER', 'USER', 'BUILDER', 'ADMIN', 'TELECALLER', 'SALES_EXECUTIVE', 'SAAS_OWNER'].includes(u.role as string))
+      others: allUsers.filter(u => !['BUYER', 'USER', 'BUILDER', 'CHANNEL_PARTNER', 'ADMIN', 'TELECALLER', 'SALES_EXECUTIVE', 'SAAS_OWNER'].includes(u.role as string))
     }
 
     // console.log('Summary with lastActiveAt:', JSON.stringify(summary.staff.map(u => ({ email: u.email, lastActiveAt: u.lastActiveAt })), null, 2));

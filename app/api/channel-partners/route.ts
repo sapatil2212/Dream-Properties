@@ -11,7 +11,10 @@ export async function GET(request: NextRequest) {
     }
 
     const partners = await prisma.user.findMany({
-      where: { role: 'CHANNEL_PARTNER' },
+      where: { 
+        role: 'CHANNEL_PARTNER',
+        status: { not: 'Deleted' }
+      },
       include: {
         channelPartner: true
       },

@@ -3,24 +3,36 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Users, User, Briefcase, Building2, ArrowUpRight 
+  Users, User, Briefcase, Building2, ArrowUpRight, Handshake 
 } from 'lucide-react';
 import { 
   Card, Button, DataTable, Badge, StatCard, Skeleton 
 } from '@/components/UIComponents';
+import { PerformanceOverviewCard } from './PerformanceOverviewCard';
+import { MostViewedPropertyCard } from './MostViewedPropertyCard';
 import Link from 'next/link';
 
 export function SuperAdminDashboard() {
   const [dataSummary, setDataSummary] = useState<any>(null);
+  const [dashboardStats, setDashboardStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch('/api/superadmin/accounts-summary');
-        if (response.ok) {
-          const data = await response.json();
+        const [summaryRes, statsRes] = await Promise.all([
+          fetch('/api/superadmin/accounts-summary'),
+          fetch('/api/superadmin/dashboard-stats')
+        ]);
+
+        if (summaryRes.ok) {
+          const data = await summaryRes.json();
           setDataSummary(data);
+        }
+
+        if (statsRes.ok) {
+          const stats = await statsRes.json();
+          setDashboardStats(stats);
         }
       } catch (err) {
         console.error(err);
@@ -35,26 +47,29 @@ export function SuperAdminDashboard() {
     total: dataSummary.total,
     buyers: dataSummary.buyers?.length || 0,
     staff: dataSummary.staff?.length || 0,
-    builders: dataSummary.builders?.length || 0
-  } : { total: 0, buyers: 0, staff: 0, builders: 0 };
+    builders: dataSummary.builders?.length || 0,
+    channelPartners: dataSummary.channelPartners?.length || 0
+  } : { total: 0, buyers: 0, staff: 0, builders: 0, channelPartners: 0 };
 
   const recentAccounts = dataSummary ? [
     ...(dataSummary.buyers || []),
     ...(dataSummary.builders || []),
-    ...(dataSummary.staff || [])
+    ...(dataSummary.staff || []),
+    ...(dataSummary.channelPartners || [])
   ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5) : [];
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Accounts" value={stats.total.toString()} trend="+12%" icon={<Users className="text-blue-600" size={20} />} color="bg-blue-50" />
-        <StatCard label="Buyer / Users" value={stats.buyers.toString()} trend="+8%" icon={<User size={20} className="text-indigo-600" />} color="bg-indigo-50" />
-        <StatCard label="Agency Staff" value={stats.staff.toString()} trend="+4%" icon={<Briefcase size={20} className="text-amber-600" />} color="bg-amber-50" />
-        <StatCard label="Partner Builders" value={stats.builders.toString()} trend="+18%" icon={<Building2 className="text-emerald-600" size={20} />} color="bg-emerald-50" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatCard className="p-4" label="Total Accounts" value={stats.total.toString()} trend="+12%" icon={<Users className="text-blue-600" size={20} />} color="bg-blue-50" />
+        <StatCard className="p-4" label="Buyer / Users" value={stats.buyers.toString()} trend="+8%" icon={<User size={20} className="text-indigo-600" />} color="bg-indigo-50" />
+        <StatCard className="p-4" label="Channel Partners" value={stats.channelPartners.toString()} trend="+15%" icon={<Handshake size={20} className="text-purple-600" />} color="bg-purple-50" />
+        <StatCard className="p-4" label="Agency Staff" value={stats.staff.toString()} trend="+4%" icon={<Briefcase size={20} className="text-amber-600" />} color="bg-amber-50" />
+        <StatCard className="p-4" label="Partner Builders" value={stats.builders.toString()} trend="+18%" icon={<Building2 className="text-emerald-600" size={20} />} color="bg-emerald-50" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-8 space-y-4">
+        <div className="lg:col-span-7 space-y-4">
           <Card>
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <h3 className="font-black uppercase tracking-tight text-slate-900">Recent Registrations</h3>
@@ -99,8 +114,11 @@ export function SuperAdminDashboard() {
           </Card>
         </div>
 
-        <div className="lg:col-span-4 space-y-4">
+        <div className="lg:col-span-5 space-y-4">
 
+          <PerformanceOverviewCard data={dashboardStats?.graphData} isLoading={isLoading} />
+          
+          <MostViewedPropertyCard property={dashboardStats?.mostViewedProperty} isLoading={isLoading} />
           
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
