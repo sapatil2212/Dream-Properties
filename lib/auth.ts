@@ -36,7 +36,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email: credentials.email },
+          include: { channelPartner: true }
         })
 
         if (!user) {
@@ -44,6 +45,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (user.status === 'Disabled') {
+          // Check if it's a channel partner pending approval
+          if (user.role === 'CHANNEL_PARTNER' && user.channelPartner?.approvalStatus === 'Pending') {
+            throw new Error('Your account verification is pending. Please wait for admin approval.')
+          }
           throw new Error('Your account has been blocked. Please contact support.')
         }
 

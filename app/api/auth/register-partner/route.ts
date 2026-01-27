@@ -158,19 +158,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Send Mobile OTP
-    try {
-        await sendMobileOtp(mobile, mobileOtp);
-    } catch (smsError: any) {
-        console.error('Error sending SMS:', smsError);
-        // Return specific error message if available (e.g. from Twilio)
-        const errorMessage = smsError?.message || 'Failed to send Mobile OTP';
-        return NextResponse.json({ 
-            message: `SMS Verification Failed: ${errorMessage}. Please check the number and try again.` 
-        }, { status: 500 });
-    }
+    // try {
+    //     await sendMobileOtp(mobile, mobileOtp);
+    // } catch (smsError: any) {
+    //     console.error('Error sending SMS:', smsError);
+    //     // Return specific error message if available (e.g. from Twilio)
+    //     const errorMessage = smsError?.message || 'Failed to send Mobile OTP';
+    //     return NextResponse.json({ 
+    //         message: `SMS Verification Failed: ${errorMessage}. Please check the number and try again.` 
+    //     }, { status: 500 });
+    // }
 
     return NextResponse.json({ 
-        message: 'OTPs sent successfully. Please check your Email and Mobile.',
+        message: 'OTP sent successfully. Please check your Email.',
         email,
         mobile
     });

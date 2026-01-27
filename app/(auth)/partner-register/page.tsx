@@ -56,7 +56,7 @@ export default function PartnerRegisterPage() {
     // Digital
     companyName: '',
     websiteUrl: '',
-    leadSourceType: '',
+    leadSourceType: [] as string[],
     monthlyLeadCapacity: '',
     technicalContactPerson: '',
     technicalContactEmail: '',
@@ -85,9 +85,29 @@ export default function PartnerRegisterPage() {
   
   // OTP State
   const [showOTPModal, setShowOTPModal] = useState(false);
-  const [emailOtp, setEmailOtp] = useState('');
-  const [mobileOtp, setMobileOtp] = useState('');
+  const [emailOtp, setEmailOtp] = useState(['', '', '', '', '', '']);
+  // const [mobileOtp, setMobileOtp] = useState(''); // Mobile OTP disabled
   const [verifying, setVerifying] = useState(false);
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (isNaN(Number(value))) return;
+    const newOtp = [...emailOtp];
+    newOtp[index] = value;
+    setEmailOtp(newOtp);
+    
+    // Auto-focus next input
+    if (value && index < 5) {
+        const nextInput = document.getElementById(`otp-${index + 1}`);
+        if (nextInput) nextInput.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !emailOtp[index] && index > 0) {
+        const prevInput = document.getElementById(`otp-${index - 1}`);
+        if (prevInput) prevInput.focus();
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -158,8 +178,8 @@ export default function PartnerRegisterPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 email: formData.email,
-                emailOtp,
-                mobileOtp
+                emailOtp: emailOtp.join(''),
+                // mobileOtp
             })
         });
 
@@ -381,17 +401,23 @@ export default function PartnerRegisterPage() {
                       <Input label="Company Name" required name="companyName" value={formData.companyName} onChange={handleChange} className="h-10" />
                       <Input label="Website URL" name="websiteUrl" value={formData.websiteUrl} onChange={handleChange} className="h-10" />
                       <div className="sm:col-span-2">
-                        <Select
-                           label="Lead Source Type"
-                           options={[
-                             { label: 'Social Media', value: 'Social Media' },
-                             { label: 'Google Ads', value: 'Google Ads' },
-                             { label: 'Content Marketing', value: 'Content Marketing' },
-                             { label: 'Email Marketing', value: 'Email Marketing' },
-                           ]}
-                           value={formData.leadSourceType}
-                           onChange={(val) => handleSelectChange('leadSourceType', val)}
-                        />
+                        <label className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-500 mb-2 block">Lead Source Type</label>
+                        <div className="flex flex-wrap gap-3">
+                           {['Social Media', 'Google Ads', 'Content Marketing', 'Email Marketing'].map(type => (
+                            <label key={type} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${formData.leadSourceType.includes(type) ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-slate-200 hover:border-slate-300'}`}>
+                              <input 
+                                type="checkbox" 
+                                className="hidden"
+                                checked={formData.leadSourceType.includes(type)} 
+                                onChange={() => handleMultiSelect('leadSourceType', type)} 
+                              />
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center ${formData.leadSourceType.includes(type) ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
+                                {formData.leadSourceType.includes(type) && <CheckCircle size={10} className="text-white" />}
+                              </div>
+                              <span className="text-[11px] font-bold uppercase tracking-wide">{type}</span>
+                            </label>
+                           ))}
+                        </div>
                       </div>
                       <Input label="Monthly Lead Capacity" type="number" name="monthlyLeadCapacity" value={formData.monthlyLeadCapacity} onChange={handleChange} className="h-10" />
                       <Input label="Technical Contact Person" required name="technicalContactPerson" value={formData.technicalContactPerson} onChange={handleChange} className="h-10" />
@@ -521,7 +547,7 @@ export default function PartnerRegisterPage() {
                 </div>
                 <h3 className="text-xl font-black text-slate-900 mb-2">Verification Required</h3>
                 <p className="text-xs text-slate-500 font-medium">
-                    We've sent verification codes to your email and mobile number.
+                    We've sent a verification code to your email.
                 </p>
             </div>
 
@@ -529,14 +555,23 @@ export default function PartnerRegisterPage() {
                 <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-700 block">Email OTP</label>
                     <p className="text-[10px] text-slate-400">Sent to {formData.email}</p>
-                    <Input 
-                        value={emailOtp} 
-                        onChange={(e) => setEmailOtp(e.target.value)} 
-                        placeholder="Enter Email OTP" 
-                        className="text-center tracking-widest font-bold text-lg"
-                    />
+                    <div className="flex justify-center gap-2">
+                      {emailOtp.map((digit, index) => (
+                        <input
+                          key={index}
+                          id={`otp-${index}`}
+                          type="text"
+                          maxLength={1}
+                          value={digit}
+                          onChange={(e) => handleOtpChange(index, e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(index, e)}
+                          className="w-10 h-12 md:w-12 md:h-14 text-center text-xl font-black bg-slate-50 border-2 border-slate-100 rounded-xl focus:bg-white focus:border-blue-600 outline-none transition-all"
+                        />
+                      ))}
+                    </div>
                 </div>
                 
+                {/* 
                 <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-700 block">Mobile OTP</label>
                     <p className="text-[10px] text-slate-400">Sent to {formData.mobile}</p>
@@ -547,6 +582,7 @@ export default function PartnerRegisterPage() {
                         className="text-center tracking-widest font-bold text-lg"
                     />
                 </div>
+                */}
 
                 {error && (
                     <div className="bg-rose-50 text-rose-600 px-4 py-2 rounded-lg text-xs font-bold text-center">

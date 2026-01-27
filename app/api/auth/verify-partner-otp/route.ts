@@ -3,9 +3,9 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, emailOtp, mobileOtp } = await request.json();
+    const { email, emailOtp } = await request.json();
 
-    if (!email || !emailOtp || !mobileOtp) {
+    if (!email || !emailOtp) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
 
@@ -24,9 +24,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check mobile OTP (handle potential null from schema)
-    if (!pendingUser.mobileOtp || pendingUser.mobileOtp !== mobileOtp) {
-        return NextResponse.json({ message: 'Invalid Mobile OTP' }, { status: 400 });
-    }
+    // if (!pendingUser.mobileOtp || pendingUser.mobileOtp !== mobileOtp) {
+    //     return NextResponse.json({ message: 'Invalid Mobile OTP' }, { status: 400 });
+    // }
 
     // All good, create user
     // Cast metadata to any to access properties since it's stored as Json
