@@ -18,8 +18,16 @@ export function ChannelPartnerDashboard() {
   const [loading, setLoading] = useState(true);
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [agreementContent, setAgreementContent] = useState('');
+  const [agreementType, setAgreementType] = useState<'text' | 'file'>('text');
+  const [agreementFileUrl, setAgreementFileUrl] = useState('');
   const [signatureUrl, setSignatureUrl] = useState('');
   const [logoBase64, setLogoBase64] = useState('');
+  
+  // Company Details
+  const [companyName, setCompanyName] = useState('');
+  const [companyAddress, setCompanyAddress] = useState('');
+  const [companyJurisdiction, setCompanyJurisdiction] = useState('');
+
   const agreementRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,14 +65,45 @@ export function ChannelPartnerDashboard() {
             console.error('Error fetching profile', e);
         }
 
-        // Fetch Agreement Terms
+        // Fetch Agreement Terms and Settings
         try {
             const termsRes = await fetch('/api/settings?key=channel_partner_agreement_terms');
+            const typeRes = await fetch('/api/settings?key=channel_partner_agreement_type');
+            const fileRes = await fetch('/api/settings?key=channel_partner_agreement_file_url');
+            
+            // Fetch Company Details
+            const nameRes = await fetch('/api/settings?key=company_name');
+            const addressRes = await fetch('/api/settings?key=company_address');
+            const jurisdictionRes = await fetch('/api/settings?key=company_jurisdiction');
+
             if (termsRes.ok) {
                 const data = await termsRes.json();
                 setAgreementContent(data.value || getDefaultAgreement());
             } else {
                 setAgreementContent(getDefaultAgreement());
+            }
+
+            if (typeRes.ok) {
+                const data = await typeRes.json();
+                if (data.value) setAgreementType(data.value as 'text' | 'file');
+            }
+
+            if (fileRes.ok) {
+                const data = await fileRes.json();
+                if (data.value) setAgreementFileUrl(data.value);
+            }
+            
+            if (nameRes.ok) {
+                const data = await nameRes.json();
+                if (data.value) setCompanyName(data.value);
+            }
+            if (addressRes.ok) {
+                const data = await addressRes.json();
+                if (data.value) setCompanyAddress(data.value);
+            }
+            if (jurisdictionRes.ok) {
+                const data = await jurisdictionRes.json();
+                if (data.value) setCompanyJurisdiction(data.value);
             }
         } catch (e) {
             console.error('Error fetching terms', e);
@@ -121,21 +160,25 @@ export function ChannelPartnerDashboard() {
   const processedAgreementContent = React.useMemo(() => {
     let content = agreementContent;
     
-    // Auto-convert plain text newlines to <br/> if no HTML tags are detected
-    if (content && !/<[a-z][\s\S]*>/i.test(content)) {
-        content = content.replace(/\n/g, '<br/>');
-    }
-
+    // Replace variables
     const effectiveDate = partnerProfile?.createdAt 
         ? new Date(partnerProfile.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
         : new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
     
+    // Standard Placeholders
+    content = content.replace(/\[Effective Date\]/g, effectiveDate);
+    content = content.replace(/\[Company Name\]/g, companyName || 'Dream Properties');
+    content = content.replace(/\[Country\/State\]/g, companyJurisdiction || 'India');
+    content = content.replace(/\[Address\]/g, companyAddress || '');
+    content = content.replace(/\[Channel Partner \/ Channel Manager Name\]/g, partnerProfile?.name || 'Partner');
+
+    // Backward Compatibility
     content = content.replace(/{{EFFECTIVE_DATE}}/g, effectiveDate);
     content = content.replace(/{{PARTNER_NAME}}/g, partnerProfile?.name || 'Partner');
-    content = content.replace(/{{COMPANY_NAME}}/g, 'Dream Properties');
+    content = content.replace(/{{COMPANY_NAME}}/g, companyName || 'Dream Properties');
     
     return content;
-  }, [agreementContent, partnerProfile]);
+  }, [agreementContent, partnerProfile, companyName, companyJurisdiction, companyAddress]);
 
   const handleDownloadAgreement = async () => {
     if (!agreementRef.current) return;
@@ -150,43 +193,65 @@ export function ChannelPartnerDashboard() {
     // Calculate margins and usable height
     const margin = 40;
     const pageHeight = doc.internal.pageSize.getHeight();
-    const footerHeight = 60; // Space reserved for footer
+    const footerHeight = 80; // Increased Space reserved for footer
     
-    await doc.html(agreementRef.current, {
-        callback: function (pdf) {
-            const totalPages = pdf.getNumberOfPages();
-            for (let i = 1; i <= totalPages; i++) {
-                pdf.setPage(i);
-                
-                // Footer Line (Faint)
-                pdf.setDrawColor(200, 200, 200);
-                pdf.setLineWidth(0.5);
-                pdf.line(margin, pageHeight - 40, 555, pageHeight - 40);
-                
-                // Add Logo to Footer (if possible)
-                if (logoBase64) {
-                    try {
-                        pdf.addImage(logoBase64, 'PNG', margin, pageHeight - 35, 30, 10); // x, y, w, h
-                    } catch (e) {
-                        // fallback
-                    }
-                }
+    // Create a temporary clone of the agreement content to make it visible for capture
+    // This fixes the "blank PDF" issue when capturing hidden elements
+    const element = agreementRef.current.cloneNode(true) as HTMLElement;
+    element.style.position = 'fixed';
+    element.style.top = '0';
+    element.style.left = '0';
+    element.style.zIndex = '-1000'; // Behind everything but visible to html2canvas
+    document.body.appendChild(element);
 
-                // Footer Contact Info
-                pdf.setFontSize(8);
-                pdf.setTextColor(100);
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                pdf.text('Dream Properties | +91 9876543210 | support@dreamproperties.com | www.dreamproperties.com', pageWidth / 2, pageHeight - 15, { align: 'center' });
-            }
-            pdf.save('Channel_Partner_Agreement.pdf');
-        },
-        x: margin,
-        y: margin,
-        width: 515, // A4 width 595 - 80 margin
-        windowWidth: 800,
-        margin: [margin, margin, footerHeight, margin], // Top, Right, Bottom, Left
-        autoPaging: 'text'
-    });
+    try {
+        await doc.html(element, {
+            callback: function (pdf) {
+                const totalPages = pdf.getNumberOfPages();
+                for (let i = 1; i <= totalPages; i++) {
+                    pdf.setPage(i);
+                    
+                    // Footer Line (Faint)
+                    pdf.setDrawColor(200, 200, 200);
+                    pdf.setLineWidth(0.5);
+                    pdf.line(margin, pageHeight - 50, 555, pageHeight - 50);
+                    
+                    // Add Logo to Footer (if possible)
+                    if (logoBase64) {
+                        try {
+                            pdf.addImage(logoBase64, 'PNG', margin, pageHeight - 45, 30, 10); // x, y, w, h
+                        } catch (e) {
+                            // fallback
+                        }
+                    }
+
+                    // Footer Contact Info
+                    pdf.setFontSize(8);
+                    pdf.setTextColor(100);
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    pdf.text('Dream Properties | +91 9876543210 | support@dreamproperties.com | www.dreamproperties.com', pageWidth / 2, pageHeight - 25, { align: 'center' });
+                }
+                const filename = partnerProfile?.name 
+                    ? `${partnerProfile.name.replace(/[^a-zA-Z0-9]/g, '_')}_Agreement.pdf` 
+                    : 'Channel_Partner_Agreement.pdf';
+                pdf.save(filename);
+                
+                // Remove temporary element
+                document.body.removeChild(element);
+            },
+            x: margin,
+            y: margin,
+            width: 515, // A4 width 595 - 80 margin
+            windowWidth: 800,
+            margin: [margin, margin, footerHeight, margin], // Top, Right, Bottom, Left
+            autoPaging: 'text'
+        });
+    } catch (e) {
+        console.error('PDF Generation Error:', e);
+        if (document.body.contains(element)) {
+            document.body.removeChild(element);
+        }
+    }
   };
 
   const statCards = [
@@ -273,59 +338,53 @@ export function ChannelPartnerDashboard() {
             </Card>
         </div>
         <div>
-            <Card className="border border-slate-100 h-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-6 relative overflow-hidden">
-                {/* Decorative background elements */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12 blur-xl"></div>
-
+            <Card className="border border-slate-100 h-full bg-slate-50 text-slate-800 p-6 relative overflow-hidden">
                 <div className="relative z-10">
-                    <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
-                        <FileText size={20} className="text-blue-200" />
+                    <h3 className="font-bold text-lg mb-2 flex items-center gap-2 text-slate-900">
+                        <FileText size={20} className="text-blue-600" />
                         Partner Agreement
                     </h3>
-                    <p className="text-blue-100 text-xs mb-6 opacity-90">
+                    <p className="text-slate-500 text-xs mb-6">
                         Ensure you are familiar with our commission structure and policies.
                     </p>
 
                     {/* PDF Preview Card */}
-                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-6 border border-white/20 hover:bg-white/20 transition-colors group cursor-pointer">
+                    <div className="bg-white rounded-xl p-4 mb-6 border border-slate-200 hover:border-blue-300 transition-colors group cursor-pointer shadow-sm">
                         <div className="flex items-start gap-3">
-                            <div className="bg-red-500 rounded-lg p-2 text-white shadow-lg group-hover:scale-105 transition-transform">
+                            <div className="bg-red-100 rounded-lg p-2 text-red-600 shadow-sm group-hover:scale-105 transition-transform">
                                 <FileText size={24} />
-                                <span className="text-[8px] font-bold block text-center mt-1">PDF</span>
+                                <span className="text-[8px] font-bold block text-center mt-1">
+                                    {agreementType === 'file' ? 'FILE' : 'PDF'}
+                                </span>
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm font-bold text-white truncate">Channel_Partner_Agreement.pdf</p>
-                                <p className="text-xs text-blue-200 mt-1">2.4 MB • Updated Jan 15, 2024</p>
+                                <p className="text-sm font-bold text-slate-900 truncate">
+                                    {agreementType === 'file' ? 'Partner_Agreement_Document' : 'Channel_Partner_Agreement.pdf'}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-1">
+                                    {agreementType === 'file' ? 'Uploaded by Admin' : 'Auto-generated'}
+                                </p>
                             </div>
                         </div>
                         <div className="flex gap-2 mt-4">
-                            <Button size="sm" variant="secondary" className="h-8 text-xs w-full bg-white/90 text-blue-700 hover:bg-white border-none">
-                                <Eye size={12} className="mr-1.5" /> View
-                            </Button>
-                            <Button size="sm" variant="secondary" className="h-8 text-xs w-full bg-blue-500/30 text-white hover:bg-blue-500/50 border-none backdrop-blur-md" onClick={handleDownloadAgreement}>
-                                <Download size={12} className="mr-1.5" /> Download
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div className="space-y-3 bg-black/20 rounded-xl p-4 border border-white/10">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-blue-200 text-xs uppercase tracking-wider font-semibold">Commission Rate</span>
-                            <span className="font-bold text-xl text-emerald-300">
-                                {partnerProfile?.channelPartner?.commissionRate 
-                                    ? `${partnerProfile.channelPartner.commissionRate}%` 
-                                    : '2.0%'}
-                            </span>
-                        </div>
-                        <div className="w-full h-px bg-white/10"></div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-blue-200 text-xs uppercase tracking-wider font-semibold">Payout Cycle</span>
-                            <span className="font-bold">Weekly</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-blue-200 text-xs uppercase tracking-wider font-semibold">Support</span>
-                            <span className="font-bold text-xs">partners@dream.com</span>
+                            {agreementType === 'file' && agreementFileUrl ? (
+                                <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="h-8 text-xs w-full text-slate-700 hover:bg-slate-50 border-slate-200"
+                                    onClick={() => window.open(agreementFileUrl, '_blank')}
+                                >
+                                    <Eye size={12} className="mr-1.5" /> View / Download
+                                </Button>
+                            ) : (
+                                <>
+                                    <Link href="/dashboard/partner-agreement" className="w-full">
+                                        <Button size="sm" variant="outline" className="h-8 text-xs w-full text-slate-700 hover:bg-slate-50 border-slate-200">
+                                            <Eye size={12} className="mr-1.5" /> View
+                                        </Button>
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -342,7 +401,7 @@ export function ChannelPartnerDashboard() {
                 <h1 style={{ fontSize: '24px', fontWeight: 'bold', textTransform: 'uppercase', margin: 0 }}>Channel Partner Agreement</h1>
             </div>
             
-            <div dangerouslySetInnerHTML={{ __html: processedAgreementContent }} style={{ lineHeight: '1.6', fontSize: '14px', marginBottom: '50px', textAlign: 'justify' }} />
+            <div dangerouslySetInnerHTML={{ __html: processedAgreementContent }} style={{ lineHeight: '1.6', fontSize: '14px', marginBottom: '50px', whiteSpace: 'pre-wrap' }} />
             
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '80px', alignItems: 'flex-end' }}>
                 <div>

@@ -9,25 +9,65 @@ export default function PartnerAgreementPage() {
   const [agreementContent, setAgreementContent] = useState('');
   const [signatureUrl, setSignatureUrl] = useState('');
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
+  const [companyName, setCompanyName] = useState('Dream Properties');
   const [loading, setLoading] = useState(true);
   const agreementRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
+        let profile: any = null;
         const profileRes = await fetch('/api/profile/me');
         if (profileRes.ok) {
-          const profile = await profileRes.json();
+          profile = await profileRes.json();
           setPartnerProfile(profile);
         }
-        const termsRes = await fetch('/api/settings?key=channel_partner_agreement_terms');
+
+        // Fetch Settings
+        const [termsRes, nameRes, addressRes, jurisdictionRes, sigRes] = await Promise.all([
+             fetch('/api/settings?key=channel_partner_agreement_terms'),
+             fetch('/api/settings?key=company_name'),
+             fetch('/api/settings?key=company_address'),
+             fetch('/api/settings?key=company_jurisdiction'),
+             fetch('/api/settings?key=authorized_signatory_signature')
+        ]);
+
+        let cName = 'Dream Properties';
+        let cAddress = '';
+        let cJurisdiction = 'India';
+
+        if (nameRes.ok) { const d = await nameRes.json(); if (d.value) cName = d.value; }
+        if (addressRes.ok) { const d = await addressRes.json(); if (d.value) cAddress = d.value; }
+        if (jurisdictionRes.ok) { const d = await jurisdictionRes.json(); if (d.value) cJurisdiction = d.value; }
+
+        setCompanyName(cName);
+
         if (termsRes.ok) {
           const data = await termsRes.json();
-          setAgreementContent(data.value || getDefaultAgreement());
+          let content = data.value || getDefaultAgreement();
+          
+          // Replace variables
+          const effectiveDate = profile?.createdAt 
+              ? new Date(profile.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
+              : new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+          
+          // Standard Placeholders
+          content = content.replace(/\[Effective Date\]/g, effectiveDate);
+          content = content.replace(/\[Company Name\]/g, cName);
+          content = content.replace(/\[Country\/State\]/g, cJurisdiction);
+          content = content.replace(/\[Address\]/g, cAddress);
+          content = content.replace(/\[Channel Partner \/ Channel Manager Name\]/g, profile?.name || 'Partner');
+
+          // Backward Compatibility
+          content = content.replace(/{{EFFECTIVE_DATE}}/g, effectiveDate);
+          content = content.replace(/{{PARTNER_NAME}}/g, profile?.name || 'Partner');
+          content = content.replace(/{{COMPANY_NAME}}/g, cName);
+          
+          setAgreementContent(content);
         } else {
           setAgreementContent(getDefaultAgreement());
         }
-        const sigRes = await fetch('/api/settings?key=authorized_signatory_signature');
+
         if (sigRes.ok) {
           const data = await sigRes.json();
           if (data.value) setSignatureUrl(data.value);
@@ -47,24 +87,40 @@ export default function PartnerAgreementPage() {
       (window as any).html2canvas = html2canvas;
     }
     const doc = new jsPDF('p', 'pt', 'a4');
+    
+    // Calculate margins and usable height
+    const margin = 40;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const footerHeight = 80; // Space reserved for footer
+
     await doc.html(agreementRef.current, {
       callback: function (pdf) {
         const totalPages = pdf.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
           pdf.setPage(i);
+          
+          // Footer Line (Faint)
           pdf.setDrawColor(200, 200, 200);
           pdf.setLineWidth(0.5);
-          pdf.line(40, 800, 555, 800);
+          pdf.line(margin, pageHeight - 50, 555, pageHeight - 50);
+
+          // Footer Contact Info
           pdf.setFontSize(8);
           pdf.setTextColor(100);
-          pdf.text('Dream Properties | +91 9876543210 | support@dreamproperties.com | www.dreamproperties.com', 297, 825, { align: 'center' });
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          pdf.text('Dream Properties | +91 9876543210 | support@dreamproperties.com | www.dreamproperties.com', pageWidth / 2, pageHeight - 25, { align: 'center' });
         }
-        pdf.save('Channel_Partner_Agreement.pdf');
+        const filename = partnerProfile?.name 
+            ? `${partnerProfile.name.replace(/[^a-zA-Z0-9]/g, '_')}_Agreement.pdf` 
+            : 'Channel_Partner_Agreement.pdf';
+        pdf.save(filename);
       },
-      x: 40,
-      y: 40,
-      width: 515,
-      windowWidth: 800
+      x: margin,
+      y: margin,
+      width: 515, // A4 width 595 - 80 margin
+      windowWidth: 800,
+      margin: [margin, margin, footerHeight, margin], // Top, Right, Bottom, Left
+      autoPaging: 'text'
     });
   };
 
@@ -100,7 +156,7 @@ export default function PartnerAgreementPage() {
                 <div><span className="font-semibold">Email:</span> {partnerProfile?.email || ''}</div>
               </div>
             </div>
-            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: agreementContent }} />
+            <div className="prose prose-sm max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: agreementContent }} />
             <div className="mt-12">
               <div className="flex flex-col items-start">
                 {signatureUrl && (
@@ -126,7 +182,7 @@ export default function PartnerAgreementPage() {
             <p style={{ margin: '5px 0' }}><strong>Partner Name:</strong> {partnerProfile?.name || ''}</p>
             <p style={{ margin: '5px 0' }}><strong>Email:</strong> {partnerProfile?.email || ''}</p>
           </div>
-          <div dangerouslySetInnerHTML={{ __html: agreementContent }} style={{ lineHeight: '1.6', fontSize: '14px', marginBottom: '50px' }} />
+          <div dangerouslySetInnerHTML={{ __html: agreementContent }} style={{ lineHeight: '1.6', fontSize: '14px', marginBottom: '50px', whiteSpace: 'pre-wrap' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '80px', alignItems: 'flex-end' }}>
             <div>
               {signatureUrl ? (
@@ -137,7 +193,7 @@ export default function PartnerAgreementPage() {
                 <div style={{ height: '60px' }}></div>
               )}
               <div style={{ width: '200px', borderTop: '1px solid #333', marginBottom: '5px' }}></div>
-              <p style={{ fontSize: '12px', fontWeight: 'bold' }}>Authorized Signatory<br/><span style={{fontWeight: 'normal'}}>Dream Properties</span></p>
+              <p style={{ fontSize: '12px', fontWeight: 'bold' }}>Authorized Signatory<br/><span style={{fontWeight: 'normal'}}>{companyName}</span></p>
             </div>
           </div>
         </div>

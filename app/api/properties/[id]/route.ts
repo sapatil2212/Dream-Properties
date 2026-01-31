@@ -80,6 +80,7 @@ export async function PUT(
 
     const updateData: any = {
         title: body.title,
+        projectBuilderName: body.projectBuilderName,
         description: body.description,
         price: normalizedPrice,
         area: body.area,
@@ -87,8 +88,8 @@ export async function PUT(
         address: body.address,
         type: body.type,
         isFeatured: body.isFeatured,
-        bedrooms: body.bedrooms ? parseInt(body.bedrooms) : null,
-        bathrooms: body.bathrooms ? parseInt(body.bathrooms) : null,
+        bedrooms: body.bedrooms || null,
+        bathrooms: body.bathrooms || null,
         possessionDate: body.possessionDate,
         reraId: body.reraId,
         amenities: body.amenities,

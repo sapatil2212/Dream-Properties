@@ -155,37 +155,37 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
         </div>
 
         {/* Pricing and Action Buttons */}
-        {property.price && property.price !== 'NA' && (
-          <div className="mt-auto pt-3 border-t border-slate-50">
+        <div className="mt-auto pt-3 border-t border-slate-50">
+          {property.price && property.price !== 'NA' && (
             <div className="flex justify-between items-center mb-3">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                {property.listing_type === 'Rent' ? 'Monthly Rent' : 'Starting From'}
+                {property.listingType === 'Rent' ? 'Monthly Rent' : 'Starting From'}
               </span>
               <p className="text-blue-600 font-black text-base">{property.price}</p>
             </div>
+          )}
             
-            <div className="grid grid-cols-2 gap-2">
-              <Button 
-                onClick={() => router.push(`/properties/${property.id}`)}
-                variant="outline" 
-                size="sm" 
-                className="w-full py-2 rounded-xl border-slate-200 hover:border-blue-600 hover:bg-blue-50 text-slate-700 font-bold text-[10px] gap-1.5 shadow-none"
-              >
-                <Info size={12} />
-                Details
-              </Button>
-              <Button 
-                variant="primary" 
-                size="sm" 
-                className="w-full py-2 rounded-xl font-bold text-[10px] gap-1.5 shadow-none"
-                onClick={() => setShowInquiry(true)}
-              >
-                <Send size={12} />
-                Inquire
-              </Button>
-            </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button 
+              onClick={() => router.push(`/properties/${property.id}`)}
+              variant="outline" 
+              size="sm" 
+              className="w-full py-2 rounded-xl border-slate-200 hover:border-blue-600 hover:bg-blue-50 text-slate-700 font-bold text-[10px] gap-1.5 shadow-none"
+            >
+              <Info size={12} />
+              Details
+            </Button>
+            <Button 
+              variant="primary" 
+              size="sm" 
+              className="w-full py-2 rounded-xl font-bold text-[10px] gap-1.5 shadow-none"
+              onClick={() => setShowInquiry(true)}
+            >
+              <Send size={12} />
+              Inquire
+            </Button>
           </div>
-        )}
+        </div>
       </div>
       <Modal
         isOpen={showInquiry}

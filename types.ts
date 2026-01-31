@@ -28,8 +28,9 @@ export interface Property {
   status: string;
   isFeatured?: boolean;
   propertyFlag?: string;
-  bedrooms?: number;
-  bathrooms?: number;
+  projectBuilderName?: string;
+  bedrooms?: number | string;
+  bathrooms?: number | string;
   possession_date?: string;
   rera_id?: string;
   amenities: string[] | any;
@@ -49,6 +50,7 @@ export interface Property {
   nearby_locations?: any;
   attachments?: any;
   listing_type?: 'Sell' | 'Rent' | 'Lease';
+  listingType?: 'Sell' | 'Rent' | 'Lease';
   
   // Rental-specific fields
   furnishing?: string;

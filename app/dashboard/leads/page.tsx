@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { User, Plus, Download, Eye, Edit2, Share2, Search, FileText, FileSpreadsheet, File } from 'lucide-react';
+import { User, Plus, Download, Eye, Edit2, Share2, Search, FileText, FileSpreadsheet, File, Trash2 } from 'lucide-react';
 import { Card, Badge, Button, Input, DataTable, Skeleton, Select, Modal } from '@/components/UIComponents';
 import { AlertModal } from '@/components/ui/alert-modal';
 import jsPDF from 'jspdf';
@@ -40,6 +40,30 @@ export default function LeadsPage() {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertTitle, setAlertTitle] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
+  const [deleteLeadId, setDeleteLeadId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteLead = async () => {
+    if (!deleteLeadId) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/leads?id=${deleteLeadId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setLeads(prev => prev.filter(l => l.id !== deleteLeadId));
+        setDeleteLeadId(null);
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to delete lead');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting lead');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const fetchLeads = async () => {
     try {
@@ -338,6 +362,16 @@ export default function LeadsPage() {
         type="error"
       />
 
+      <AlertModal
+        isOpen={!!deleteLeadId}
+        onClose={() => setDeleteLeadId(null)}
+        title="Delete Lead"
+        message="Are you sure you want to delete this lead? This action cannot be undone."
+        type="warning"
+        onConfirm={handleDeleteLead}
+        isLoading={isDeleting}
+      />
+
       <Card>
         <div className="p-4 border-b border-slate-100 flex items-center justify-end gap-3">
           <div className="relative">
@@ -586,6 +620,17 @@ Property: ${l.propertyOfInterest || l.property?.title || ''}`;
                     >
                       <Eye size={16} />
                     </Button>
+                    {(isAdminView || role === 'CHANNEL_PARTNER') && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-slate-400 hover:text-rose-600"
+                        onClick={() => setDeleteLeadId(l.id)}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>

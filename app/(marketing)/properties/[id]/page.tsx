@@ -368,15 +368,6 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                     <p className="text-sm font-black text-slate-900">{property.area}</p>
                   </div>
                 )}
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-1.5 text-slate-400">
-                    <Building2 size={14} />
-                    <span className="text-[9px] font-bold uppercase tracking-wider">Builder</span>
-                  </div>
-                  <p className="text-sm font-black text-slate-900 truncate">
-                    {typeof property.builder === 'string' ? property.builder : property.builder?.name || 'N/A'}
-                  </p>
-                </div>
               </div>
 
               {/* Project Details Section */}

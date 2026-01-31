@@ -31,6 +31,9 @@ export async function GET(request: NextRequest) {
       if (status) {
         sql += ' AND status = ?'
         params.push(status)
+      } else {
+        sql += ' AND status != ?'
+        params.push('Deleted')
       }
 
       const idRows: { id: number; sales_executive_id: number | null }[] =
@@ -148,6 +151,8 @@ export async function GET(request: NextRequest) {
 
     if (status) {
       where.status = status
+    } else {
+      where.status = { not: 'Deleted' }
     }
 
     if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'SAAS_OWNER') {
@@ -472,6 +477,73 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ message: 'Lead updated successfully', lead })
   } catch (error) {
     console.error('Update lead error:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// DELETE: Soft delete a lead
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const leadId = searchParams.get('id')
+
+    if (!leadId) {
+      return NextResponse.json({ message: 'Lead ID is required' }, { status: 400 })
+    }
+
+    const id = parseInt(leadId)
+    if (isNaN(id)) {
+      return NextResponse.json({ message: 'Invalid Lead ID' }, { status: 400 })
+    }
+
+    const role = session.user.role
+    const userId = parseInt(session.user.id)
+
+    // Check permissions
+    const lead = await prisma.lead.findUnique({
+      where: { id },
+      include: { channelPartner: true }
+    })
+
+    if (!lead) {
+      return NextResponse.json({ message: 'Lead not found' }, { status: 404 })
+    }
+
+    let canDelete = false
+    if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'SAAS_OWNER') {
+      canDelete = true
+    } else if (role === 'CHANNEL_PARTNER') {
+      // Check if the lead belongs to this channel partner
+      // The channelPartner relation in Lead points to ChannelPartner model
+      // We need to check if that ChannelPartner's userId matches current user
+      if (lead.channelPartnerId) {
+         const cp = await prisma.channelPartner.findUnique({
+             where: { id: lead.channelPartnerId }
+         });
+         if (cp && cp.userId === userId) {
+             canDelete = true;
+         }
+      }
+    }
+
+    if (!canDelete) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
+    }
+
+    // Soft delete
+    await prisma.lead.update({
+      where: { id },
+      data: { status: 'Deleted' }
+    })
+
+    return NextResponse.json({ message: 'Lead deleted successfully' })
+  } catch (error) {
+    console.error('Delete lead error:', error)
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
   }
 }

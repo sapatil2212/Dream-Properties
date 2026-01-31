@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
       data: {
         builderId,
         title: body.title,
+        projectBuilderName: body.projectBuilderName,
         description: body.description,
         price: normalizedPrice,
         area: body.area,
@@ -140,8 +141,8 @@ export async function POST(request: NextRequest) {
         type: body.type,
         status: 'Pending_Approval',
         isFeatured: body.isFeatured || false,
-        bedrooms: body.bedrooms ? parseInt(body.bedrooms) : null,
-        bathrooms: body.bathrooms ? parseInt(body.bathrooms) : null,
+        bedrooms: body.bedrooms || null,
+        bathrooms: body.bathrooms || null,
         possessionDate: body.possessionDate,
         reraId: body.reraId,
         amenities: body.amenities || [],

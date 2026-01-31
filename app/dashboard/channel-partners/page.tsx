@@ -42,6 +42,13 @@ export default function ChannelPartnersPage() {
 
   // Legal Settings State
   const [agreementTerms, setAgreementTerms] = useState('');
+  const [agreementType, setAgreementType] = useState<'text' | 'file'>('text');
+  const [agreementFileUrl, setAgreementFileUrl] = useState('');
+
+  // Company Details
+  const [companyName, setCompanyName] = useState('');
+  const [companyAddress, setCompanyAddress] = useState('');
+  const [companyJurisdiction, setCompanyJurisdiction] = useState('');
   const [signatureUrl, setSignatureUrl] = useState('');
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -203,65 +210,55 @@ export default function ChannelPartnersPage() {
         try {
           // Fetch terms
           const termsRes = await fetch('/api/settings?key=channel_partner_agreement_terms');
+          const typeRes = await fetch('/api/settings?key=channel_partner_agreement_type');
+          const fileRes = await fetch('/api/settings?key=channel_partner_agreement_file_url');
+          
+          // Fetch Company Details
+          const nameRes = await fetch('/api/settings?key=company_name');
+          const addressRes = await fetch('/api/settings?key=company_address');
+          const jurisdictionRes = await fetch('/api/settings?key=company_jurisdiction');
+
           if (termsRes.ok) {
             const data = await termsRes.json();
             if (data.value) {
                 setAgreementTerms(data.value);
             } else {
                 // Set default terms if empty
-                setAgreementTerms(`This Agreement is entered on <strong>{{EFFECTIVE_DATE}}</strong> between <strong>Dream Properties</strong>, owner of a real estate SaaS platform, and <strong>{{PARTNER_NAME}}</strong> (“Partner”).
+                setAgreementTerms(`This Real Estate Channel Manager Agreement ("Agreement") is entered into on <strong>[Effective Date]</strong>, BY AND BETWEEN <strong>[Company Name]</strong>, a company incorporated under the laws of <strong>[Country/State]</strong>, having its registered office at <strong>[Address]</strong> (hereinafter referred to as the "Company", which expression shall, unless it be repugnant to the context or meaning thereof, be deemed to mean and include its successors and assigns) of the ONE PART;
 
-1. PURPOSE
+AND
 
-The Company provides a cloud-based real estate Channel Management SaaS ("Platform") to manage listings, channel partners, inventory, and leads. The Partner is authorized to use the Platform strictly under this Agreement.
+<strong>[Channel Partner / Channel Manager Name]</strong> (hereinafter referred to as the "Channel Partner", which expression shall, unless it be repugnant to the context or meaning thereof, be deemed to mean and include its successors and permitted assigns) of the OTHER PART.
 
-2. ACCESS & LICENSE
+1. APPOINTMENT
 
-The Company grants the Partner a limited, non-exclusive, revocable, non-transferable license to access and use the Platform for lawful business purposes only. No ownership rights are transferred.
-
-3. PARTNER RESPONSIBILITIES
-
-The Partner shall:
-
-Ensure accuracy and legality of all listings and data
-
-Comply with applicable real estate, RERA (if applicable), and data protection laws
-
-Not misrepresent properties, pricing, or availability
-
-Maintain confidentiality and system security
-
-4. PLATFORM USE RESTRICTIONS
-
-The Partner shall not:
-
-Copy, resell, reverse engineer, or misuse the Platform
-
-Share login credentials or grant unauthorized access
-
-Use the Platform for unlawful or fraudulent purposes
-
-5. COMMERCIAL TERMS
-
-Subscription fees, commissions, or revenue sharing (if any) shall be as agreed separately. The Company is not responsible for transaction disputes between third parties.
-
-6. DATA & CONFIDENTIALITY
-
-All platform data, customer data, and business information are confidential. Data may be processed only for Platform-related purposes in accordance with applicable laws.
-
-7. INTELLECTUAL PROPERTY
-
-All intellectual property rights in the Platform, software, branding, and documentation remain the exclusive property of the Company.
-
-8. LIMITATION OF LIABILITY
-
-The Platform is provided on an "as-is" basis. The Company shall not be liable for indirect or consequential damages. Total liability shall not exceed fees paid in the preceding 6 months.
-
-9. TERM & TERMINATION
-
-Either Party may terminate this Agreement with 30 days' written notice or immediately for breach or misuse. Access to the Platform shall cease upon termination.`);
+The Company hereby appoints the Channel Partner as its non-exclusive authorized partner for the promotion and sale/lease of real estate properties listed on the Company's platform.`);
             }
           }
+
+          if (typeRes.ok) {
+            const data = await typeRes.json();
+            if (data.value) setAgreementType(data.value as 'text' | 'file');
+          }
+
+          if (fileRes.ok) {
+            const data = await fileRes.json();
+            if (data.value) setAgreementFileUrl(data.value);
+          }
+
+          if (nameRes.ok) {
+            const data = await nameRes.json();
+            if (data.value) setCompanyName(data.value);
+          }
+          if (addressRes.ok) {
+            const data = await addressRes.json();
+            if (data.value) setCompanyAddress(data.value);
+          }
+          if (jurisdictionRes.ok) {
+            const data = await jurisdictionRes.json();
+            if (data.value) setCompanyJurisdiction(data.value);
+          }
+          
           // Fetch signature
           const sigRes = await fetch('/api/settings?key=authorized_signatory_signature');
           if (sigRes.ok) {
@@ -279,18 +276,41 @@ Either Party may terminate this Agreement with 30 days' written notice or immedi
   const handleSaveSettings = async () => {
     setIsSavingSettings(true);
     try {
-      // Save Terms
       await fetch('/api/settings', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'channel_partner_agreement_terms', value: agreementTerms })
       });
-      // Save Signature
+      
       await fetch('/api/settings', {
         method: 'POST',
-        body: JSON.stringify({ key: 'authorized_signatory_signature', value: signatureUrl })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'channel_partner_agreement_type', value: agreementType })
       });
+
+      if (agreementFileUrl) {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'channel_partner_agreement_file_url', value: agreementFileUrl })
+        });
+      }
+
+      // Save Company Details
+      await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'company_name', value: companyName }) });
+      await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'company_address', value: companyAddress }) });
+      await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'company_jurisdiction', value: companyJurisdiction }) });
+
+      if (signatureUrl) {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'authorized_signatory_signature', value: signatureUrl })
+        });
+      }
       setShowSuccessModal(true);
-    } catch (e) {
+    } catch (error) {
+      console.error('Error saving settings:', error);
       alert('Failed to save settings');
     } finally {
       setIsSavingSettings(false);
@@ -300,21 +320,44 @@ Either Party may terminate this Agreement with 30 days' written notice or immedi
   const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const formData = new FormData();
     formData.append('file', file);
+
     try {
       const res = await fetch('/api/upload-image', {
         method: 'POST',
         body: formData
       });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json();
+      if (data.url) {
         setSignatureUrl(data.url);
-      } else {
-        alert('Failed to upload signature');
       }
-    } catch (e) {
-      alert('Error uploading signature');
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Failed to upload signature');
+    }
+  };
+
+  const handleAgreementFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.url) {
+        setAgreementFileUrl(data.url);
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Failed to upload agreement file');
     }
   };
 
@@ -476,16 +519,105 @@ Either Party may terminate this Agreement with 30 days' written notice or immedi
                 </div>
                 <div className="space-y-6">
                     <div>
-                        <label className="text-xs font-bold text-slate-700 mb-2 block">Channel Partner Agreement Terms (HTML Supported)</label>
-                        <p className="text-xs text-slate-500 mb-2">
-                            Use HTML tags for formatting. Example: &lt;b&gt;Bold&lt;/b&gt;, &lt;br/&gt; for line break, &lt;ul&gt;&lt;li&gt;List item&lt;/li&gt;&lt;/ul&gt;
-                        </p>
-                        <textarea
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono resize-y min-h-[400px]"
-                            value={agreementTerms}
-                            onChange={(e) => setAgreementTerms(e.target.value)}
-                            placeholder="<p>Enter legal terms here...</p>"
-                        />
+                        <div className="flex items-center justify-between mb-4">
+                            <label className="text-xs font-bold text-slate-700 block">Agreement Format</label>
+                            <div className="flex bg-slate-100 p-1 rounded-lg">
+                                <button
+                                    onClick={() => setAgreementType('text')}
+                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                                        agreementType === 'text' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+                                    }`}
+                                >
+                                    Text Editor
+                                </button>
+                                <button
+                                    onClick={() => setAgreementType('file')}
+                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                                        agreementType === 'file' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+                                    }`}
+                                >
+                                    Upload PDF/Image
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Company Details Section */}
+                        <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6">
+                            <h3 className="text-sm font-bold text-slate-800 mb-4">Company Details (For Agreement)</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-700 mb-1 block">Company Name</label>
+                                    <Input 
+                                        value={companyName}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCompanyName(e.target.value)}
+                                        placeholder="e.g. Dream Properties"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-700 mb-1 block">Registered Address</label>
+                                    <Input 
+                                        value={companyAddress}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCompanyAddress(e.target.value)}
+                                        placeholder="Full office address"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-700 mb-1 block">Jurisdiction (Country/State)</label>
+                                    <Input 
+                                        value={companyJurisdiction}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCompanyJurisdiction(e.target.value)}
+                                        placeholder="e.g. Maharashtra, India"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {agreementType === 'text' ? (
+                            <>
+                                <label className="text-xs font-bold text-slate-700 mb-2 block">Channel Partner Agreement Terms</label>
+                                <p className="text-xs text-slate-500 mb-2">
+                                    Type your agreement here. Line breaks will be preserved in the generated agreement.
+                                </p>
+                                <textarea
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono resize-y min-h-[400px]"
+                                    value={agreementTerms}
+                                    onChange={(e) => setAgreementTerms(e.target.value)}
+                                    placeholder="Enter legal terms here..."
+                                />
+                            </>
+                        ) : (
+                            <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition-colors">
+                                {agreementFileUrl ? (
+                                    <div className="mb-4">
+                                        <div className="flex items-center justify-center gap-2 text-green-600 mb-2">
+                                            <CheckCircle size={20} />
+                                            <span className="font-bold text-sm">File Uploaded</span>
+                                        </div>
+                                        <a 
+                                            href={agreementFileUrl} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-blue-600 text-xs hover:underline block"
+                                        >
+                                            View Current Agreement File
+                                        </a>
+                                    </div>
+                                ) : null}
+                                <div className="relative inline-block">
+                                    <input 
+                                        type="file" 
+                                        accept=".pdf,image/*"
+                                        onChange={handleAgreementFileUpload}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    />
+                                    <Button variant="outline" className="gap-2">
+                                        <Upload size={16} />
+                                        {agreementFileUrl ? 'Replace File' : 'Upload PDF or Image'}
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-slate-400 mt-2">Supported formats: PDF, JPG, PNG</p>
+                            </div>
+                        )}
                     </div>
                     <div>
                         <label className="text-xs font-bold text-slate-700 mb-2 block">Authorized Signatory Signature</label>

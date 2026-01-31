@@ -171,7 +171,7 @@ export function BuilderDashboard() {
                     </Link>
                     {!p.propertyFlag && (
                       <>
-                        <Link href={`/dashboard/edit-property/${p.id}`}>
+                        <Link href={`/dashboard/post-property?id=${p.id}`}>
                           <button className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Edit Property">
                             <Edit2 size={16} />
                           </button>

@@ -844,15 +844,16 @@ export default function InventoryManagementPage() {
                           <Eye size={14} />
                         </Button>
                         {isAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 w-8"
-                            onClick={() => handleEditProperty(p.id)}
-                            title="Edit Property"
-                          >
-                            <Edit2 size={14} />
-                          </Button>
+                          <Link href={`/dashboard/post-property?id=${p.id}`}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 w-8"
+                              title="Edit Property"
+                            >
+                              <Edit2 size={14} />
+                            </Button>
+                          </Link>
                         )}
                         <div className="relative inline-block">
                           <Button
@@ -936,10 +937,12 @@ export default function InventoryManagementPage() {
               : 'View complete property information'}
           </p>
           {!isEditing && isAdmin && (
-            <Button variant="outline" size="sm" onClick={handleEditToggle}>
-              <Edit2 size={16} className="mr-2" />
-              Edit
-            </Button>
+            <Link href={`/dashboard/post-property?id=${selectedProperty?.id}`}>
+              <Button variant="outline" size="sm">
+                <Edit2 size={16} className="mr-2" />
+                Edit
+              </Button>
+            </Link>
           )}
         </div>
 

@@ -1,14 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ArrowRight, X, Plus, FileText, Image as ImageIcon, Upload, Check, Sparkles } from 'lucide-react';
 import { Button, Input, Card, Alert, Select } from '@/components/UIComponents';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AIPropertyAutoFill } from '@/components/dashboard/AIPropertyAutoFill';
+import { SuccessModal } from '@/components/ui/success-modal';
 
 export default function PostPropertyPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PostPropertyContent />
+    </Suspense>
+  );
+}
+
+function PostPropertyContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams?.get('id');
+  const isEditing = !!editId;
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -19,6 +32,8 @@ export default function PostPropertyPage() {
   // Alert states
   const [showAlert, setShowAlert] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showAiSuccessModal, setShowAiSuccessModal] = useState(false);
   const [alertConfig, setAlertConfig] = useState({
     type: 'success' as 'success' | 'error' | 'warning' | 'info',
     title: '',
@@ -32,6 +47,7 @@ export default function PostPropertyPage() {
     listingType: '',
     isFeatured: false,
     title: '',
+    projectBuilderName: '',
     price: '',
     area: '',
     areaUnit: 'sq.ft.',
@@ -97,6 +113,90 @@ export default function PostPropertyPage() {
 
   // Field errors for inline validation
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
+
+  useEffect(() => {
+    if (editId) {
+      const fetchPropertyData = async () => {
+        try {
+          const response = await fetch(`/api/properties/${editId}`);
+          if (response.ok) {
+            const data = await response.json();
+            
+            // Helper to parse JSON fields safely
+            const safeParse = (val: any) => {
+                if (typeof val === 'string') {
+                    try {
+                        return JSON.parse(val);
+                    } catch (e) {
+                        return [];
+                    }
+                }
+                return val || [];
+            };
+
+            setFormData(prev => ({
+              ...prev,
+              type: data.type || '',
+              propertySubtype: data.propertySubtype || '',
+              listingType: data.listingType || '',
+              isFeatured: data.isFeatured || false,
+              title: data.title || '',
+              projectBuilderName: data.projectBuilderName || '',
+              price: data.price ? String(data.price) : '',
+              area: data.area ? String(data.area) : '',
+              areaUnit: data.areaUnit || 'sq.ft.',
+              location: data.location || '',
+              address: data.address || '',
+              description: data.description || '',
+              bedrooms: data.bedrooms ? String(data.bedrooms) : '',
+              bathrooms: data.bathrooms ? String(data.bathrooms) : '',
+              possessionDate: data.possessionDate ? new Date(data.possessionDate).toISOString().split('T')[0] : '',
+              reraId: data.reraId || '',
+              furnishing: data.furnishing || '',
+              listedBy: data.listedBy || '',
+              bachelorsAllowed: data.bachelorsAllowed || '',
+              carpetArea: data.carpetArea ? String(data.carpetArea) : '',
+              maintenance: data.maintenance ? String(data.maintenance) : '',
+              totalFloors: data.totalFloors ? String(data.totalFloors) : '',
+              carParking: data.carParking || '',
+              projectUnits: data.projectUnits ? String(data.projectUnits) : '',
+              projectArea: data.projectArea ? String(data.projectArea) : '',
+              configurations: data.configurations || '',
+              avgPrice: data.avgPrice ? String(data.avgPrice) : '',
+              launchDate: data.launchDate ? new Date(data.launchDate).toISOString().split('T')[0] : '',
+              sizes: data.sizes || '',
+              projectSize: data.projectSize || '',
+              amenities: safeParse(data.amenities),
+              highlights: safeParse(data.highlights),
+              specifications: safeParse(data.specifications),
+              images: safeParse(data.images),
+              mapLink: data.mapLink || '',
+              videoUrl: data.videoUrl || '',
+              nearbyLocations: safeParse(data.nearbyLocations),
+              attachments: safeParse(data.attachments),
+              floorPlans: safeParse(data.floorPlans),
+            }));
+          } else {
+             setAlertConfig({
+                type: 'error',
+                title: 'Error',
+                message: 'Failed to fetch property details.'
+             });
+             setShowAlert(true);
+          }
+        } catch (error) {
+          console.error('Error fetching property details:', error);
+          setAlertConfig({
+             type: 'error',
+             title: 'Error',
+             message: 'Failed to fetch property details.'
+          });
+          setShowAlert(true);
+        }
+      };
+      fetchPropertyData();
+    }
+  }, [editId]);
 
   // Property Type Options
   const propertyTypes = ['Residential', 'Commercial', 'Plots'];
@@ -176,7 +276,7 @@ export default function PostPropertyPage() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(formData.type && formData.propertySubtype && formData.listingType && formData.title && formData.area);
+        return !!(formData.type && formData.propertySubtype && formData.listingType && formData.title && formData.projectBuilderName && formData.area);
       case 2:
         return !!(formData.location && formData.address && formData.description);
       case 3:
@@ -201,6 +301,7 @@ export default function PostPropertyPage() {
       if (!formData.propertySubtype) errors.propertySubtype = 'Please select a property sub-type';
       if (!formData.listingType) errors.listingType = 'Please select listing type (Sell/Rent/Lease)';
       if (!formData.title) errors.title = 'Property name/title is required';
+      if (!formData.projectBuilderName) errors.projectBuilderName = 'Project / Builder name is required';
       if (!formData.area) errors.area = 'Area is required';
     } else if (currentStep === 2) {
       if (!formData.location) errors.location = 'Location is required';
@@ -367,12 +468,7 @@ export default function PostPropertyPage() {
           specifications: [...prev.specifications, ...data.data.specifications]
         }));
         
-        setAlertConfig({
-          type: 'success',
-          title: 'AI Generation Successful',
-          message: 'Amenities, highlights, and specifications have been extracted and added.'
-        });
-        setShowAlert(true);
+        setShowAiSuccessModal(true);
         setAiInput(''); // Clear input after success
       } else {
         throw new Error(data.error || 'Failed to generate amenities');
@@ -392,21 +488,16 @@ export default function PostPropertyPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/properties', {
-        method: 'POST',
+      const url = isEditing ? `/api/properties/${editId}` : '/api/properties';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
       if (response.ok) {
-        setAlertConfig({
-          type: 'success',
-          title: 'Property Submitted!',
-          message: 'Your property has been submitted for approval. Our admin team will review it shortly.'
-        });
-        setShowAlert(true);
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 2000);
+        setShowSuccessModal(true);
       } else {
         const data = await response.json();
         setAlertConfig({
@@ -454,7 +545,7 @@ export default function PostPropertyPage() {
                 <ArrowLeft size={18} />
               </button>
               <div>
-                <h1 className="text-xl font-black text-slate-900">Post New Property</h1>
+                <h1 className="text-xl font-black text-slate-900">{isEditing ? 'Edit Property' : 'Post New Property'}</h1>
                 <p className="text-xs text-slate-500 font-medium">Step {currentStep} of 8</p>
               </div>
             </div>
@@ -591,8 +682,30 @@ export default function PostPropertyPage() {
                           <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.listingType}</p>
                         )}
                         
-                        {/* Featured Checkbox */}
-                        <div className="mt-4 flex items-center gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100">
+
+                      </div>
+                    </div>
+
+                    {/* Property Sub-Type and Featured Checkbox */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {formData.type && (
+                        <div>
+                          <Select
+                            label="Property Sub-Type *"
+                            placeholder="Select sub-type"
+                            value={formData.propertySubtype}
+                            options={subtypeOptions[formData.type as keyof typeof subtypeOptions]?.map(subtype => ({ label: subtype, value: subtype })) || []}
+                            onChange={(value) => {
+                              setFormData({ ...formData, propertySubtype: value });
+                              setFieldErrors(prev => ({ ...prev, propertySubtype: '' }));
+                            }}
+                            error={fieldErrors.propertySubtype}
+                          />
+                        </div>
+                      )}
+                      
+                      <div className={formData.type ? "pt-5" : ""}>
+                        <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100">
                           <input
                             type="checkbox"
                             id="isFeatured"
@@ -607,37 +720,37 @@ export default function PostPropertyPage() {
                       </div>
                     </div>
 
-                    {/* Property Sub-Type - Full Width Below */}
-                    {formData.type && (
-                      <div>
-                        <Select
-                          label="Property Sub-Type *"
-                          placeholder="Select sub-type"
-                          value={formData.propertySubtype}
-                          options={subtypeOptions[formData.type as keyof typeof subtypeOptions]?.map(subtype => ({ label: subtype, value: subtype })) || []}
-                          onChange={(value) => {
-                            setFormData({ ...formData, propertySubtype: value });
-                            setFieldErrors(prev => ({ ...prev, propertySubtype: '' }));
-                          }}
-                          error={fieldErrors.propertySubtype}
-                        />
-                      </div>
-                    )}
-
                     {/* Property Name/Title */}
-                    <div>
-                      <Input
-                        label="Project/Property Name/Title *"
-                        placeholder="e.g., Dream Heights Residency"
-                        value={formData.title}
-                        onChange={e => {
-                          setFormData({ ...formData, title: e.target.value });
-                          setFieldErrors(prev => ({ ...prev, title: '' }));
-                        }}
-                      />
-                      {fieldErrors.title && (
-                        <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.title}</p>
-                      )}
+                    <div className="space-y-4">
+                      <div>
+                        <Input
+                          label="Project/Property Name/Title *"
+                          placeholder="e.g., Dream Heights Residency"
+                          value={formData.title}
+                          onChange={e => {
+                            setFormData({ ...formData, title: e.target.value });
+                            setFieldErrors(prev => ({ ...prev, title: '' }));
+                          }}
+                        />
+                        {fieldErrors.title && (
+                          <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.title}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <Input
+                          label="Project / Builder Name *"
+                          placeholder="e.g., Reliable Builders"
+                          value={formData.projectBuilderName}
+                          onChange={e => {
+                            setFormData({ ...formData, projectBuilderName: e.target.value });
+                            setFieldErrors(prev => ({ ...prev, projectBuilderName: '' }));
+                          }}
+                        />
+                        {fieldErrors.projectBuilderName && (
+                          <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.projectBuilderName}</p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Price/Rent and Area - Side by Side */}
@@ -758,7 +871,6 @@ export default function PostPropertyPage() {
                         <div>
                           <Input
                             label="Bedrooms *"
-                            type="number"
                             placeholder="e.g., 3"
                             value={formData.bedrooms}
                             onChange={e => {
@@ -773,7 +885,6 @@ export default function PostPropertyPage() {
                         <div>
                           <Input
                             label="Bathrooms *"
-                            type="number"
                             placeholder="e.g., 2"
                             value={formData.bathrooms}
                             onChange={e => {
@@ -1423,7 +1534,7 @@ export default function PostPropertyPage() {
                   </Button>
                 ) : (
                   <Button onClick={handleSubmit} isLoading={isSubmitting} className="gap-2">
-                    Submit Property
+                    {isEditing ? 'Update Property' : 'Submit Property'}
                   </Button>
                 )}
               </div>
@@ -1441,6 +1552,23 @@ export default function PostPropertyPage() {
         message={alertConfig.message}
         autoClose={alertConfig.type === 'success'}
         duration={3000}
+      />
+
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          router.push('/dashboard');
+        }}
+        title={isEditing ? "Property Updated!" : "Property Submitted!"}
+        message={isEditing ? "Your property details have been successfully updated." : "Your property has been submitted for approval. Our admin team will review it shortly."}
+      />
+
+      <SuccessModal
+        isOpen={showAiSuccessModal}
+        onClose={() => setShowAiSuccessModal(false)}
+        title="AI Generation Successful"
+        message="Amenities, highlights, and specifications have been extracted and added."
       />
     </div>
   );

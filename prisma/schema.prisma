@@ -124,10 +124,11 @@ model Property {
   location          String?         @db.VarChar(255)
   address           String?         @db.Text
   type              String?         @db.VarChar(50)
+  projectBuilderName String?        @map("project_builder_name") @db.VarChar(255)
   status            PropertyStatus  @default(Pending_Approval)
   isFeatured        Boolean         @default(false) @map("is_featured")
-  bedrooms          Int?
-  bathrooms         Int?
+  bedrooms          String?         @db.VarChar(50)
+  bathrooms         String?         @db.VarChar(50)
   possessionDate    String?         @map("possession_date") @db.VarChar(50)
   reraId            String?         @map("rera_id") @db.VarChar(100)
   amenities         Json?
