@@ -7,6 +7,7 @@ import { Button, Input, Card, Alert, Select } from '@/components/UIComponents';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AIPropertyAutoFill } from '@/components/dashboard/AIPropertyAutoFill';
 import { SuccessModal } from '@/components/ui/success-modal';
+import { useSession } from 'next-auth/react';
 
 export default function PostPropertyPage() {
   return (
@@ -21,6 +22,8 @@ function PostPropertyContent() {
   const searchParams = useSearchParams();
   const editId = searchParams?.get('id');
   const isEditing = !!editId;
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN';
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,7 +53,9 @@ function PostPropertyContent() {
     projectBuilderName: '',
     price: '',
     area: '',
-    areaUnit: 'sq.ft.',
+    areaUnit: 'Sq.Ft',
+    negotiable: '',
+    carpetArea: '',
     
     // Step 2: Location & Description
     location: '',
@@ -67,7 +72,6 @@ function PostPropertyContent() {
     furnishing: '',
     listedBy: '',
     bachelorsAllowed: '',
-    carpetArea: '',
     maintenance: '',
     totalFloors: '',
     carParking: '',
@@ -144,7 +148,7 @@ function PostPropertyContent() {
               projectBuilderName: data.projectBuilderName || '',
               price: data.price ? String(data.price) : '',
               area: data.area ? String(data.area) : '',
-              areaUnit: data.areaUnit || 'sq.ft.',
+              areaUnit: data.areaUnit || 'Sq.Ft',
               location: data.location || '',
               address: data.address || '',
               description: data.description || '',
@@ -276,9 +280,9 @@ function PostPropertyContent() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(formData.type && formData.propertySubtype && formData.listingType && formData.title && formData.projectBuilderName && formData.area);
+        return !!(formData.type && formData.propertySubtype && formData.listingType && formData.title && formData.area);
       case 2:
-        return !!(formData.location && formData.address && formData.description);
+        return !!(formData.location && formData.description);
       case 3:
         if (formData.type === 'Residential') {
           return !!(formData.bedrooms && formData.bathrooms);
@@ -301,11 +305,9 @@ function PostPropertyContent() {
       if (!formData.propertySubtype) errors.propertySubtype = 'Please select a property sub-type';
       if (!formData.listingType) errors.listingType = 'Please select listing type (Sell/Rent/Lease)';
       if (!formData.title) errors.title = 'Property name/title is required';
-      if (!formData.projectBuilderName) errors.projectBuilderName = 'Project / Builder name is required';
       if (!formData.area) errors.area = 'Area is required';
     } else if (currentStep === 2) {
       if (!formData.location) errors.location = 'Location is required';
-      if (!formData.address) errors.address = 'Complete address is required';
       if (!formData.description) errors.description = 'Property description is required';
     } else if (currentStep === 3) {
       if (formData.type === 'Residential') {
@@ -634,7 +636,8 @@ function PostPropertyContent() {
                               key={type}
                               type="button"
                               onClick={() => {
-                                setFormData({ ...formData, type, propertySubtype: '' });
+                                const defaultUnit = type === 'Plots' ? 'Sq. Yards' : 'Sq.Ft';
+                                setFormData({ ...formData, type, propertySubtype: '', areaUnit: defaultUnit });
                                 setFieldErrors(prev => ({ ...prev, type: '' }));
                               }}
                               className={`p-4 rounded-xl border-2 text-sm font-bold transition-all ${
@@ -739,7 +742,7 @@ function PostPropertyContent() {
 
                       <div>
                         <Input
-                          label="Project / Builder Name *"
+                          label="Project / Builder Name"
                           placeholder="e.g., Reliable Builders"
                           value={formData.projectBuilderName}
                           onChange={e => {
@@ -747,9 +750,6 @@ function PostPropertyContent() {
                             setFieldErrors(prev => ({ ...prev, projectBuilderName: '' }));
                           }}
                         />
-                        {fieldErrors.projectBuilderName && (
-                          <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.projectBuilderName}</p>
-                        )}
                       </div>
                     </div>
 
@@ -758,7 +758,7 @@ function PostPropertyContent() {
                       <div>
                         <Input
                           label={formData.listingType === 'Rent' ? 'Rent (Monthly)' : 'Price'}
-                          placeholder={formData.listingType === 'Rent' ? 'e.g., ₹25,000/month' : 'e.g., ₹45 Lacs onwards'}
+                          placeholder={formData.listingType === 'Rent' ? 'e.g., ₹25,000/month' : 'e.g. Rs.45Lacs'}
                           value={formData.price}
                           onChange={e => {
                             setFormData({ ...formData, price: e.target.value });
@@ -769,7 +769,7 @@ function PostPropertyContent() {
                       <div className="flex gap-2">
                         <div className="flex-1">
                           <Input
-                            label="Area *"
+                            label={(formData.type === 'Residential' || formData.type === 'Commercial') ? 'Built-up Area *' : 'Plot Area *'}
                             placeholder="e.g., 1200"
                             value={formData.area}
                             onChange={e => {
@@ -781,16 +781,50 @@ function PostPropertyContent() {
                             <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.area}</p>
                           )}
                         </div>
-                        <div className="w-28">
+                        <div className="w-32">
                           <Select
                             label="Unit"
                             value={formData.areaUnit}
-                            options={['sq.ft.', 'sq.yd.', 'Acres', 'Hectares'].map(u => ({ label: u, value: u }))}
+                            options={
+                              formData.type === 'Plots'
+                                ? ['Sq. Yards', 'Sq. Mtrs', 'Sq.Ft', 'Acres', 'Hectares'].map(u => ({ label: u, value: u }))
+                                : ['Sq.Ft'].map(u => ({ label: u, value: u }))
+                            }
                             onChange={(value) => setFormData({ ...formData, areaUnit: value })}
                           />
                         </div>
                       </div>
                     </div>
+
+                    {(formData.type === 'Residential' || formData.type === 'Commercial') && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Input
+                            label="Carpet Area (optional)"
+                            placeholder="e.g., 900"
+                            value={formData.carpetArea}
+                            onChange={e => setFormData({ ...formData, carpetArea: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Select
+                            label="Price Negotiation"
+                            placeholder="Select"
+                            value={formData.negotiable}
+                            options={['Negotiable', 'Non-Negotiable'].map(o => ({ label: o, value: o }))}
+                            onChange={(value) => {
+                              setFormData(prev => {
+                                const updated = { ...prev, negotiable: value };
+                                const other = value === 'Negotiable' ? 'Non-Negotiable' : 'Negotiable';
+                                const withoutOther = prev.highlights.filter(h => h !== other);
+                                const withThis = withoutOther.includes(value) ? withoutOther : [...withoutOther, value];
+                                return { ...updated, highlights: withThis };
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -821,7 +855,7 @@ function PostPropertyContent() {
 
                     <div>
                       <Input
-                        label="Complete Address *"
+                        label="Complete Address"
                         placeholder="e.g., Plot No. 45, Hill Road, Nashik Road, Nashik - 422101"
                         value={formData.address}
                         onChange={e => {
@@ -829,9 +863,6 @@ function PostPropertyContent() {
                           setFieldErrors(prev => ({ ...prev, address: '' }));
                         }}
                       />
-                      {fieldErrors.address && (
-                        <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.address}</p>
-                      )}
                     </div>
 
                     <div>
@@ -952,14 +983,6 @@ function PostPropertyContent() {
                                 onChange={(value) => setFormData({ ...formData, bachelorsAllowed: value })}
                               />
                             </div>
-                            
-                            <Input
-                              label="Carpet Area"
-                              placeholder="e.g., 1200 sq.ft."
-                              value={formData.carpetArea}
-                              onChange={e => setFormData({ ...formData, carpetArea: e.target.value })}
-                            />
-                            
                             <Input
                               label="Maintenance (Monthly)"
                               placeholder="e.g., ₹2,000"
@@ -1219,7 +1242,7 @@ function PostPropertyContent() {
                         </div>
                         <div className="text-center">
                           <p className="text-sm font-bold text-slate-700">Click to upload images</p>
-                          <p className="text-xs text-slate-500 mt-1">PNG, JPG up to 10MB each</p>
+                          <p className="text-xs text-slate-500 mt-1">PNG, JPG up to 10MB each • Recommended ratio 4:5</p>
                         </div>
                       </div>
                       <input
@@ -1238,7 +1261,7 @@ function PostPropertyContent() {
 
                     <div className="grid grid-cols-3 gap-4 mt-6">
                       {formData.images.map((img, idx) => (
-                        <div key={idx} className="relative group aspect-video rounded-xl overflow-hidden border-2 border-slate-200">
+                        <div key={idx} className="relative group aspect-[4/5] rounded-xl overflow-hidden border-2 border-slate-200">
                           <img src={img} className="w-full h-full object-cover" alt={`Property ${idx + 1}`} />
                           <button
                             onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
@@ -1283,27 +1306,28 @@ function PostPropertyContent() {
                     </p>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 mb-2 block">Property Video Link (YouTube/Vimeo)</label>
-                    <Input
-                      placeholder="e.g., https://www.youtube.com/watch?v=..."
-                      value={formData.videoUrl}
-                      onChange={e => {
-                        let value = e.target.value.trim();
-                         // Extract URL from iframe if pasted
-                         if (value.includes('<iframe')) {
-                          const match = value.match(/src=["'](.*?)["']/);
-                          if (match && match[1]) {
-                            value = match[1];
+                  {isAdmin && (
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 mb-2 block">Property Video Link (YouTube/Vimeo)</label>
+                      <Input
+                        placeholder="e.g., https://www.youtube.com/watch?v=..."
+                        value={formData.videoUrl}
+                        onChange={e => {
+                          let value = e.target.value.trim();
+                           if (value.includes('<iframe')) {
+                            const match = value.match(/src=[\"'](.*?)[\"']/);
+                            if (match && match[1]) {
+                              value = match[1];
+                            }
                           }
-                        }
-                        setFormData({ ...formData, videoUrl: value });
-                      }}
-                    />
-                    <p className="text-xs text-slate-500 mt-2">
-                      <span className="font-bold">Note:</span> Supports YouTube, Vimeo, or direct video URLs.
-                    </p>
-                  </div>
+                          setFormData({ ...formData, videoUrl: value });
+                        }}
+                      />
+                      <p className="text-xs text-slate-500 mt-2">
+                        <span className="font-bold">Note:</span> Supports YouTube, Vimeo, or direct video URLs.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="pt-6 border-t border-slate-200">
                     <label className="text-sm font-bold text-slate-700 mb-3 block">Nearby Locations</label>
@@ -1561,7 +1585,11 @@ function PostPropertyContent() {
           router.push('/dashboard');
         }}
         title={isEditing ? "Property Updated!" : "Property Submitted!"}
-        message={isEditing ? "Your property details have been successfully updated." : "Your property has been submitted for approval. Our admin team will review it shortly."}
+        message={
+          isEditing
+            ? "Your property details have been successfully updated."
+            : "Your property has been submitted for approval. Our admin team will review it shortly. Our Executive will contact you soon."
+        }
       />
 
       <SuccessModal

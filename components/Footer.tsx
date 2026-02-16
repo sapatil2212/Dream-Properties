@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { Instagram, Facebook, Linkedin, Youtube, Mail, Phone, MapPin } from 'lucide-react';
 import Link from 'next/link';
 
@@ -8,7 +10,34 @@ const XIcon = ({ size }: { size: number }) => (
   </svg>
 );
 
-export const Footer: React.FC = () => (
+export const Footer: React.FC = () => {
+  const [visitors, setVisitors] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const res = await fetch('/api/visitors', { cache: 'no-store' });
+        const data = await res.json();
+        setVisitors(data.total ?? 0);
+      } catch {}
+    };
+    fetchCount();
+
+    const markVisit = async () => {
+      try {
+        const flag = localStorage.getItem('dp_visitor_counted');
+        if (!flag) {
+          const res = await fetch('/api/visitors', { method: 'POST' });
+          const data = await res.json();
+          setVisitors(data.total ?? null);
+          localStorage.setItem('dp_visitor_counted', '1');
+        }
+      } catch {}
+    };
+    markVisit();
+  }, []);
+
+  return (
   <footer className="bg-slate-900 text-white pt-16 pb-8 px-6 md:px-8 border-t border-slate-800">
     <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
       <div className="col-span-1 md:col-span-2">
@@ -85,7 +114,10 @@ export const Footer: React.FC = () => (
       <div className="flex gap-6">
         <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
         <Link href="/terms" className="hover:text-white">Terms of Service</Link>
+        {typeof visitors === 'number' && (
+          <span className="bg-slate-800 text-slate-300 px-2 py-1 rounded-lg">Total Visitors: {visitors}</span>
+        )}
       </div>
     </div>
   </footer>
-);
+)}

@@ -72,7 +72,7 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
   return (
     <Card className="group flex flex-col h-full bg-white hover:shadow-xl transition-all duration-500 border border-slate-100 rounded-2xl overflow-hidden">
       {/* Image Container */}
-      <div className="relative aspect-[4/3] overflow-hidden cursor-pointer" onClick={() => router.push(`/properties/${property.id}`)}>
+      <div className="relative aspect-[4/5] overflow-hidden cursor-pointer" onClick={() => router.push(`/properties/${property.id}`)}>
         <img
           src={Array.isArray(property.images) ? property.images[0] : JSON.parse(property.images as unknown as string)[0]}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
@@ -89,6 +89,10 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
               Featured
             </Badge>
           )}
+        </div>
+
+        <div className="absolute bottom-2 left-2 bg-black/50 text-white text-[9px] font-bold px-2 py-0.5 rounded">
+          Image size should be 4:5
         </div>
 
         {/* Wishlist Button */}

@@ -106,7 +106,7 @@ export async function PUT(
         areaUnit: body.areaUnit,
         propertySubtype: body.propertySubtype,
         mapLink: body.mapLink,
-        videoUrl: body.videoUrl,
+        videoUrl: isAdmin ? body.videoUrl : undefined,
         nearbyLocations: body.nearbyLocations,
         attachments: body.attachments,
         listingType: body.listingType,

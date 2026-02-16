@@ -128,6 +128,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN'
+
     const property = await prisma.property.create({
       data: {
         builderId,
@@ -159,7 +161,7 @@ export async function POST(request: NextRequest) {
         areaUnit: body.areaUnit,
         propertySubtype: body.propertySubtype,
         mapLink: body.mapLink,
-        videoUrl: body.videoUrl,
+        videoUrl: isAdmin ? body.videoUrl : null,
         nearbyLocations: body.nearbyLocations || [],
         attachments: body.attachments || [],
         listingType: body.listingType || 'Sell',
