@@ -134,14 +134,31 @@ export async function DELETE(request: NextRequest, props: { params: Promise<{ id
   const params = await props.params;
   try {
     const id = parseInt(params.id);
-
-    // Soft delete: Set status to 'Deleted'
-    const deletedUser = await prisma.user.update({
-      where: { id },
-      data: { status: 'Deleted' }
+    
+    // Check if employee exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id }
     });
-
-    return NextResponse.json(deletedUser);
+    
+    if (!existingUser) {
+      return NextResponse.json({ message: 'Employee not found' }, { status: 404 });
+    }
+    
+    // Hard delete: Remove employee completely from database
+    await prisma.$transaction(async (tx) => {
+      // Delete related records first (cascade delete)
+      await tx.attendance.deleteMany({ where: { userId: id } });
+      await tx.leaveRequest.deleteMany({ where: { userId: id } });
+      await tx.salarySlip.deleteMany({ where: { userId: id } });
+      await tx.employeeProfile.deleteMany({ where: { userId: id } });
+      
+      // Delete the user
+      await tx.user.delete({
+        where: { id }
+      });
+    });
+    
+    return NextResponse.json({ message: 'Employee deleted successfully' });
   } catch (error) {
     console.error('Error deleting employee:', error);
     return NextResponse.json({ message: 'Error deleting employee' }, { status: 500 });

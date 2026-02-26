@@ -521,6 +521,35 @@ function PostPropertyContent() {
     }
   };
 
+  // Handle step navigation for admin users
+  const handleStepClick = (stepNumber: number) => {
+    // Don't allow navigating to current step
+    if (stepNumber === currentStep) return;
+    
+    // Allow navigating to completed steps (backward navigation)
+    if (stepNumber < currentStep) {
+      setCurrentStep(stepNumber);
+      setFieldErrors({}); // Clear errors when navigating
+      return;
+    }
+    
+    // For forward navigation, validate required fields in current step
+    const isValid = validateStep(currentStep);
+    
+    if (isValid) {
+      setCurrentStep(stepNumber);
+      setFieldErrors({}); // Clear errors when navigating
+    } else {
+      // Show validation error
+      setAlertConfig({
+        type: 'error',
+        title: 'Required Fields Missing',
+        message: 'Please fill all required fields in the current step before proceeding.'
+      });
+      setShowAlert(true);
+    }
+  };
+
   const steps = [
     { number: 1, title: 'Property Type' },
     { number: 2, title: 'Location' },
@@ -541,7 +570,7 @@ function PostPropertyContent() {
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
             <div className="flex items-center gap-4 mb-6">
               <button 
-                onClick={() => router.push('/dashboard')} 
+                onClick={() => router.push('/dashboard/properties')} 
                 className="p-2 rounded-lg bg-slate-50 text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all"
               >
                 <ArrowLeft size={18} />
@@ -557,13 +586,18 @@ function PostPropertyContent() {
               {steps.map((step, idx) => (
                 <React.Fragment key={step.number}>
                   <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                      currentStep > step.number 
-                        ? 'bg-emerald-500 text-white shadow-md' 
-                        : currentStep === step.number 
-                        ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-lg scale-110' 
-                        : 'bg-slate-200 text-slate-400'
-                    }`}>
+                    <div 
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all cursor-pointer ${
+                        currentStep > step.number 
+                          ? 'bg-emerald-500 text-white shadow-md hover:bg-emerald-600' 
+                          : currentStep === step.number 
+                          ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-lg scale-110' 
+                          : isAdmin
+                            ? 'bg-slate-200 text-slate-400 hover:bg-slate-300 hover:text-slate-600'
+                            : 'bg-slate-200 text-slate-400'
+                      }`}
+                      onClick={() => isAdmin && handleStepClick(step.number)}
+                    >
                       {currentStep > step.number ? <Check size={14} /> : step.number}
                     </div>
                     <span className={`text-[10px] font-bold whitespace-nowrap ${

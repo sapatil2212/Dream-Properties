@@ -14,28 +14,46 @@ export async function GET(request: NextRequest) {
     }
 
     if (q.trim()) {
-      // Split query into words and filter out common stop words
-      const stopWords = ['in', 'at', 'near', 'on', 'the', 'a', 'an', 'for', 'of', 'with', 'and', 'or', 'property', 'properties', 'real', 'estate'];
-      const terms = q.trim().split(/\s+/).filter(term => !stopWords.includes(term.toLowerCase()) && term.length > 2);
+      const trimmedQuery = q.trim();
       
-      // If filtering leaves nothing (or short words only), use the original query
-      const searchTerms = terms.length > 0 ? terms : [q.trim()];
-
-      // Build OR conditions: Any field containing Any of the search terms
-      where.OR = [];
-      searchTerms.forEach(term => {
-        where.OR.push(
-          { title: { contains: term } },
-          { description: { contains: term } },
-          { location: { contains: term } },
-          { address: { contains: term } },
-          { type: { contains: term } },
-          { propertySubtype: { contains: term } },
-          { configurations: { contains: term } },
-          { reraId: { contains: term } },
-          { builder: { name: { contains: term } } }
-        );
+      // Split query into words and filter out common stop words
+      const stopWords = ['in', 'at', 'near', 'on', 'the', 'a', 'an', 'for', 'of', 'with', 'and', 'or'];
+      const terms = trimmedQuery.split(/\s+/).filter(term => !stopWords.includes(term.toLowerCase()) && term.length >= 1);
+      
+      // Build search conditions
+      // Note: MySQL is case-insensitive by default for contains queries
+      const searchConditions: any[] = [];
+      
+      // Helper to add field search conditions
+      const addFieldConditions = (value: string) => ({
+        OR: [
+          { title: { contains: value } },
+          { description: { contains: value } },
+          { location: { contains: value } },
+          { address: { contains: value } },
+          { type: { contains: value } },
+          { propertySubtype: { contains: value } },
+          { configurations: { contains: value } },
+          { reraId: { contains: value } },
+          { builder: { name: { contains: value } } }
+        ]
       });
+      
+      // 1. First priority: Match the full phrase (for exact matches like "White Lily")
+      if (trimmedQuery.length >= 1) {
+        searchConditions.push(addFieldConditions(trimmedQuery));
+      }
+      
+      // 2. Second priority: Match individual terms (for broader matches)
+      terms.forEach(term => {
+        searchConditions.push(addFieldConditions(term));
+      });
+      
+      // Use AND logic so properties matching more terms rank higher
+      // But wrap in OR so any match works
+      if (searchConditions.length > 0) {
+        where.OR = searchConditions;
+      }
     }
 
     if (listing_type) {

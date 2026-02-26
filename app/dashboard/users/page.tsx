@@ -652,6 +652,7 @@ export default function UsersPage() {
               placeholder="Search accounts (name, email, mobile, role, etc.)..."
               className="w-48 sm:w-64"
               icon={<Search size={14} />}
+              inputSize="sm"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

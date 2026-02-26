@@ -10,6 +10,7 @@ import {
 } from '@/components/UIComponents';
 import { PerformanceOverviewCard } from './PerformanceOverviewCard';
 import { MostViewedPropertyCard } from './MostViewedPropertyCard';
+import { VisitorStatsCard } from './VisitorStatsCard';
 import Link from 'next/link';
 
 export function SuperAdminDashboard() {
@@ -115,6 +116,8 @@ export function SuperAdminDashboard() {
         </div>
 
         <div className="lg:col-span-5 space-y-4">
+
+          <VisitorStatsCard />
 
           <PerformanceOverviewCard data={dashboardStats?.graphData} isLoading={isLoading} />
           

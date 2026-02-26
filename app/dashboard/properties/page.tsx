@@ -19,7 +19,7 @@ import { AlertModal } from '@/components/ui/alert-modal';
 
 // Image Viewer Component - Moved to @/components/ImageViewer
 
-export default function InventoryManagementPage() {
+export default function ManagePropertyListingsPage() {
   const { data: session } = useSession();
   const [properties, setProperties] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -588,7 +588,7 @@ export default function InventoryManagementPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Inventory Management</h2>
+          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Manage Property Listings</h2>
           <p className="text-xs font-medium text-slate-500 uppercase tracking-widest mt-1">
             {isAdmin ? 'Manage all property submissions' : 'View and manage your listings'}
           </p>
@@ -612,6 +612,7 @@ export default function InventoryManagementPage() {
               value={searchQuery}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               icon={<Search size={14} />}
+              inputSize="sm"
             />
           </div>
           <div className="w-32">

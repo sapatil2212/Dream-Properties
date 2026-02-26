@@ -374,13 +374,13 @@ export default function LeadsPage() {
 
       <Card>
         <div className="p-4 border-b border-slate-100 flex items-center justify-end gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+          <div className="w-64">
             <Input 
               placeholder="Search leads..." 
-              className="pl-9 w-64" 
               value={searchQuery}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+              icon={<Search size={14} />}
+              inputSize="sm"
             />
           </div>
           <div className="w-32">

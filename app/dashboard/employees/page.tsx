@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Alert, Select, Input, Modal, Button } from '@/components/UIComponents';
+import { AlertModal } from '@/components/ui/alert-modal';
 import { Plus, Search, User, Phone, Mail, Briefcase, Loader2, ArrowRight, Building2, Send, Lock, Check, Power, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { OnboardingModal } from '@/components/dashboard/OnboardingModal';
@@ -49,6 +50,17 @@ export default function EmployeesPage() {
   // Onboarding State
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+
+  // Alert Modal State
+  const [alertModalState, setAlertModalState] = useState({
+    isOpen: false,
+    employeeId: null as number | null,
+    type: 'warning' as 'error' | 'warning' | 'info',
+    title: '',
+    message: '',
+    isLoading: false,
+    isSuccess: false
+  });
 
   const [alertState, setAlertState] = useState<{
     isOpen: boolean;
@@ -222,22 +234,103 @@ export default function EmployeesPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this employee? This will move them to the deactivated list.')) return;
+    // Open confirmation modal instead of using browser confirm
+    setAlertModalState({
+      isOpen: true,
+      employeeId: id,
+      type: 'warning',
+      title: 'Delete Employee',
+      message: 'Are you sure you want to delete this employee? This will remove them completely from the database.',
+      isLoading: false,
+      isSuccess: false
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!alertModalState.employeeId) return;
+    
+    // Show loading state
+    setAlertModalState(prev => ({
+      ...prev,
+      isLoading: true
+    }));
     
     try {
-        const res = await fetch(`/api/employees/${id}`, {
+        const res = await fetch(`/api/employees/${alertModalState.employeeId}`, {
             method: 'DELETE'
         });
         
+        const result = await res.json();
+        
         if (res.ok) {
-            showAlert('success', 'Employee Deleted', 'Employee moved to deactivated list');
-            fetchEmployees();
+            // Show success state in the same modal
+            setAlertModalState(prev => ({
+              ...prev,
+              isLoading: false,
+              isSuccess: true,
+              title: 'Employee Deleted',
+              message: 'Employee has been successfully removed from the database.'
+            }));
+            
+            // Refresh the employee list to show updated data
+            await fetchEmployees();
+            
+            // Close modal after delay
+            setTimeout(() => {
+              setAlertModalState({
+                isOpen: false,
+                employeeId: null,
+                type: 'warning',
+                title: '',
+                message: '',
+                isLoading: false,
+                isSuccess: false
+              });
+            }, 2000);
         } else {
-            showAlert('error', 'Error', 'Failed to delete employee');
+            // Show error state
+            setAlertModalState(prev => ({
+              ...prev,
+              isLoading: false,
+              isSuccess: false,
+              type: 'error',
+              title: 'Deletion Failed',
+              message: result.message || 'Failed to delete employee. Please try again.'
+            }));
+            
+            // Reset to normal state after delay
+            setTimeout(() => {
+              setAlertModalState(prev => ({
+                ...prev,
+                type: 'warning',
+                title: 'Delete Employee',
+                message: 'Are you sure you want to delete this employee? This will remove them completely.',
+                isSuccess: false
+              }));
+            }, 2000);
         }
     } catch (error) {
         console.error('Error deleting employee:', error);
-        showAlert('error', 'Error', 'Something went wrong');
+        // Show error state
+        setAlertModalState(prev => ({
+          ...prev,
+          isLoading: false,
+          isSuccess: false,
+          type: 'error',
+          title: 'Deletion Failed',
+          message: 'Something went wrong. Please try again.'
+        }));
+        
+        // Reset to normal state after delay
+        setTimeout(() => {
+          setAlertModalState(prev => ({
+            ...prev,
+            type: 'warning',
+            title: 'Delete Employee',
+            message: 'Are you sure you want to delete this employee? This will remove them completely.',
+            isSuccess: false
+          }));
+        }, 2000);
     }
   };
 
@@ -384,13 +477,13 @@ export default function EmployeesPage() {
       </div>
 
       <div className="mb-6 p-4 bg-white rounded-2xl border border-slate-200 flex flex-wrap items-center justify-end gap-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+        <div className="w-64">
           <Input 
             placeholder="Search employees..." 
-            className="pl-9 w-64" 
             value={search}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+            icon={<Search size={14} />}
+            inputSize="sm"
           />
         </div>
         <div className="w-32">
@@ -459,6 +552,17 @@ export default function EmployeesPage() {
         type={alertState.type}
         title={alertState.title}
         message={alertState.message}
+      />
+
+      <AlertModal
+        isOpen={alertModalState.isOpen}
+        onClose={() => setAlertModalState(prev => ({ ...prev, isOpen: false, employeeId: null, isLoading: false, isSuccess: false }))}
+        onConfirm={confirmDelete}
+        title={alertModalState.title}
+        message={alertModalState.message}
+        type={alertModalState.type}
+        isLoading={alertModalState.isLoading}
+        isSuccess={alertModalState.isSuccess}
       />
 
       <Modal

@@ -14,6 +14,17 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: 'Dream Properties - Nashik Premier Real Estate Hub',
   description: 'Nashik Premier Multi-Tenant Real Estate Hub connecting you with verified premium developments',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({

@@ -67,22 +67,27 @@ export const Badge: React.FC<{ children: React.ReactNode, variant?: 'success' | 
   );
 };
 
-export const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label?: string, icon?: React.ReactNode, error?: string }> = ({ label, icon, error, className = '', ...props }) => {
+export const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement> & { label?: string, icon?: React.ReactNode, error?: string, inputSize?: 'sm' | 'md' }> = ({ label, icon, error, inputSize = 'md', className = '', ...props }) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = props.type === 'password';
   const type = isPassword ? (showPassword ? 'text' : 'password') : props.type;
+
+  const sizeClasses = {
+    sm: `px-3 py-1 text-[9px] ${icon ? 'pl-9' : ''}`,
+    md: `px-3.5 py-2 text-[13px] ${icon ? 'pl-10' : ''}`
+  };
 
   return (
     <div className="flex flex-col gap-1 w-full">
       {label && <label className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-500">{label}</label>}
       <div className="relative">
         {icon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+          <div className={`absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none ${inputSize === 'sm' ? 'scale-75' : ''}`}>
             {icon}
           </div>
         )}
         <input
-          className={`px-3.5 py-2 rounded-xl border bg-white transition-all focus:border-blue-500 outline-none disabled:bg-slate-50 text-[13px] font-medium w-full ${icon ? 'pl-10' : ''} ${isPassword ? 'pr-10' : ''} ${
+          className={`rounded-xl border bg-white transition-all focus:border-blue-500 outline-none disabled:bg-slate-50 font-medium w-full ${sizeClasses[inputSize]} ${isPassword ? 'pr-10' : ''} ${
             error ? 'border-rose-500 bg-rose-50/20' : 'border-slate-200'
           } ${className}`}
           {...props}
