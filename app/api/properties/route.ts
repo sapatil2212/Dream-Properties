@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
             email: true,
           },
         },
+        occupancies: true,
       },
       orderBy: [
         { isFeatured: 'desc' },
@@ -173,6 +174,21 @@ export async function POST(request: NextRequest) {
         maintenance: body.maintenance,
         totalFloors: body.totalFloors,
         carParking: body.carParking,
+        // Occupancy types
+        occupancies: body.occupancyTypes && body.occupancyTypes.length > 0 ? {
+          create: body.occupancyTypes.map((occ: any) => ({
+            occupancyType: occ.occupancyType,
+            bedrooms: occ.bedrooms || null,
+            bathrooms: occ.bathrooms || null,
+            builtUpArea: occ.builtUpArea,
+            carpetArea: occ.carpetArea || null,
+            numberOfUnits: occ.numberOfUnits,
+            floorNumber: occ.floorNumber || null,
+          }))
+        } : undefined,
+      },
+      include: {
+        occupancies: true,
       },
     })
 

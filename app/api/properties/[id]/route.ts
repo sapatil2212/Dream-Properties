@@ -20,6 +20,7 @@ export async function GET(
             mobile: true,
           },
         },
+        occupancies: true,
       },
     })
 
@@ -127,9 +128,35 @@ export async function PUT(
         updateData.status = body.status;
     }
 
+    // Handle occupancy types update - delete existing and create new ones
+    if (body.occupancyTypes !== undefined) {
+      // Delete existing occupancies
+      await prisma.propertyOccupancy.deleteMany({
+        where: { propertyId },
+      });
+      
+      // Create new occupancies if provided
+      if (body.occupancyTypes && body.occupancyTypes.length > 0) {
+        updateData.occupancies = {
+          create: body.occupancyTypes.map((occ: any) => ({
+            occupancyType: occ.occupancyType,
+            bedrooms: occ.bedrooms || null,
+            bathrooms: occ.bathrooms || null,
+            builtUpArea: occ.builtUpArea,
+            carpetArea: occ.carpetArea || null,
+            numberOfUnits: occ.numberOfUnits,
+            floorNumber: occ.floorNumber || null,
+          }))
+        };
+      }
+    }
+
     const updated = await prisma.property.update({
       where: { id: propertyId },
       data: updateData,
+      include: {
+        occupancies: true,
+      },
     })
 
     return NextResponse.json({ message: 'Property updated and pending approval', property: updated })

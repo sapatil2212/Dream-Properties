@@ -952,11 +952,11 @@ export default function ManagePropertyListingsPage() {
               {/* Basic Information */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
-                  Basic Information
+                  Step 1: Property Type & Details
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
-                        label="Title"
+                        label="Property Title"
                         value={isEditing ? (editedProperty?.title || '') : (selectedProperty.title || '')}
                         onChange={(e) => handleInputChange('title', e.target.value)}
                         readOnly={!isEditing}
@@ -964,9 +964,17 @@ export default function ManagePropertyListingsPage() {
                         className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
                     />
                     <Input
-                        label="Type"
+                        label="Property Type"
                         value={isEditing ? (editedProperty?.type || '') : (selectedProperty.type || '')}
                         onChange={(e) => handleInputChange('type', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
+                        label="Property Sub-Type"
+                        value={isEditing ? (editedProperty?.propertySubtype || '') : (selectedProperty.propertySubtype || '')}
+                        onChange={(e) => handleInputChange('propertySubtype', e.target.value)}
                         readOnly={!isEditing}
                         disabled={!isEditing}
                         className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
@@ -988,6 +996,14 @@ export default function ManagePropertyListingsPage() {
                         />
                     )}
                     <Input
+                        label="Builder/Project Name"
+                        value={isEditing ? (editedProperty?.projectBuilderName || '') : (selectedProperty.projectBuilderName || '')}
+                        onChange={(e) => handleInputChange('projectBuilderName', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
                         label="Price"
                         value={isEditing ? (editedProperty?.price || '') : (selectedProperty.price || '')}
                         onChange={(e) => handleInputChange('price', e.target.value)}
@@ -996,9 +1012,33 @@ export default function ManagePropertyListingsPage() {
                         className={!isEditing ? "bg-slate-50 font-bold text-blue-600" : ""}
                     />
                     <Input
-                        label="Area"
+                        label="Built-up Area"
                         value={isEditing ? (editedProperty?.area || '') : (selectedProperty.area || '')}
                         onChange={(e) => handleInputChange('area', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
+                        label="Area Unit"
+                        value={isEditing ? (editedProperty?.areaUnit || '') : (selectedProperty.areaUnit || 'Sq.Ft')}
+                        onChange={(e) => handleInputChange('areaUnit', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
+                        label="Carpet Area"
+                        value={isEditing ? (editedProperty?.carpetArea || '') : (selectedProperty.carpetArea || '')}
+                        onChange={(e) => handleInputChange('carpetArea', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
+                        label="Negotiable"
+                        value={isEditing ? (editedProperty?.negotiable || '') : (selectedProperty.negotiable || '')}
+                        onChange={(e) => handleInputChange('negotiable', e.target.value)}
                         readOnly={!isEditing}
                         disabled={!isEditing}
                         className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
@@ -1038,7 +1078,7 @@ export default function ManagePropertyListingsPage() {
               {/* Location Details */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
-                  Location
+                  Step 2: Location & Description
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
@@ -1058,34 +1098,28 @@ export default function ManagePropertyListingsPage() {
                             disabled={!isEditing}
                         />
                     </div>
+                    <div className="md:col-span-2">
+                        <label className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-500">Description</label>
+                        <textarea
+                            className={`w-full px-3.5 py-2 mt-1 rounded-xl border bg-white transition-all focus:border-blue-500 outline-none disabled:bg-slate-50 text-[13px] font-medium border-slate-200 min-h-[100px]`}
+                            value={isEditing ? (editedProperty?.description || '') : (selectedProperty.description || '')}
+                            onChange={(e) => handleInputChange('description', e.target.value)}
+                            disabled={!isEditing}
+                            placeholder={!isEditing ? "No description available" : ""}
+                        />
+                    </div>
                 </div>
               </div>
 
-              {/* Description */}
-              <div className="space-y-2">
-                <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
-                  Description
-                </h3>
-                 <div>
-                    <textarea
-                        className={`w-full px-3.5 py-2 mt-1 rounded-xl border bg-white transition-all focus:border-blue-500 outline-none disabled:bg-slate-50 text-[13px] font-medium border-slate-200 min-h-[100px]`}
-                        value={isEditing ? (editedProperty?.description || '') : (selectedProperty.description || '')}
-                        onChange={(e) => handleInputChange('description', e.target.value)}
-                        disabled={!isEditing}
-                        placeholder={!isEditing ? "No description available" : ""}
-                    />
-                </div>
-              </div>
-
-              {/* Property Details */}
+              {/* Project Information */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
-                  Property Details
+                  Step 3: Project Information
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Input
                         label="Bedrooms"
-                        type="number"
+                        type="text"
                         value={isEditing ? (editedProperty?.bedrooms || '') : (selectedProperty.bedrooms || '')}
                         onChange={(e) => handleInputChange('bedrooms', e.target.value)}
                         readOnly={!isEditing}
@@ -1094,7 +1128,7 @@ export default function ManagePropertyListingsPage() {
                     />
                     <Input
                         label="Bathrooms"
-                        type="number"
+                        type="text"
                         value={isEditing ? (editedProperty?.bathrooms || '') : (selectedProperty.bathrooms || '')}
                         onChange={(e) => handleInputChange('bathrooms', e.target.value)}
                         readOnly={!isEditing}
@@ -1124,13 +1158,325 @@ export default function ManagePropertyListingsPage() {
                         disabled={!isEditing}
                         className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
                     />
+                    <Input
+                        label="Project Units"
+                        value={isEditing ? (editedProperty?.projectUnits || '') : (selectedProperty.projectUnits || '')}
+                        onChange={(e) => handleInputChange('projectUnits', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
+                        label="Project Area"
+                        value={isEditing ? (editedProperty?.projectArea || '') : (selectedProperty.projectArea || '')}
+                        onChange={(e) => handleInputChange('projectArea', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
+                        label="Configurations"
+                        value={isEditing ? (editedProperty?.configurations || '') : (selectedProperty.configurations || '')}
+                        onChange={(e) => handleInputChange('configurations', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
+                        label="Avg. Price"
+                        value={isEditing ? (editedProperty?.avgPrice || '') : (selectedProperty.avgPrice || '')}
+                        onChange={(e) => handleInputChange('avgPrice', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
+                        label="Launch Date"
+                        value={isEditing ? (editedProperty?.launchDate || '') : (selectedProperty.launchDate || '')}
+                        onChange={(e) => handleInputChange('launchDate', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
+                        label="Sizes"
+                        value={isEditing ? (editedProperty?.sizes || '') : (selectedProperty.sizes || '')}
+                        onChange={(e) => handleInputChange('sizes', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
+                    <Input
+                        label="Project Size"
+                        value={isEditing ? (editedProperty?.projectSize || '') : (selectedProperty.projectSize || '')}
+                        onChange={(e) => handleInputChange('projectSize', e.target.value)}
+                        readOnly={!isEditing}
+                        disabled={!isEditing}
+                        className={!isEditing ? "bg-slate-50 text-slate-700" : ""}
+                    />
                 </div>
               </div>
 
-              {/* Media & Links */}
+              {/* Rental Details - Show if any rental field has value */}
+              {(selectedProperty.furnishing || selectedProperty.listedBy || selectedProperty.bachelorsAllowed || selectedProperty.maintenance || selectedProperty.totalFloors || selectedProperty.carParking) && (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
+                    Rental Details
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <Input
+                          label="Furnishing"
+                          value={selectedProperty.furnishing || ''}
+                          readOnly={true}
+                          disabled={true}
+                          className="bg-slate-50 text-slate-700"
+                      />
+                      <Input
+                          label="Listed By"
+                          value={selectedProperty.listedBy || ''}
+                          readOnly={true}
+                          disabled={true}
+                          className="bg-slate-50 text-slate-700"
+                      />
+                      <Input
+                          label="Bachelors Allowed"
+                          value={selectedProperty.bachelorsAllowed || ''}
+                          readOnly={true}
+                          disabled={true}
+                          className="bg-slate-50 text-slate-700"
+                      />
+                      <Input
+                          label="Maintenance"
+                          value={selectedProperty.maintenance || ''}
+                          readOnly={true}
+                          disabled={true}
+                          className="bg-slate-50 text-slate-700"
+                      />
+                      <Input
+                          label="Total Floors"
+                          value={selectedProperty.totalFloors || ''}
+                          readOnly={true}
+                          disabled={true}
+                          className="bg-slate-50 text-slate-700"
+                      />
+                      <Input
+                          label="Car Parking"
+                          value={selectedProperty.carParking || ''}
+                          readOnly={true}
+                          disabled={true}
+                          className="bg-slate-50 text-slate-700"
+                      />
+                  </div>
+                </div>
+              )}
+
+              {/* Occupancy Types / Unit Configurations */}
+              {selectedProperty.occupancies && selectedProperty.occupancies.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
+                    Unit Configurations ({selectedProperty.occupancies.length} Types)
+                  </h3>
+                  <div className="grid gap-3">
+                    {selectedProperty.occupancies.map((occ: any, idx: number) => (
+                      <div key={idx} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-bold">
+                            {occ.occupancyType}
+                          </span>
+                          <span className="text-xs font-bold text-blue-600">
+                            {occ.numberOfUnits} Unit{occ.numberOfUnits > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                          {occ.bedrooms && (
+                            <div>
+                              <span className="text-slate-400">Bedrooms: </span>
+                              <span className="font-medium text-slate-700">{occ.bedrooms}</span>
+                            </div>
+                          )}
+                          {occ.bathrooms && (
+                            <div>
+                              <span className="text-slate-400">Bathrooms: </span>
+                              <span className="font-medium text-slate-700">{occ.bathrooms}</span>
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-slate-400">Built-up Area: </span>
+                            <span className="font-medium text-slate-700">{occ.builtUpArea} Sq.Ft</span>
+                          </div>
+                          {occ.carpetArea && (
+                            <div>
+                              <span className="text-slate-400">Carpet Area: </span>
+                              <span className="font-medium text-slate-700">{occ.carpetArea} Sq.Ft</span>
+                            </div>
+                          )}
+                          {occ.floorNumber && (
+                            <div>
+                              <span className="text-slate-400">Floor: </span>
+                              <span className="font-medium text-slate-700">{occ.floorNumber}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100 flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-800">
+                        Total: {selectedProperty.occupancies.reduce((sum: number, o: any) => sum + o.numberOfUnits, 0)} units
+                      </span>
+                      <span className="text-xs font-medium text-emerald-600">
+                        {selectedProperty.occupancies.length} configuration{selectedProperty.occupancies.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Highlights */}
+              {(isEditing || (selectedProperty.highlights && Array.isArray(selectedProperty.highlights) && selectedProperty.highlights.length > 0)) && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
+                    Highlights
+                  </h3>
+                  {isEditing ? (
+                       <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-500">Highlights (Comma separated)</label>
+                          <textarea
+                               className="w-full px-3.5 py-2 mt-1 rounded-xl border bg-white transition-all focus:border-blue-500 outline-none disabled:bg-slate-50 text-[13px] font-medium border-slate-200 min-h-[60px]"
+                               value={Array.isArray(editedProperty?.highlights) ? editedProperty.highlights.join(', ') : (typeof editedProperty?.highlights === 'string' ? editedProperty.highlights : '')}
+                               onChange={(e) => handleInputChange('highlights', e.target.value.split(',').map((s: string) => s.trim()))}
+                          />
+                       </div>
+                  ) : (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {selectedProperty.highlights.map((highlight: string, index: number) => (
+                          <Badge key={index} variant="info" className="text-xs">
+                            {highlight}
+                          </Badge>
+                        ))}
+                      </div>
+                  )}
+                </div>
+              )}
+
+              {/* Specifications */}
+              {(isEditing || (selectedProperty.specifications && Array.isArray(selectedProperty.specifications) && selectedProperty.specifications.length > 0)) && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
+                    Specifications
+                  </h3>
+                  {isEditing ? (
+                       <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-500">Specifications (JSON format)</label>
+                          <textarea
+                               className="w-full px-3.5 py-2 mt-1 rounded-xl border bg-white transition-all focus:border-blue-500 outline-none disabled:bg-slate-50 text-[13px] font-medium border-slate-200 min-h-[60px]"
+                               value={JSON.stringify(editedProperty?.specifications || [])}
+                               onChange={(e) => handleInputChange('specifications', JSON.parse(e.target.value))}
+                          />
+                       </div>
+                  ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-1">
+                        {selectedProperty.specifications.map((spec: any, index: number) => (
+                          <div key={index} className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase">{spec.label}</span>
+                            <p className="text-sm font-medium text-slate-700">{spec.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                  )}
+                </div>
+              )}
+
+              {/* Nearby Locations */}
+              {(isEditing || (selectedProperty.nearbyLocations && Array.isArray(selectedProperty.nearbyLocations) && selectedProperty.nearbyLocations.length > 0)) && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
+                    Nearby Locations
+                  </h3>
+                  {isEditing ? (
+                       <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-500">Nearby Locations (JSON format)</label>
+                          <textarea
+                               className="w-full px-3.5 py-2 mt-1 rounded-xl border bg-white transition-all focus:border-blue-500 outline-none disabled:bg-slate-50 text-[13px] font-medium border-slate-200 min-h-[60px]"
+                               value={JSON.stringify(editedProperty?.nearbyLocations || [])}
+                               onChange={(e) => handleInputChange('nearbyLocations', JSON.parse(e.target.value))}
+                          />
+                       </div>
+                  ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-1">
+                        {selectedProperty.nearbyLocations.map((loc: any, index: number) => (
+                          <div key={index} className="p-2 bg-blue-50 rounded-lg border border-blue-100">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-blue-700">{loc.name}</span>
+                              <Badge variant="neutral" className="text-[9px]">{loc.type}</Badge>
+                            </div>
+                            <p className="text-[10px] text-blue-600 mt-1">{loc.distance} • {loc.time}</p>
+                          </div>
+                        ))}
+                      </div>
+                  )}
+                </div>
+              )}
+
+              {/* Floor Plans */}
+              {(isEditing || (selectedProperty.floorPlans && Array.isArray(selectedProperty.floorPlans) && selectedProperty.floorPlans.length > 0)) && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
+                    Floor Plans ({isEditing ? (editedProperty?.floorPlans?.length || 0) : (selectedProperty.floorPlans?.length || 0)})
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-1">
+                    {(isEditing ? (editedProperty?.floorPlans || []) : (selectedProperty.floorPlans || [])).map((plan: any, index: number) => (
+                      <div key={index} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                        <p className="text-xs font-bold text-slate-700 mb-2">{plan.title}</p>
+                        {plan.url && (
+                          <a 
+                            href={plan.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                          >
+                            <FileText size={12} />
+                            View Plan
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Documents / Attachments */}
+              {(isEditing || (selectedProperty.attachments && Array.isArray(selectedProperty.attachments) && selectedProperty.attachments.length > 0)) && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
+                    Documents & Attachments ({isEditing ? (editedProperty?.attachments?.length || 0) : (selectedProperty.attachments?.length || 0)})
+                  </h3>
+                  <div className="grid gap-2 pt-1">
+                    {(isEditing ? (editedProperty?.attachments || []) : (selectedProperty.attachments || [])).map((doc: any, index: number) => (
+                      <a 
+                        key={index} 
+                        href={doc.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileText size={18} className="text-slate-400" />
+                          <div>
+                            <p className="text-xs font-bold text-slate-700">{doc.name}</p>
+                            <p className="text-[10px] text-slate-400">{doc.size || 'File'}</p>
+                          </div>
+                        </div>
+                        <Download size={14} className="text-slate-400" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 6: Map & Video */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
-                  Media & Links
+                  Step 6: Map & Video
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
@@ -1186,11 +1532,11 @@ export default function ManagePropertyListingsPage() {
                 </div>
               )}
 
-              {/* Amenities */}
+              {/* Step 4: Amenities & Features */}
               {(isEditing || (selectedProperty.amenities && Array.isArray(selectedProperty.amenities) && selectedProperty.amenities.length > 0)) && (
                 <div className="space-y-2">
                   <h3 className="text-sm font-bold text-slate-900 pb-2 border-b">
-                    Amenities
+                    Step 4: Amenities
                   </h3>
                   {isEditing ? (
                        <div className="space-y-1">
@@ -1213,11 +1559,11 @@ export default function ManagePropertyListingsPage() {
                 </div>
               )}
 
-              {/* Images */}
+              {/* Step 5: Images */}
               {(isEditing || (selectedProperty.images && Array.isArray(selectedProperty.images) && selectedProperty.images.length > 0)) && (
                 <div className="space-y-2">
                   <h3 className="text-sm font-bold text-slate-900 pb-2 border-b flex justify-between items-center">
-                    <span>Property Images ({isEditing ? (editedProperty?.images?.length || 0) : (selectedProperty.images?.length || 0)})</span>
+                    <span>Step 5: Property Images ({isEditing ? (editedProperty?.images?.length || 0) : (selectedProperty.images?.length || 0)})</span>
                   </h3>
                   
                   {uploadingImages && (

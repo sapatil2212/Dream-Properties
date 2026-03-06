@@ -14,6 +14,17 @@ export type UserRole = typeof UserRole[keyof typeof UserRole];
 
 export type PropertyCategory = 'Flats' | 'Villa' | 'Shop' | 'Office' | 'Plot' | 'Agricultural' | 'Industrial' | 'Warehouse';
 
+export interface PropertyOccupancy {
+  id?: number;
+  occupancyType: string;
+  bedrooms?: string;
+  bathrooms?: string;
+  builtUpArea: string;
+  carpetArea?: string;
+  numberOfUnits: number;
+  floorNumber?: string;
+}
+
 export interface Property {
   id: number | string;
   builderId: number | string;
@@ -62,6 +73,7 @@ export interface Property {
   car_parking?: string;
   
   builder?: string | { name: string }; // For display
+  occupancies?: PropertyOccupancy[];
   createdAt?: string;
   updatedAt?: string;
 }

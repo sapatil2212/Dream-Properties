@@ -508,6 +508,68 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                   )}
                 </div>
               </div>
+
+              {/* Occupancy Types / Unit Configurations */}
+              {property.occupancies && property.occupancies.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-3">
+                    Unit Configurations
+                  </h3>
+                  <div className="grid gap-3">
+                    {property.occupancies.map((occ: any, idx: number) => (
+                      <div key={idx} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm font-bold">
+                            {occ.occupancyType}
+                          </span>
+                          <span className="text-xs font-bold text-blue-600">
+                            {occ.numberOfUnits} Unit{occ.numberOfUnits > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                          {occ.bedrooms && (
+                            <div className="flex items-center gap-2">
+                              <Bed size={14} className="text-slate-400" />
+                              <span className="font-medium text-slate-700">{occ.bedrooms} Bed</span>
+                            </div>
+                          )}
+                          {occ.bathrooms && (
+                            <div className="flex items-center gap-2">
+                              <Bath size={14} className="text-slate-400" />
+                              <span className="font-medium text-slate-700">{occ.bathrooms} Bath</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <Square size={14} className="text-slate-400" />
+                            <span className="font-medium text-slate-700">{occ.builtUpArea} Sq.Ft</span>
+                          </div>
+                          {occ.carpetArea && (
+                            <div className="flex items-center gap-2">
+                              <Square size={14} className="text-slate-400" />
+                              <span className="font-medium text-slate-500">Carpet: {occ.carpetArea} Sq.Ft</span>
+                            </div>
+                          )}
+                          {occ.floorNumber && (
+                            <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
+                              <span className="text-slate-400">📍</span>
+                              <span className="font-medium text-slate-500">Floor: {occ.floorNumber}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {/* Summary */}
+                    <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100 flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-800">
+                        Total: {property.occupancies.reduce((sum: number, o: any) => sum + o.numberOfUnits, 0)} units
+                      </span>
+                      <span className="text-xs font-medium text-emerald-600">
+                        {property.occupancies.length} configuration{property.occupancies.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </Card>
 
             {/* Content Tabs */}

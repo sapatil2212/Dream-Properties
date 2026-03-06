@@ -9,6 +9,18 @@ import { AIPropertyAutoFill } from '@/components/dashboard/AIPropertyAutoFill';
 import { SuccessModal } from '@/components/ui/success-modal';
 import { useSession } from 'next-auth/react';
 
+// Type for occupancy types in property form
+type OccupancyType = {
+  id?: number;
+  occupancyType: string;
+  builtUpArea: string;
+  carpetArea: string;
+  numberOfUnits: number;
+  floorNumber: string;
+  bedrooms: string;
+  bathrooms: string;
+};
+
 export default function PostPropertyPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -101,6 +113,9 @@ function PostPropertyContent() {
     // Step 8: Documents
     attachments: [] as { name: string; url: string; size: string }[],
     floorPlans: [] as { title: string; url: string }[],
+    
+    // Occupancy Types (for apartments/projects with multiple units)
+    occupancyTypes: [] as OccupancyType[],
   });
 
   const [tempInputs, setTempInputs] = useState({
@@ -113,6 +128,14 @@ function PostPropertyContent() {
     nearbyDistance: '',
     nearbyTime: '',
     floorPlanTitle: '',
+    // Occupancy type temp inputs
+    occupancyType: '2BHK',
+    builtUpArea: '',
+    carpetArea: '',
+    numberOfUnits: '',
+    floorNumber: '',
+    bedrooms: '',
+    bathrooms: '',
   });
 
   // Field errors for inline validation
@@ -179,6 +202,7 @@ function PostPropertyContent() {
               nearbyLocations: safeParse(data.nearbyLocations),
               attachments: safeParse(data.attachments),
               floorPlans: safeParse(data.floorPlans),
+              occupancyTypes: data.occupancies || [],
             }));
           } else {
              setAlertConfig({
@@ -280,14 +304,11 @@ function PostPropertyContent() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(formData.type && formData.propertySubtype && formData.listingType && formData.title && formData.area);
+        // For Residential, area is captured in Occupancy Types, so not required here
+        const areaRequired = formData.type !== 'Residential';
+        return !!(formData.type && formData.propertySubtype && formData.listingType && formData.title && (!areaRequired || formData.area));
       case 2:
         return !!(formData.location && formData.description);
-      case 3:
-        if (formData.type === 'Residential') {
-          return !!(formData.bedrooms && formData.bathrooms);
-        }
-        return true;
       default:
         return true;
     }
@@ -305,15 +326,11 @@ function PostPropertyContent() {
       if (!formData.propertySubtype) errors.propertySubtype = 'Please select a property sub-type';
       if (!formData.listingType) errors.listingType = 'Please select listing type (Sell/Rent/Lease)';
       if (!formData.title) errors.title = 'Property name/title is required';
-      if (!formData.area) errors.area = 'Area is required';
+      // Area is only required for Commercial and Plots (not Residential - captured in Occupancy Types)
+      if (formData.type !== 'Residential' && !formData.area) errors.area = 'Area is required';
     } else if (currentStep === 2) {
       if (!formData.location) errors.location = 'Location is required';
       if (!formData.description) errors.description = 'Property description is required';
-    } else if (currentStep === 3) {
-      if (formData.type === 'Residential') {
-        if (!formData.bedrooms) errors.bedrooms = 'Number of bedrooms is required';
-        if (!formData.bathrooms) errors.bathrooms = 'Number of bathrooms is required';
-      }
     }
     
     if (Object.keys(errors).length > 0) {
@@ -322,7 +339,7 @@ function PostPropertyContent() {
     }
     
     // Proceed to next step if no errors
-    setCurrentStep(prev => Math.min(prev + 1, 8));
+    setCurrentStep(prev => Math.min(prev + 1, 7));
   };
 
   const handlePrevious = () => {
@@ -553,12 +570,11 @@ function PostPropertyContent() {
   const steps = [
     { number: 1, title: 'Property Type' },
     { number: 2, title: 'Location' },
-    { number: 3, title: 'Details' },
-    { number: 4, title: 'Project Info' },
-    { number: 5, title: 'Features' },
-    { number: 6, title: 'Images' },
-    { number: 7, title: 'Map' },
-    { number: 8, title: 'Docs & Plans' }
+    { number: 3, title: 'Project Info' },
+    { number: 4, title: 'Features' },
+    { number: 5, title: 'Images' },
+    { number: 6, title: 'Map' },
+    { number: 7, title: 'Docs & Plans' }
   ];
 
   return (
@@ -800,37 +816,39 @@ function PostPropertyContent() {
                           }}
                         />
                       </div>
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <Input
-                            label={(formData.type === 'Residential' || formData.type === 'Commercial') ? 'Built-up Area *' : 'Plot Area *'}
-                            placeholder="e.g., 1200"
-                            value={formData.area}
-                            onChange={e => {
-                              setFormData({ ...formData, area: e.target.value });
-                              setFieldErrors(prev => ({ ...prev, area: '' }));
-                            }}
-                          />
-                          {fieldErrors.area && (
-                            <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.area}</p>
-                          )}
+                      {formData.type !== 'Residential' && (
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <Input
+                              label={formData.type === 'Plots' ? 'Plot Area *' : 'Built-up Area *'}
+                              placeholder="e.g., 1200"
+                              value={formData.area}
+                              onChange={e => {
+                                setFormData({ ...formData, area: e.target.value });
+                                setFieldErrors(prev => ({ ...prev, area: '' }));
+                              }}
+                            />
+                            {fieldErrors.area && (
+                              <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.area}</p>
+                            )}
+                          </div>
+                          <div className="w-32">
+                            <Select
+                              label="Unit"
+                              value={formData.areaUnit}
+                              options={
+                                formData.type === 'Plots'
+                                  ? ['Sq. Yards', 'Sq. Mtrs', 'Sq.Ft', 'Acres', 'Hectares'].map(u => ({ label: u, value: u }))
+                                  : ['Sq.Ft'].map(u => ({ label: u, value: u }))
+                              }
+                              onChange={(value) => setFormData({ ...formData, areaUnit: value })}
+                            />
+                          </div>
                         </div>
-                        <div className="w-32">
-                          <Select
-                            label="Unit"
-                            value={formData.areaUnit}
-                            options={
-                              formData.type === 'Plots'
-                                ? ['Sq. Yards', 'Sq. Mtrs', 'Sq.Ft', 'Acres', 'Hectares'].map(u => ({ label: u, value: u }))
-                                : ['Sq.Ft'].map(u => ({ label: u, value: u }))
-                            }
-                            onChange={(value) => setFormData({ ...formData, areaUnit: value })}
-                          />
-                        </div>
-                      </div>
+                      )}
                     </div>
 
-                    {(formData.type === 'Residential' || formData.type === 'Commercial') && (
+                    {formData.type === 'Commercial' && (
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Input
@@ -922,131 +940,8 @@ function PostPropertyContent() {
                 </div>
               )}
 
-              {/* Step 3: Property Specific Details */}
-              {currentStep === 3 && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-900 mb-2">Property Details</h2>
-                    <p className="text-sm text-slate-500">Specific details about the property</p>
-                  </div>
-
-                  <div className="space-y-4">
-                    {formData.type === 'Residential' && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Input
-                            label="Bedrooms *"
-                            placeholder="e.g., 3"
-                            value={formData.bedrooms}
-                            onChange={e => {
-                              setFormData({ ...formData, bedrooms: e.target.value });
-                              setFieldErrors(prev => ({ ...prev, bedrooms: '' }));
-                            }}
-                          />
-                          {fieldErrors.bedrooms && (
-                            <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.bedrooms}</p>
-                          )}
-                        </div>
-                        <div>
-                          <Input
-                            label="Bathrooms *"
-                            placeholder="e.g., 2"
-                            value={formData.bathrooms}
-                            onChange={e => {
-                              setFormData({ ...formData, bathrooms: e.target.value });
-                              setFieldErrors(prev => ({ ...prev, bathrooms: '' }));
-                            }}
-                          />
-                          {fieldErrors.bathrooms && (
-                            <p className="text-xs text-red-600 mt-1.5 font-medium">{fieldErrors.bathrooms}</p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <Input
-                        label={formData.listingType === 'Rent' ? 'Available From' : 'Possession Date'}
-                        placeholder={formData.listingType === 'Rent' ? 'e.g., Immediately / Jan 2025' : 'e.g., Dec 2025'}
-                        value={formData.possessionDate}
-                        onChange={e => setFormData({ ...formData, possessionDate: e.target.value })}
-                      />
-                      {formData.listingType !== 'Rent' && (
-                        <Input
-                          label="RERA ID"
-                          placeholder="e.g., P02400009392"
-                          value={formData.reraId}
-                          onChange={e => setFormData({ ...formData, reraId: e.target.value })}
-                        />
-                      )}
-                    </div>
-                    
-                    {/* Rental-specific fields */}
-                    {formData.listingType === 'Rent' && (
-                      <>
-                        <div className="border-t border-slate-200 pt-4 mt-4">
-                          <h3 className="text-lg font-black text-slate-900 mb-4">Rental Details</h3>
-                          
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Select
-                                label="Furnishing"
-                                placeholder="Select furnishing"
-                                value={formData.furnishing}
-                                options={['Fully Furnished', 'Semi Furnished', 'Unfurnished'].map(o => ({ label: o, value: o }))}
-                                onChange={(value) => setFormData({ ...formData, furnishing: value })}
-                              />
-                            </div>
-                            
-                            <div>
-                              <Select
-                                label="Listed By"
-                                placeholder="Select type"
-                                value={formData.listedBy}
-                                options={['Owner', 'Builder', 'Dealer'].map(o => ({ label: o, value: o }))}
-                                onChange={(value) => setFormData({ ...formData, listedBy: value })}
-                              />
-                            </div>
-                            
-                            <div>
-                              <Select
-                                label="Bachelors Allowed"
-                                placeholder="Select option"
-                                value={formData.bachelorsAllowed}
-                                options={['Yes', 'No'].map(o => ({ label: o, value: o }))}
-                                onChange={(value) => setFormData({ ...formData, bachelorsAllowed: value })}
-                              />
-                            </div>
-                            <Input
-                              label="Maintenance (Monthly)"
-                              placeholder="e.g., ₹2,000"
-                              value={formData.maintenance}
-                              onChange={e => setFormData({ ...formData, maintenance: e.target.value })}
-                            />
-                            
-                            <Input
-                              label="Total Floors"
-                              placeholder="e.g., 10"
-                              value={formData.totalFloors}
-                              onChange={e => setFormData({ ...formData, totalFloors: e.target.value })}
-                            />
-                            
-                            <Input
-                              label="Car Parking"
-                              placeholder="e.g., 2"
-                              value={formData.carParking}
-                              onChange={e => setFormData({ ...formData, carParking: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Step 4: Project Details - Hidden for Rent */}
-              {currentStep === 4 && formData.listingType !== 'Rent' && (
+              {/* Step 3: Project Details - Hidden for Rent */}
+              {currentStep === 3 && formData.listingType !== 'Rent' && (
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-2xl font-black text-slate-900 mb-2">Project Information</h2>
@@ -1054,6 +949,18 @@ function PostPropertyContent() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Possession Date"
+                      placeholder="e.g., Dec 2025"
+                      value={formData.possessionDate}
+                      onChange={e => setFormData({ ...formData, possessionDate: e.target.value })}
+                    />
+                    <Input
+                      label="RERA ID"
+                      placeholder="e.g., P02400009392"
+                      value={formData.reraId}
+                      onChange={e => setFormData({ ...formData, reraId: e.target.value })}
+                    />
                     <Input
                       label="Total Project Units"
                       type="number"
@@ -1099,11 +1006,198 @@ function PostPropertyContent() {
                       className="col-span-2"
                     />
                   </div>
+
+                  {/* Occupancy Types Section - Only for Residential */}
+                  {formData.type === 'Residential' && (
+                    <div className="border-t border-slate-200 pt-6 mt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-black text-slate-900">Occupancy Types</h3>
+                          <p className="text-xs text-slate-500">Add different unit types available in this property (e.g., 2BHK, 3BHK, etc.)</p>
+                        </div>
+                      </div>
+
+                    {/* Add Occupancy Type Form */}
+                    <div className="bg-slate-50 p-4 rounded-xl space-y-4 mb-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 mb-1.5 block">Unit Type</label>
+                          <select
+                            value={tempInputs.occupancyType}
+                            onChange={e => setTempInputs({ ...tempInputs, occupancyType: e.target.value })}
+                            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="2BHK">2BHK</option>
+                            <option value="3BHK">3BHK</option>
+                            <option value="4BHK">4BHK</option>
+                            <option value="5BHK">5BHK</option>
+                            <option value="Penthouse">Penthouse</option>
+                            <option value="Studio">Studio</option>
+                            <option value="1BHK">1BHK</option>
+                            <option value="Shop">Shop</option>
+                            <option value="Office">Office</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 mb-1.5 block">Bedrooms</label>
+                          <input
+                            type="number"
+                            placeholder="e.g., 2"
+                            value={tempInputs.bedrooms}
+                            onChange={e => setTempInputs({ ...tempInputs, bedrooms: e.target.value })}
+                            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 mb-1.5 block">Bathrooms</label>
+                          <input
+                            type="number"
+                            placeholder="e.g., 2"
+                            value={tempInputs.bathrooms}
+                            onChange={e => setTempInputs({ ...tempInputs, bathrooms: e.target.value })}
+                            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 mb-1.5 block">Built-up Area (Sq.Ft)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., 1000"
+                            value={tempInputs.builtUpArea}
+                            onChange={e => setTempInputs({ ...tempInputs, builtUpArea: e.target.value })}
+                            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 mb-1.5 block">Carpet Area (Sq.Ft)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., 800"
+                            value={tempInputs.carpetArea}
+                            onChange={e => setTempInputs({ ...tempInputs, carpetArea: e.target.value })}
+                            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 mb-1.5 block">No. of Units</label>
+                          <input
+                            type="number"
+                            placeholder="e.g., 5"
+                            value={tempInputs.numberOfUnits}
+                            onChange={e => setTempInputs({ ...tempInputs, numberOfUnits: e.target.value })}
+                            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 mb-1.5 block">Floor Number(s)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., 1st, 2nd, 3rd"
+                            value={tempInputs.floorNumber}
+                            onChange={e => setTempInputs({ ...tempInputs, floorNumber: e.target.value })}
+                            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          if (tempInputs.builtUpArea && tempInputs.numberOfUnits) {
+                            setFormData(prev => ({
+                              ...prev,
+                              occupancyTypes: [...prev.occupancyTypes, {
+                                occupancyType: tempInputs.occupancyType,
+                                builtUpArea: tempInputs.builtUpArea,
+                                carpetArea: tempInputs.carpetArea,
+                                numberOfUnits: parseInt(tempInputs.numberOfUnits) || 1,
+                                floorNumber: tempInputs.floorNumber,
+                                bedrooms: tempInputs.bedrooms,
+                                bathrooms: tempInputs.bathrooms,
+                              }]
+                            }));
+                            setTempInputs(prev => ({
+                              ...prev,
+                              builtUpArea: '',
+                              carpetArea: '',
+                              numberOfUnits: '',
+                              floorNumber: '',
+                              bedrooms: '',
+                              bathrooms: '',
+                            }));
+                          }
+                        }}
+                        className="gap-2"
+                      >
+                        <Plus size={16} /> Add Unit Type
+                      </Button>
+                    </div>
+
+                    {/* Display Added Occupancy Types */}
+                    {formData.occupancyTypes && formData.occupancyTypes.length > 0 ? (
+                      <div className="space-y-2">
+                        {formData.occupancyTypes.map((occ, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl">
+                            <div className="flex items-center gap-4">
+                              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-bold">
+                                {occ.occupancyType}
+                              </span>
+                              <div className="text-sm text-slate-600">
+                                {occ.bedrooms && (
+                                  <>
+                                    <span>{occ.bedrooms} Bed</span>
+                                    <span className="mx-2">•</span>
+                                  </>
+                                )}
+                                {occ.bathrooms && (
+                                  <>
+                                    <span>{occ.bathrooms} Bath</span>
+                                    <span className="mx-2">•</span>
+                                  </>
+                                )}
+                                <span className="font-medium">{occ.builtUpArea} Sq.Ft</span>
+                                {occ.carpetArea && (
+                                  <>
+                                    <span className="mx-2">•</span>
+                                    <span>Carpet: {occ.carpetArea} Sq.Ft</span>
+                                  </>
+                                )}
+                                <span className="mx-2">•</span>
+                                <span>{occ.numberOfUnits} Unit{occ.numberOfUnits > 1 ? 's' : ''}</span>
+                                {occ.floorNumber && (
+                                  <>
+                                    <span className="mx-2">•</span>
+                                    <span>Floor: {occ.floorNumber}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => setFormData(prev => ({
+                                ...prev,
+                                occupancyTypes: prev.occupancyTypes.filter((_, i) => i !== idx)
+                              }))}
+                              className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ))}
+                        {/* Summary */}
+                        <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                          <p className="text-sm font-medium text-emerald-800">
+                            Total Units: {formData.occupancyTypes.reduce((sum, o) => sum + o.numberOfUnits, 0)} units
+                            across {formData.occupancyTypes.length} configuration{formData.occupancyTypes.length > 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+                    </div>
+                  )}
                 </div>
               )}
               
-              {/* Skip Step 4 for Rental Properties - Show message */}
-              {currentStep === 4 && formData.listingType === 'Rent' && (
+              {/* Skip Step 3 for Rental Properties - Show message */}
+              {currentStep === 3 && formData.listingType === 'Rent' && (
                 <div className="space-y-6">
                   <div className="text-center py-12">
                     <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -1115,8 +1209,8 @@ function PostPropertyContent() {
                 </div>
               )}
 
-              {/* Step 5: Features & Amenities */}
-              {currentStep === 5 && (
+              {/* Step 4: Features & Amenities */}
+              {currentStep === 4 && (
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-2xl font-black text-slate-900 mb-2">Features & Amenities</h2>
@@ -1260,8 +1354,8 @@ function PostPropertyContent() {
                 </div>
               )}
 
-              {/* Step 6: Images */}
-              {currentStep === 6 && (
+              {/* Step 5: Images */}
+              {currentStep === 5 && (
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-2xl font-black text-slate-900 mb-2">Property Images</h2>
@@ -1310,8 +1404,8 @@ function PostPropertyContent() {
                 </div>
               )}
 
-              {/* Step 7: Map & Nearby Locations */}
-              {currentStep === 7 && (
+              {/* Step 6: Map & Nearby Locations */}
+              {currentStep === 6 && (
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-2xl font-black text-slate-900 mb-2">Location & Map</h2>
@@ -1433,8 +1527,8 @@ function PostPropertyContent() {
                 </div>
               )}
 
-              {/* Step 8: Documents & Floor Plans */}
-              {currentStep === 8 && (
+              {/* Step 7: Documents & Floor Plans */}
+              {currentStep === 7 && (
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-2xl font-black text-slate-900 mb-2">Documents & Floor Plans</h2>
@@ -1586,7 +1680,7 @@ function PostPropertyContent() {
                 
                 <div className="flex-1" />
 
-                {currentStep < 8 ? (
+                {currentStep < 7 ? (
                   <Button onClick={handleNext} className="gap-2">
                     Next <ArrowRight size={16} />
                   </Button>

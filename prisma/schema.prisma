@@ -171,8 +171,27 @@ model Property {
   favorites         Favorite[]
   leads             Lead[]
   siteVisits        SiteVisit[]
-  
+  occupancies       PropertyOccupancy[]
+
   @@map("properties")
+}
+
+model PropertyOccupancy {
+  id              Int      @id @default(autoincrement())
+  propertyId      Int      @map("property_id")
+  occupancyType   String   @map("occupancy_type") @db.VarChar(20) // 2BHK, 3BHK, 4BHK, 5BHK, Penthouse
+  bedrooms        String?  @db.VarChar(10)
+  bathrooms       String?  @db.VarChar(10)
+  builtUpArea     String   @map("built_up_area") @db.VarChar(50) // Square feet
+  carpetArea      String?  @map("carpet_area") @db.VarChar(50) // Square feet
+  numberOfUnits   Int      @map("number_of_units")
+  floorNumber     String?  @map("floor_number") @db.VarChar(50) // Can be multiple floors like "1st, 2nd, 3rd"
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("property_occupancies")
 }
 
 model Favorite {

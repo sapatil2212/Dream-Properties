@@ -12,6 +12,9 @@ export async function GET() {
 
     const properties = await prisma.property.findMany({
       where: { builderId: parseInt(session.user.id) },
+      include: {
+        occupancies: true,
+      },
       orderBy: [
         { isFeatured: 'desc' },
         { createdAt: 'desc' },

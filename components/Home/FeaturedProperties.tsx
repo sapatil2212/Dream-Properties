@@ -91,10 +91,6 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
           )}
         </div>
 
-        <div className="absolute bottom-2 left-2 bg-black/50 text-white text-[9px] font-bold px-2 py-0.5 rounded">
-          Image size should be 4:5
-        </div>
-
         {/* Wishlist Button */}
         <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
           {showLoginPrompt && (
@@ -114,49 +110,84 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
       {/* Content */}
       <div className="p-4 flex flex-col flex-1">
         <div className="mb-3">
-          <h3 
-            className="font-bold text-base text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors cursor-pointer mb-1"
-            onClick={() => router.push(`/properties/${property.id}`)}
-          >
-            {property.title}
-          </h3>
           <div className="flex items-center text-slate-500 text-[11px] font-medium">
             <MapPin size={12} className="mr-1 text-blue-500 shrink-0" />
             <span className="truncate">{property.location}</span>
           </div>
         </div>
 
-        {/* Specs Grid */}
-        <div className="grid grid-cols-3 gap-2 mb-4 pt-3 border-t border-slate-50">
-          <div className="flex items-center gap-2">
-            <div className="p-1 bg-blue-50 rounded-lg text-blue-600">
-              {isResidentialProperty ? <Bed size={12} /> : <Building2 size={12} />}
+        {/* Specs Grid - Show BHK/Bath only for properties without occupancy types */}
+        {(!((property as any).occupancies && (property as any).occupancies.length > 0)) ? (
+          <div className="grid grid-cols-3 gap-2 mb-4 pt-3 border-t border-slate-50">
+            <div className="flex items-center gap-2">
+              <div className="p-1 bg-blue-50 rounded-lg text-blue-600">
+                {isResidentialProperty ? <Bed size={12} /> : <Building2 size={12} />}
+              </div>
+              <span className="text-[11px] font-bold text-slate-700">
+                {isResidentialProperty 
+                  ? `${property.bedrooms || 0} BHK` 
+                  : ((property as any).projectUnits || (property as any).project_units 
+                      ? `${(property as any).projectUnits || (property as any).project_units} Units` 
+                      : ((property as any).projectSize || (property as any).project_size || 'N/A'))}
+              </span>
             </div>
-            <span className="text-[11px] font-bold text-slate-700">
-              {isResidentialProperty 
-                ? `${property.bedrooms || 0} BHK` 
-                : ((property as any).projectUnits || (property as any).project_units 
-                    ? `${(property as any).projectUnits || (property as any).project_units} Units` 
-                    : ((property as any).projectSize || (property as any).project_size || 'N/A'))}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-1 bg-blue-50 rounded-lg text-blue-600">
-              {isResidentialProperty ? <Bath size={12} /> : <Calendar size={12} />}
+            <div className="flex items-center gap-2">
+              <div className="p-1 bg-blue-50 rounded-lg text-blue-600">
+                {isResidentialProperty ? <Bath size={12} /> : <Calendar size={12} />}
+              </div>
+              <span className="text-[11px] font-bold text-slate-700">
+                {isResidentialProperty 
+                  ? `${property.bathrooms || 0} Bath` 
+                  : ((property as any).possessionDate || (property as any).possession_date || 'Ready')}
+              </span>
             </div>
-            <span className="text-[11px] font-bold text-slate-700">
-              {isResidentialProperty 
-                ? `${property.bathrooms || 0} Bath` 
-                : ((property as any).possessionDate || (property as any).possession_date || 'Ready')}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-1 bg-blue-50 rounded-lg text-blue-600">
-              <Maximize size={12} />
+            <div className="flex items-center gap-2">
+              <div className="p-1 bg-blue-50 rounded-lg text-blue-600">
+                <Maximize size={12} />
+              </div>
+              <span className="text-[11px] font-bold text-slate-700">{property.area}</span>
             </div>
-            <span className="text-[11px] font-bold text-slate-700">{property.area}</span>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 mb-4 pt-3 border-t border-slate-50">
+            <div className="flex items-center gap-2">
+              <div className="p-1 bg-blue-50 rounded-lg text-blue-600">
+                <Maximize size={12} />
+              </div>
+              <span className="text-[11px] font-bold text-slate-700">{property.area}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="p-1 bg-blue-50 rounded-lg text-blue-600">
+                <Building2 size={12} />
+              </div>
+              <span className="text-[11px] font-bold text-slate-700">
+                {(property as any).occupancies.reduce((sum: number, o: any) => sum + o.numberOfUnits, 0)} Units
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Occupancy Types Preview */}
+        {(property as any).occupancies && (property as any).occupancies.length > 0 && (
+          <div className="mb-4 pt-3 border-t border-slate-50">
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2">Available Units</p>
+            <div className="flex flex-wrap gap-1.5">
+              {(property as any).occupancies.slice(0, 4).map((occ: any, idx: number) => (
+                <span 
+                  key={idx} 
+                  className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-[9px] font-bold border border-blue-100"
+                >
+                  {occ.occupancyType}
+                </span>
+              ))}
+              {(property as any).occupancies.length > 4 && (
+                <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-[9px] font-bold">
+                  +{(property as any).occupancies.length - 4} more
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Pricing and Action Buttons */}
         <div className="mt-auto pt-3 border-t border-slate-50">
