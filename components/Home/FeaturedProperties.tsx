@@ -76,7 +76,7 @@ export const PropertyCard: React.FC<{ property: Property }> = ({ property }) => 
         <img
           src={Array.isArray(property.images) ? property.images[0] : JSON.parse(property.images as unknown as string)[0]}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-          alt={property.title}
+          alt="Property Image"
           loading="lazy"
         />
         

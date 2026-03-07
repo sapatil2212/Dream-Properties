@@ -201,7 +201,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
               <span>/</span>
               <Link href="/properties" className="hover:text-blue-600">Properties</Link>
               <span>/</span>
-              <span className="text-slate-900 truncate max-w-[150px]">{property.title}</span>
+              <span className="text-slate-900 truncate max-w-[150px]">Property Details</span>
             </nav>
           </div>
           <div className="flex items-center gap-2 relative">
@@ -258,7 +258,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
                     src={property.images[currentImageIndex]}
-                    alt={property.title}
+                    alt="Property Image"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </AnimatePresence>
@@ -324,7 +324,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
             <Card className="p-5 rounded-xl border-slate-100">
               <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
                 <div>
-                  <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">{property.title}</h1>
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tight mb-1">Property Details</h1>
                   <div className="flex items-center text-slate-500 font-bold text-[10px] uppercase tracking-wider">
                     <MapPin size={12} className="mr-1.5 text-blue-500" />
                     {property.address || property.location}
