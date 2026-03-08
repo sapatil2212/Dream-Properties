@@ -151,7 +151,7 @@ export const Navbar: React.FC = () => {
                   pathname === '/partner-register' ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'
                 }`}
               >
-                Become Partner
+                Channel Partner
               </Link>
 
               <Link 
